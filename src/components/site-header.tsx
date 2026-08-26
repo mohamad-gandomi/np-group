@@ -33,7 +33,7 @@ const mobileTargets = ["categories", "spaces", "brands", "projects", "journal", 
 
 function BrandMark() {
   return (
-    <Link href="#top" className="group flex items-center gap-2" aria-label="گروه ان‌پی، صفحه اصلی">
+    <Link href="/" className="group flex items-center gap-2" aria-label="گروه ان‌پی، صفحه اصلی">
       <Image src="/logos/np-mark.png" alt="گروه ان‌پی" width={96} height={96} className="size-24 object-contain transition-transform group-hover:scale-105" priority />
     </Link>
   );
@@ -63,7 +63,7 @@ export function SiteHeader() {
                         {group.items.map((item) => (
                           <li key={item}>
                             <NavigationMenuLink asChild>
-                              <Link href="#categories" className="px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
+                              <Link href="/shop#products" className="px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
                                 {item}
                               </Link>
                             </NavigationMenuLink>
@@ -106,7 +106,7 @@ export function SiteHeader() {
               </SheetHeader>
               <nav className="flex flex-col px-6 py-4">
                 {mobileLinks.map((item, index) => (
-                  <Link key={item} href={`#${mobileTargets[index]}`} className="flex items-center justify-between border-b py-4 text-lg">
+                  <Link key={item} href={index === 0 ? "/shop" : `/#${mobileTargets[index]}`} className="flex items-center justify-between border-b py-4 text-lg">
                     {item}<span className="text-xs text-wine">۰{index + 1}</span>
                   </Link>
                 ))}
