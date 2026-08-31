@@ -1,0 +1,19 @@
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Check, Circle, MapPin, PackageCheck } from "lucide-react";
+import { notFound } from "next/navigation";
+
+import { getOrder, statusLabels, type OrderStatus } from "@/features/account/account-data";
+import { requireUser } from "@/features/auth/session";
+
+const price = new Intl.NumberFormat("fa-IR");
+const date = new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" });
+const steps: Array<{ status: OrderStatus; label: string }> = [{ status: "pending_review", label: "ثبت و بررسی" }, { status: "confirmed", label: "تأیید سفارش" }, { status: "in_production", label: "آماده‌سازی" }, { status: "ready", label: "آماده ارسال" }, { status: "shipped", label: "ارسال" }, { status: "delivered", label: "تحویل" }];
+
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const [user, { id }] = await Promise.all([requireUser(), params]);
+  const order = await getOrder(user, id);
+  if (!order) notFound();
+  const currentIndex = steps.findIndex((step) => step.status === order.status);
+  return <section><Link href="/account/orders" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-wine"><ArrowRight className="size-4" />بازگشت به سفارش‌ها</Link><div className="mt-5 border border-black/10 bg-white p-5 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-5"><div><p className="text-xs text-muted-foreground">شماره سفارش</p><h2 className="mt-2 text-2xl font-medium" dir="ltr">{order.orderNumber}</h2><p className="mt-2 text-xs text-muted-foreground">ثبت‌شده در {date.format(new Date(order.createdAt))}</p></div><span className="border border-wine/20 bg-wine/5 px-4 py-2 text-xs text-wine">{statusLabels[order.status]}</span></div><div className="mt-8 grid grid-cols-3 gap-y-6 border-y border-black/10 py-6 sm:grid-cols-6">{steps.map((step, index) => { const done = currentIndex >= index; return <div key={step.status} className="relative text-center"><div className={`relative z-10 mx-auto grid size-8 place-items-center rounded-full ${done ? "bg-wine text-white" : "border border-black/15 bg-white text-muted-foreground"}`}>{done ? <Check className="size-4" /> : <Circle className="size-3" />}</div><p className={`mt-2 text-[0.68rem] ${done ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p></div>; })}</div><div className="mt-7 space-y-4">{order.items.map((item) => <div key={item.id} className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-4 border-b border-black/10 pb-4 sm:grid-cols-[5rem_minmax(0,1fr)_auto]"><div className="relative aspect-square overflow-hidden bg-secondary"><Image src={item.image} alt={item.productName} fill sizes="80px" className="object-cover" /></div><div><p className="font-medium">{item.productName}</p><p className="mt-1 text-xs text-muted-foreground">رنگ {item.color} · تعداد {new Intl.NumberFormat("fa-IR").format(item.quantity)}</p></div><p className="col-start-2 text-sm font-semibold text-wine sm:col-start-auto">{price.format(item.unitPrice * item.quantity)} تومان</p></div>)}</div><div className="mt-6 grid gap-4 sm:grid-cols-2"><div className="border border-black/10 p-4"><p className="flex items-center gap-2 text-sm font-medium"><MapPin className="size-4 text-wine" />نشانی تحویل</p><p className="mt-3 text-xs leading-6 text-muted-foreground">{order.address || "پس از هماهنگی با مشاور ثبت می‌شود."}</p></div><div className="border border-black/10 p-4"><p className="flex items-center gap-2 text-sm font-medium"><PackageCheck className="size-4 text-wine" />خلاصه مالی</p><div className="mt-3 flex justify-between gap-4 text-sm"><span className="text-muted-foreground">مبلغ سفارش</span><strong className="text-wine">{price.format(order.total)} تومان</strong></div></div></div></div></section>;
+}

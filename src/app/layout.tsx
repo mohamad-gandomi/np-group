@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { siteConfig } from "@/config/site";
+import { CartProvider } from "@/features/cart/cart-context";
+import { SavedProvider } from "@/features/saved/saved-context";
 import "./globals.css";
 
 const ravi = localFont({
@@ -10,10 +16,10 @@ const ravi = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: "گروه ام‌پی | مبلمان و روشنایی برای فضاهای ماندگار",
-    template: "%s | گروه ام‌پی",
+    default: "گروه ان‌پی | مبلمان و روشنایی برای فضاهای ماندگار",
+    template: "%s | گروه ان‌پی",
   },
   description:
     "انتخابی ممتاز از مبلمان، روشنایی، پارچه و اکسسوری برای خانه‌ها، هتل‌ها، رستوران‌ها و فضاهای کاری.",
@@ -26,7 +32,7 @@ export const metadata: Metadata = {
     "تجهیز هتل",
   ],
   openGraph: {
-    title: "گروه ام‌پی | طراحی برای زندگی بهتر",
+    title: "گروه ان‌پی | طراحی برای زندگی بهتر",
     description:
       "مجموعه‌ای از مبلمان، روشنایی و جزئیات انتخاب‌شده برای فضاهای ماندگار.",
     locale: "fa_IR",
@@ -45,7 +51,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fa" dir="rtl" className={`${ravi.variable} antialiased`}>
-      <body>{children}</body>
+      <body><SavedProvider><CartProvider><SiteHeader />{children}<SiteFooter /></CartProvider></SavedProvider></body>
     </html>
   );
 }

@@ -1,0 +1,18 @@
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, MapPin, PackageCheck, UserRound } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { SavedSummaryCard } from "@/components/account/saved-summary-card";
+import { getAccountData, statusLabels } from "@/features/account/account-data";
+import { requireUser } from "@/features/auth/session";
+
+const price = new Intl.NumberFormat("fa-IR");
+const date = new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" });
+
+export default async function AccountPage() {
+  const user = await requireUser();
+  const { orders, addresses } = await getAccountData(user);
+  const recent = orders[0];
+  return <div className="space-y-6"><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Link href="/account/orders" className="border border-black/10 bg-white p-5 transition hover:border-wine"><PackageCheck className="size-5 text-wine" /><p className="mt-5 text-2xl font-semibold">{new Intl.NumberFormat("fa-IR").format(orders.length)}</p><p className="mt-1 text-xs text-muted-foreground">سفارش ثبت‌شده</p></Link><Link href="/account/addresses" className="border border-black/10 bg-white p-5 transition hover:border-wine"><MapPin className="size-5 text-wine" /><p className="mt-5 text-2xl font-semibold">{new Intl.NumberFormat("fa-IR").format(addresses.length)}</p><p className="mt-1 text-xs text-muted-foreground">آدرس ذخیره‌شده</p></Link><SavedSummaryCard /><Link href="/account/profile" className="border border-black/10 bg-white p-5 transition hover:border-wine"><UserRound className="size-5 text-wine" /><p className="mt-5 text-sm font-semibold">{user.name ? "کامل" : "نیازمند تکمیل"}</p><p className="mt-1 text-xs text-muted-foreground">وضعیت اطلاعات حساب</p></Link></section>{recent ? <section className="border border-black/10 bg-white p-5 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-semibold text-wine">آخرین سفارش</p><h2 className="mt-2 text-xl font-medium" dir="ltr">{recent.orderNumber}</h2><p className="mt-2 text-xs text-muted-foreground">{date.format(new Date(recent.createdAt))}</p></div><span className="border border-wine/20 bg-wine/5 px-3 py-2 text-xs text-wine">{statusLabels[recent.status]}</span></div><div className="mt-6 border-y border-black/10 py-5">{recent.items.slice(0, 2).map((item) => <div key={item.id} className="flex items-center gap-4"><div className="relative size-20 overflow-hidden bg-secondary"><Image src={item.image} alt={item.productName} fill sizes="80px" className="object-cover" /></div><div className="min-w-0 flex-1"><p className="font-medium">{item.productName}</p><p className="mt-1 text-xs text-muted-foreground">رنگ {item.color} · تعداد {new Intl.NumberFormat("fa-IR").format(item.quantity)}</p></div><p className="text-sm font-semibold text-wine">{price.format(item.unitPrice * item.quantity)} <span className="text-[0.65rem] font-normal text-muted-foreground">تومان</span></p></div>)}</div><div className="mt-5 flex items-center justify-between gap-4"><p className="text-sm">مبلغ سفارش: <strong className="text-wine">{price.format(recent.total)} تومان</strong></p><Button asChild variant="outline" className="rounded-none"><Link href={`/account/orders/${recent.id}`}>جزئیات سفارش <ArrowLeft /></Link></Button></div></section> : <section className="border border-dashed border-black/15 bg-white py-16 text-center"><PackageCheck className="mx-auto size-9 text-wine" /><h2 className="mt-4 text-xl font-medium">هنوز سفارشی ثبت نشده است</h2><Button asChild className="mt-6 rounded-none bg-wine"><Link href="/shop">مشاهده فروشگاه</Link></Button></section>}</div>;
+}

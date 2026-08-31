@@ -1,0 +1,15 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, ShoppingBag } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { CartLine, useCart } from "@/features/cart/cart-context";
+
+const priceFormatter = new Intl.NumberFormat("fa-IR");
+
+export default function CartPage() {
+  const { items, subtotal } = useCart();
+  const shipping = items.length ? 0 : 0;
+  return <main className="min-h-[60vh]"><div className="container-shell py-10 sm:py-16"><div className="mb-10"><p className="text-xs font-semibold tracking-[0.18em] text-wine">سبد خرید</p><h1 className="mt-3 text-4xl font-medium sm:text-5xl">انتخاب‌های شما</h1><p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground">جزئیات رنگ، زمان آماده‌سازی و هزینه ارسال را پیش از پرداخت بررسی کنید.</p></div>{items.length ? <div className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start"><section className="border-t border-black/10">{items.map((item) => <CartLine key={item.key} item={item} />)}</section><aside className="border border-black/10 bg-secondary/35 p-6 lg:sticky lg:top-32"><h2 className="text-lg font-medium">خلاصه سفارش</h2><div className="mt-6 space-y-4 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">جمع کالاها</span><span>{priceFormatter.format(subtotal)} تومان</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">ارسال</span><span className="text-xs">پس از انتخاب شهر</span></div><div className="border-t border-black/10 pt-4"><div className="flex justify-between gap-4 text-base font-semibold"><span>مبلغ نهایی</span><span className="text-wine">{priceFormatter.format(subtotal + shipping)} تومان</span></div></div></div><Button asChild className="mt-6 h-12 w-full rounded-none bg-wine hover:bg-ink"><Link href="/checkout">ادامه به پرداخت <ArrowLeft /></Link></Button><Link href="/shop" className="mt-4 block text-center text-xs text-muted-foreground hover:text-wine">بازگشت به فروشگاه</Link><div className="mt-6 grid gap-3 border-t border-black/10 pt-5 text-xs leading-6 text-muted-foreground"><p className="flex gap-2"><CheckCircle2 className="mt-1 size-4 shrink-0 text-wine" />قیمت‌ها به تومان نمایش داده می‌شوند.</p><p className="flex gap-2"><CheckCircle2 className="mt-1 size-4 shrink-0 text-wine" />برای سفارش‌های سفارشی، پیش از تولید تأیید مشاور انجام می‌شود.</p></div></aside></div> : <div className="border border-dashed border-black/15 py-20 text-center"><ShoppingBag className="mx-auto size-10 text-wine" /><h2 className="mt-5 text-2xl font-medium">سبد خرید شما خالی است</h2><p className="mt-3 text-sm text-muted-foreground">از میان مجموعه‌های منتخب، محصول مناسب فضای خود را پیدا کنید.</p><Button asChild className="mt-7 h-12 rounded-none bg-wine px-8 hover:bg-ink"><Link href="/shop">مشاهده فروشگاه</Link></Button></div>}</div></main>;
+}

@@ -81,6 +81,16 @@
   button {
     -webkit-tap-highlight-color: transparent;
   }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 }
 
 @layer utilities {
@@ -98,6 +108,29 @@
       linear-gradient(180deg, transparent 35%, rgb(30 16 19 / 0.72) 100%),
       linear-gradient(90deg, rgb(20 8 11 / 0.25), transparent 55%);
   }
+
+  .filter-scrollbar {
+    scrollbar-color: color-mix(in srgb, var(--wine) 58%, transparent) transparent;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+
+  .filter-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .filter-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .filter-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--wine) 58%, transparent);
+    border-radius: 999px;
+  }
+
+  .filter-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--wine);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -108,4 +141,15 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+body:has(> main[data-page="catalog"]) > header {
+  position: static;
+}
+
+body:has(> main[data-page="login"]) > header,
+body:has(> main[data-page="login"]) > footer,
+body:has(> main[data-page="account"]) > header,
+body:has(> main[data-page="account"]) > footer {
+  display: none;
 }
