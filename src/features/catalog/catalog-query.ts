@@ -1,5 +1,6 @@
 import { products } from "./catalog-data";
 import type { Product } from "./catalog-types";
+import { matchesProductSearch } from "./catalog-search";
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 export const PAGE_SIZE = 6;
@@ -18,7 +19,7 @@ export function getCatalogResults(params: RawSearchParams, category?: string) {
   };
 
   const filtered = products.filter((product) =>
-    (!query.search || [product.name, product.brand, product.category, ...product.room, ...product.material, ...product.colors].some((value) => value.toLocaleLowerCase("fa").includes(query.search!))) &&
+    (!query.search || matchesProductSearch(product, query.search)) &&
     (!query.category.length || query.category.includes(product.category)) &&
     (!query.brand.length || query.brand.includes(product.brand)) &&
     (!query.room.length || query.room.some((value) => product.room.includes(value))) &&

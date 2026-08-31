@@ -12,8 +12,9 @@ const shopLinks = [
 
 const companyLinks = [
   ["درباره ما", "/about"],
-  ["پروژه‌ها", "/#projects"],
-  ["مجله", "/#journal"],
+  ["پروژه‌ها", "/projects"],
+  ["برندها", "/brands"],
+  ["مجله", "/blog"],
   ["تماس با ما", "/contact"],
 ] as const;
 
@@ -41,7 +42,9 @@ export function SiteFooter() {
           <FooterLinks title="گروه ان‌پی" links={companyLinks} />
           <div>
             <p className="mb-5 text-sm font-semibold text-white">ارتباط</p>
-            <p className="text-sm leading-7 text-white/55">{siteConfig.addressLabel}<br /><a href={siteConfig.phoneHref} dir="ltr">{siteConfig.phoneLabel}</a><br /><a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a></p>
+            <address className="text-sm not-italic leading-7 text-white/65"><a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white" aria-label={`${siteConfig.addressLabel}؛ مسیریابی در پنجره جدید`}>{siteConfig.addressLabel}</a><br /><a href={siteConfig.phoneHref}><bdi dir="ltr">{siteConfig.phoneLabel}</bdi></a><br /><a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a></address>
+            <p className="mt-3 text-xs leading-6 text-white/55">{siteConfig.hoursLabel}</p>
+            <a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block py-2 text-xs text-white underline underline-offset-4">مسیریابی فروشگاه <span className="sr-only">(پنجره جدید)</span></a>
           </div>
         </div>
         <Separator className="bg-white/12" />

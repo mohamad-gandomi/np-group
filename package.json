@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:journal": "node scripts/journal.test.mjs",
+    "test:showcase": "node scripts/showcase.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

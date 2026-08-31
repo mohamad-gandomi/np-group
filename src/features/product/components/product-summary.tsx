@@ -9,6 +9,7 @@ import { siteConfig } from "@/config/site";
 import type { Product } from "@/features/catalog/catalog-types";
 import { QuantityControl, useCart } from "@/features/cart/cart-context";
 import { ProductSaveButton } from "@/features/saved/saved-context";
+import { brandPath } from "@/features/showcase/brand-registry";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const colorValues: Record<string, string> = { "کرم": "#d8cbb7", "قهوه‌ای": "#76543c", "مشکی": "#1f2022", "طلایی": "#b69a59", "سبز": "#677565", "طوسی": "#aaa8a4", "قرمز": "#8f3035" };
@@ -21,7 +22,7 @@ export function ProductSummary({ product, description, depth, height, leadTime }
   const addToCart = () => { addItem(product, color, quantity); setAdded(true); window.setTimeout(() => setAdded(false), 2400); };
   return (
     <div className="lg:sticky lg:top-6">
-      <p className="text-xs font-semibold tracking-[0.18em] text-wine" dir="ltr">{product.brand}</p>
+      <Link href={brandPath(product.brand)} className="inline-block text-xs font-semibold tracking-[0.18em] text-wine underline-offset-4 hover:underline" dir="ltr" aria-label={`مشاهده مجموعه ${product.brand}`}>{product.brand}</Link>
       <h1 className="mt-3 text-4xl font-medium leading-[1.25] sm:text-5xl">{product.name}</h1>
       <p className="mt-5 text-sm leading-7 text-muted-foreground">{description}</p>
       <p className="mt-7 text-2xl font-semibold text-wine">{priceFormatter.format(product.price)} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>

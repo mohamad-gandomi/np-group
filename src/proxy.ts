@@ -1,8 +1,11 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
+  // Public editorial and showcase pages need no auth network calls/cookies.
+  const path = request.nextUrl.pathname;
+  if (["/blog", "/projects", "/brands"].some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return NextResponse.next();
   return updateSession(request);
 }
 

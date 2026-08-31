@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Eye, Handshake, Ruler, ShieldCheck } from "luc
 
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
+import { storeSchema } from "@/lib/store-schema";
 
 export const metadata: Metadata = {
   title: "درباره ما",
@@ -40,7 +41,8 @@ export default function AboutPage() {
       alternateName: siteConfig.nameEn,
       url: siteConfig.url,
       email: siteConfig.email,
-      telephone: "+982100000000",
+      telephone: siteConfig.phoneNumber,
+      location: storeSchema,
     },
   };
 

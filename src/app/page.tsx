@@ -17,17 +17,15 @@ import { SectionHeading } from "@/components/section-heading";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { categories, products } from "@/features/catalog/catalog-data";
+import { categoryLabel, journalPosts } from "@/features/journal/posts";
+import { formatJournalDate } from "@/features/journal/format";
+import { brandRegistry, brandPath } from "@/features/showcase/brand-registry";
+import { storeSchema } from "@/lib/store-schema";
 
 const spaces = [
   { title: "نشیمن", image: "/placeholders/living.jpg" },
   { title: "غذاخوری و آشپزخانه", image: "/placeholders/dining.jpg" },
   { title: "اتاق خواب", image: "/placeholders/bedroom.jpg" },
-];
-
-const journal = [
-  { category: "راهنمای انتخاب", title: "چطور ابعاد درست مبلمان را برای فضای خود پیدا کنیم؟", image: "/placeholders/sofa.jpg", date: "۱۲ مرداد ۱۴۰۵" },
-  { category: "متریال", title: "پارچه‌ای که با زندگی روزمره شما هماهنگ می‌ماند", image: "/placeholders/living.jpg", date: "۰۵ مرداد ۱۴۰۵" },
-  { category: "نور و فضا", title: "سه لایه روشنایی برای ساختن یک فضای گرم و آرام", image: "/placeholders/lighting.jpg", date: "۲۹ تیر ۱۴۰۵" },
 ];
 
 const services = [
@@ -45,6 +43,8 @@ export default function Home() {
     alternateName: siteConfig.nameEn,
     description: "عرضه مبلمان، روشنایی، پارچه و اکسسوری و تجهیز فضاهای مسکونی و تجاری",
     areaServed: "IR",
+    telephone: siteConfig.phoneNumber,
+    location: storeSchema,
   };
 
   return (
@@ -82,7 +82,7 @@ export default function Home() {
                     <Link href="#categories">دیدن مجموعه <ArrowLeft /></Link>
                   </Button>
                   <Button asChild size="lg" variant="outline" className="h-11 rounded-none border-white/50 bg-transparent px-5 text-white hover:bg-white/10 hover:text-white">
-                    <Link href="#projects">برای پروژه‌ها</Link>
+                    <Link href="/projects">برای پروژه‌ها</Link>
                   </Button>
                 </div>
               </div>
@@ -148,8 +148,8 @@ export default function Home() {
         <section id="projects" className="editorial-section bg-wine-deep py-5 text-white sm:py-8">
           <div className="container-shell grid overflow-hidden bg-wine lg:grid-cols-[1.2fr_0.8fr]">
               <div className="relative min-h-[28rem] lg:min-h-[44rem]">
-              <Image src="/placeholders/project.jpg" alt="پروژه تجهیز لابی هتل" fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
-              <div className="absolute start-5 top-5 border border-white bg-transparent px-3 py-2 text-xs text-white">پروژه منتخب · ۱۴۰۵</div>
+              <Image src="/placeholders/project.jpg" alt="تصویر الهام‌بخش لابی هتل؛ کانسپت نمایشی، نه پروژه اجراشده ان‌پی" fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
+              <div className="absolute start-5 top-5 border border-white bg-black/55 px-3 py-2 text-xs text-white">کانسپت نمایشی · تصویر مرجع</div>
             </div>
             <div className="flex flex-col justify-between p-7 sm:p-10 lg:p-14">
               <div>
@@ -167,7 +167,7 @@ export default function Home() {
                   <span className="flex items-center gap-2"><UtensilsCrossed className="size-4 text-white" /> رستوران و تجاری</span>
                 </div>
                 <Button asChild className="mt-7 h-11 rounded-none bg-white px-5 text-ink hover:bg-white/90">
-                  <Link href="#contact">شروع یک پروژه <ArrowLeft className="text-black" /></Link>
+                  <Link href="/projects">دیدن روایت فضاها <ArrowLeft className="text-black" /></Link>
                 </Button>
               </div>
             </div>
@@ -201,11 +201,11 @@ export default function Home() {
 
         <section id="brands" className="editorial-section border-b py-18 sm:py-24">
           <div className="container-shell">
-            <p className="mb-8 text-center text-xs tracking-[0.16em] text-muted-foreground">برندهای منتخب در مجموعه ان‌پی</p>
+            <p className="mb-8 text-center text-xs tracking-[0.16em] text-muted-foreground"><Link href="/brands" className="underline-offset-4 hover:underline">کشف برندها · کاتالوگ نمایشی</Link></p>
             <div className="grid grid-cols-2 border-y sm:grid-cols-3 lg:grid-cols-6">
-              {["NOMA", "LUMIA", "FORMA", "CASA N", "ATELIER", "MÉRIDIEN"].map((brand) => (
-                <Link key={brand} href={`/shop?brand=${encodeURIComponent(brand)}`} className="grid h-24 place-items-center border-b border-s text-sm font-semibold tracking-[0.16em] transition-colors hover:bg-wine hover:text-white sm:border-b-0 lg:h-28" dir="ltr">
-                  {brand}
+              {brandRegistry.map((brand) => (
+                <Link key={brand.slug} href={brandPath(brand.name)} className="grid h-24 place-items-center border-b border-s text-sm font-semibold tracking-[0.16em] transition-colors hover:bg-wine hover:text-white sm:border-b-0 lg:h-28" dir="ltr">
+                  {brand.name}
                 </Link>
               ))}
             </div>
@@ -232,15 +232,17 @@ export default function Home() {
 
         <section id="journal" className="editorial-section bg-card py-20 sm:py-28">
           <div className="container-shell">
-            <SectionHeading eyebrow="مجله ان‌پی" title="ایده، متریال و راهنمای انتخاب" link="همه مطالب" />
+            <SectionHeading eyebrow="مجله ان‌پی" title="ایده، متریال و راهنمای انتخاب" link="همه مطالب" href="/blog" />
             <div className="grid gap-8 md:grid-cols-3">
-              {journal.map((post) => (
+              {journalPosts.slice(0, 3).map((post) => (
                 <article key={post.title} className="group">
+                  <Link href={`/blog/${post.slug}`}>
                     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                       <Image src={post.image} alt={post.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
                     </div>
-                    <div className="flex items-center justify-between pt-5 text-xs text-muted-foreground"><span className="text-wine">{post.category}</span><time>{post.date}</time></div>
+                    <div className="flex items-center justify-between pt-5 text-xs text-muted-foreground"><span className="text-wine">{categoryLabel(post.category)}</span><time dateTime={post.publishedAt}>{formatJournalDate(post.publishedAt)}</time></div>
                     <h3 className="mt-3 text-xl font-medium leading-8 transition-colors group-hover:text-wine">{post.title}</h3>
+                  </Link>
                 </article>
               ))}
             </div>

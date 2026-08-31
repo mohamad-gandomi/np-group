@@ -66,7 +66,7 @@ export function SavedButton({ href }: { href: string }) {
   const { count } = useSaved();
   return (
     <Button asChild variant="ghost" size="icon-lg" className="relative size-11 rounded-none" aria-label={`محصولات ذخیره‌شده، ${count} محصول`}>
-      <Link href={href}>
+      <Link href={href} prefetch={false}>
         <Bookmark className="size-[1.35rem]" />
         {count > 0 ? <span className="absolute end-0.5 top-0.5 grid min-w-4 place-items-center rounded-full bg-wine px-1 text-[0.58rem] leading-4 text-white">{numberFormatter.format(count)}</span> : null}
       </Link>
