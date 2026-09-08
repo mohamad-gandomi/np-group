@@ -8,7 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "test:journal": "node scripts/journal.test.mjs",
-    "test:showcase": "node scripts/showcase.test.mjs"
+    "test:showcase": "node scripts/showcase.test.mjs",
+    "wp:setup": "node wordpress/scripts/wp.mjs setup",
+    "wp:start": "node wordpress/scripts/wp.mjs start",
+    "wp:stop": "node wordpress/scripts/wp.mjs stop",
+    "wp:status": "node wordpress/scripts/wp.mjs status",
+    "wp:logs": "node wordpress/scripts/wp.mjs logs",
+    "wp:cli": "node wordpress/scripts/wp.mjs cli",
+    "wp:test": "node wordpress/scripts/wp.mjs test",
+    "wp:seed": "node wordpress/scripts/wp.mjs seed"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

@@ -4,6 +4,8 @@ A Persian RTL furniture and interiors storefront built with Next.js, React, Type
 
 ## Run locally
 
+For the local WordPress/WooCommerce backend and live plugin development, see [wordpress/README.md](wordpress/README.md). The frontend is not yet connected to WordPress; migration progress is tracked in [the backend checklist](docs/wordpress-backend-plan.md).
+
 ```bash
 npm ci
 cp .env.example .env.local

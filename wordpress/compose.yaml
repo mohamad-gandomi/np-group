@@ -1,0 +1,74 @@
+name: np-group-wordpress
+
+x-wordpress-environment: &wordpress-environment
+  WORDPRESS_DB_HOST: db
+  WORDPRESS_DB_NAME: wordpress
+  WORDPRESS_DB_USER: wordpress
+  WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD:?Run npm run wp:setup}
+  WORDPRESS_DEBUG: 1
+  WORDPRESS_CONFIG_EXTRA: |
+    define('WP_ENVIRONMENT_TYPE', 'local');
+    define('WP_DEBUG_LOG', true);
+    define('WP_DEBUG_DISPLAY', false);
+    define('DISALLOW_FILE_EDIT', true);
+    define('AUTOMATIC_UPDATER_DISABLED', true);
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: ${WP_DB_PASSWORD:?Run npm run wp:setup}
+      MARIADB_ROOT_PASSWORD: ${WP_DB_ROOT_PASSWORD:?Run npm run wp:setup}
+    volumes:
+      - database:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  wordpress:
+    image: wordpress:7.1.0-php8.3-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WP_PORT:-8080}:80"
+    environment: *wordpress-environment
+    volumes:
+      - installation:/var/www/html
+      - ./plugins/np-group:/var/www/html/wp-content/plugins/np-group:ro
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/np-local.ini:ro
+    healthcheck:
+      test: [CMD, php, -r, "exit(@fsockopen('127.0.0.1', 80) ? 0 : 1);"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  cli:
+    image: wordpress:cli-2.12.0-php8.3
+    user: "33:33"
+    profiles: [tools]
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      <<: *wordpress-environment
+      WP_CLI_CACHE_DIR: /tmp/wp-cli-cache
+      WP_PORT: ${WP_PORT:-8080}
+      WP_ADMIN_USER: ${WP_ADMIN_USER:-npadmin}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:?Run npm run wp:setup}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:-admin@example.test}
+      WOOCOMMERCE_VERSION: ${WOOCOMMERCE_VERSION:-11.1.0}
+    volumes:
+      - installation:/var/www/html
+      - ./plugins/np-group:/var/www/html/wp-content/plugins/np-group:ro
+      - ./scripts:/workspace/scripts:ro
+      - ./tests:/workspace/tests:ro
+      - ./.cache:/workspace/packages:ro
+
+volumes:
+  database:
+  installation:
