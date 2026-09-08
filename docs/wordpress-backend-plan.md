@@ -32,23 +32,23 @@
 
 ## Phase 1: local development environment (current task)
 
-- [ ] Add Docker Compose for WordPress, database and WP-CLI.
-- [ ] Bind-mount the plugin so PHP edits take effect on the next request.
-- [ ] Persist the installation and database in Docker volumes; keep generated WordPress files outside Git.
-- [ ] Bind WordPress to localhost, install WooCommerce and configure Persian administration.
-- [ ] Provide repeatable setup/start/stop/check commands and local credentials documentation.
-- [ ] Verify running services and that setup can run again without resetting data.
+- [x] Add Docker Compose for WordPress, database and WP-CLI.
+- [x] Bind-mount the plugin so PHP edits take effect on the next request.
+- [x] Persist the installation and database in Docker volumes; keep generated WordPress files outside Git.
+- [x] Bind WordPress to localhost, install WooCommerce and configure Persian administration.
+- [x] Provide repeatable setup/start/stop/check commands and local credentials documentation.
+- [x] Verify running services and that setup can run again without resetting data.
 
 ## Phase 2: product plugin foundation (current task)
 
-- [ ] Add a minimal bootstrap with a WooCommerce dependency check.
-- [ ] Add Persian product fields: purchase mode, piece/meter unit, preparation note, ordered title/value specifications.
-- [ ] Add a shared seller phone setting.
-- [ ] Reuse native tags, attributes, variations, pricing and dimensions.
-- [ ] Enforce contact-only products, positive whole quantities and no online backorders server-side.
-- [ ] Add an explicit, local-only sample-data command for testing; never auto-import the supplied manufacturer sheets.
-- [ ] Verify field persistence, purchasing restrictions, variation behavior and live-mounted edits.
-- [ ] Document what is implemented and what is still planned.
+- [x] Add a minimal bootstrap with a WooCommerce dependency check.
+- [x] Add Persian product fields: purchase mode, piece/meter unit, preparation note, ordered title/value specifications.
+- [x] Add a shared seller phone setting.
+- [x] Reuse native tags, attributes, variations, pricing and dimensions.
+- [x] Enforce contact-only products, positive whole quantities and no online backorders server-side.
+- [x] Add an explicit, local-only sample-data command for testing; never auto-import the supplied manufacturer sheets.
+- [x] Verify field persistence, purchasing restrictions, variation behavior and live-mounted edits.
+- [x] Document what is implemented and what is still planned.
 
 ## Phase 3: CMS and Next.js integration (later)
 
@@ -80,4 +80,17 @@
 
 ## Validation record
 
-Pending implementation.
+Verified 2026-09-08:
+
+- WordPress 7.1/PHP 8.3 and MariaDB 11.4 are healthy on localhost:8080; WooCommerce 11.1.0 and NP Group 0.1.0 are active.
+- Persian core and WooCommerce language packs installed. Host-cached official ZIP downloads avoid the container network failure.
+- Setup rerun completed without resetting products, account credentials or store configuration.
+- PHP syntax checks and 21 integration checks passed, including real Store API cart additions, overselling, contact restrictions, variation inheritance, whole-meter validation and admin mutation protection.
+- Browser verified Persian login, product editor, adding/reordering/saving/reloading specification rows and shared phone settings. No browser errors were reported on the checked editor page.
+- Native REST index returns HTTP 200. Repository lint and diff whitespace checks passed.
+- Four explicitly labeled local sample products created. No manufacturer spreadsheets imported.
+- Live-mounted changes were exercised without rebuilding or reinstalling the plugin.
+- Plugin PHP modules are at most 77 lines; editor JavaScript is 35 lines. Integration fixtures are isolated from production code.
+- Next.js visuals/data sources, Supabase, customer account creation and payment integration remain unchanged and are tracked in later phases.
+
+Commits: `bae1ed8` (checklist), `5045d9a` (plugin), `5c47ee7` (Docker and tests).
