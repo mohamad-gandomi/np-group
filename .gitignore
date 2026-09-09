@@ -41,6 +41,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Local WordPress download cache
-/wordpress/.cache/

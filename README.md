@@ -43,8 +43,6 @@ npm run payload:db:status
 npm run payload:db:stop
 ```
 
-For the older local WordPress/WooCommerce backend experiment, see [wordpress/README.md](wordpress/README.md). The frontend is not connected to WordPress; its historical progress is tracked in [the backend checklist](docs/wordpress-backend-plan.md).
-
 Production verification:
 
 ```bash

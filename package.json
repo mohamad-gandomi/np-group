@@ -18,15 +18,7 @@
     "payload:seed": "payload run src/payload/seed.ts",
     "payload:db:start": "docker compose --env-file .env.local -f payload.compose.yaml up -d",
     "payload:db:stop": "docker compose --env-file .env.local -f payload.compose.yaml down",
-    "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps",
-    "wp:setup": "node wordpress/scripts/wp.mjs setup",
-    "wp:start": "node wordpress/scripts/wp.mjs start",
-    "wp:stop": "node wordpress/scripts/wp.mjs stop",
-    "wp:status": "node wordpress/scripts/wp.mjs status",
-    "wp:logs": "node wordpress/scripts/wp.mjs logs",
-    "wp:cli": "node wordpress/scripts/wp.mjs cli",
-    "wp:test": "node wordpress/scripts/wp.mjs test",
-    "wp:seed": "node wordpress/scripts/wp.mjs seed"
+    "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.88.0",
