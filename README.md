@@ -1,20 +1,34 @@
 # NPGroup Storefront
 
-A Persian RTL furniture and interiors storefront built with Next.js, React, TypeScript, and Tailwind CSS. Includes a filterable catalog, product pages, cart, checkout, phone OTP login, and account pages backed by Supabase when configured.
+A Persian RTL furniture and interiors storefront built with Next.js, React, TypeScript, Tailwind CSS, Payload CMS/Ecommerce, PostgreSQL, and the existing incremental Supabase integration.
 
-## Run locally
+## Project development context
+
+Before making architecture, Payload, catalog, or commerce changes, read:
+
+1. `NILPER_CONTEXT.md`
+2. `NILPER_TODO.md`
+3. `AGENTS.md`
+
+`NILPER_CONTEXT.md` and `NILPER_TODO.md` are the canonical architecture and progress documents. `AGENTS.md` contains generated Next.js framework instructions that must also be followed.
+
+## Local setup
+
+Requirements:
+
+- Node.js and npm
+- Docker Desktop for the local Payload PostgreSQL database
+
+Install dependencies and create a local environment file:
 
 ```bash
 npm ci
 cp .env.example .env.local
-npm run dev
 ```
 
-### Payload dashboard preview
+Keep real credentials in the ignored `.env.local` file. The blank `.env.example` is the committed template.
 
-Phase 1 adds the real Payload Admin without changing the storefront data source, cart, checkout, or Supabase flows. Docker Desktop is required for the local PostgreSQL container.
-
-Add the following local-only values to `.env.local` (keep the existing Supabase variables if you use them):
+For Payload and local PostgreSQL, configure:
 
 ```env
 DATABASE_URI=postgres://nilper_payload:YOUR_PASSWORD@127.0.0.1:5433/nilper_payload
@@ -24,7 +38,20 @@ PAYLOAD_DB_USER=nilper_payload
 PAYLOAD_DB_PASSWORD=YOUR_PASSWORD
 ```
 
-On first setup, start PostgreSQL, seed the dashboard preview, and run the app:
+Retain the Supabase variables when using the existing customer authentication, account, address, and order-request flows.
+
+Relevant non-Payload variables are documented in `.env.example`, including:
+
+- `NEXT_PUBLIC_SITE_URL` for metadata and sitemap URLs
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and server-only `SUPABASE_SECRET_KEY`
+- `AUTH_DEV_SECRET` for local demo sessions
+- `KAVENEGAR_API_KEY`, `KAVENEGAR_OTP_TEMPLATE`, and `SEND_SMS_HOOK_SECRET` for the Supabase SMS hook
+
+Apply `supabase/migrations/20260829000000_account_dashboard.sql` when provisioning the existing Supabase account/order schema. Without Supabase configuration, local development supports demo login with OTP `123456`; that fallback is disabled in production.
+
+## Development
+
+For initial setup, start PostgreSQL, seed the representative Payload data, and start Next.js:
 
 ```bash
 npm run payload:db:start
@@ -32,63 +59,56 @@ npm run payload:seed
 npm run dev
 ```
 
-For later runs, `npm run dev:payload` starts PostgreSQL and Next.js together. Open `http://localhost:3000/admin`, create the first admin user, then review **مبل دلان** (`NHSS 994`) under **محصولات**. Stop after this manual dashboard review; later migration phases remain gated by approval in [NILPER_TODO_DASHBOARD_FIRST.md](NILPER_TODO_DASHBOARD_FIRST.md).
-
-Payload maintenance commands:
+For later sessions, PostgreSQL and Next.js can be started together:
 
 ```bash
-npm run payload:generate
-npm run payload:migrate
-npm run payload:db:status
-npm run payload:db:stop
+npm run dev:payload
 ```
 
-Production verification:
+Open the storefront at `http://localhost:3000` and Payload Admin at `http://localhost:3000/admin`.
+
+Payload/PostgreSQL commands:
+
+```bash
+npm run payload:db:start
+npm run payload:db:status
+npm run payload:db:stop
+npm run payload:generate
+npm run payload:migrate
+npm run payload:seed
+```
+
+The uploaded local Payload media directory is ignored by Git.
+
+## Verification
+
+Run the production and regression checks before pushing:
 
 ```bash
 npm run lint
 npm run build
+npm run test:journal
+npm run test:showcase
 ```
 
-## Configuration
+The journal and showcase tests read the production output, so run `npm run build` first.
 
-- Set `NEXT_PUBLIC_SITE_URL` to the final HTTPS domain for metadata and sitemap URLs.
-- Configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and the server-only `SUPABASE_SECRET_KEY` for authentication and order persistence.
-- Apply `supabase/migrations/20260829000000_account_dashboard.sql` to your Supabase database.
-- The SMS hook is in `supabase/functions/send-sms/index.js`. Its Kavenegar and webhook secrets belong in the Supabase function environment.
-- Without Supabase, `npm run dev` supports a local demo login using OTP `123456`. This fallback is disabled in production, and demo orders are not persisted.
-- Keep real credentials in ignored environment files. Commit only the blank `.env.example` template.
+Optional live checks can target a running production server:
 
-## Content to replace
+```bash
+JOURNAL_TEST_URL=http://127.0.0.1:3100 npm run test:journal
+SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
+```
 
-- Shared contact details are in `src/config/site.ts`. Store address, phone and hours were checked against the supplied Google Maps listing on 2026-08-31; see `docs/contact-verification.md`. The existing email remains unverified. Review brand copy in `src/app/(frontend)/page.tsx` and `src/components/layout/` before launch.
-- Temporary editorial images live in `public/placeholders`.
-- The hero video is in `public/videos/hero.mp4`.
+## Current operational boundaries
 
-Product, project, brand, and editorial content currently use static fixtures. Checkout creates order requests; payment processing still requires integration.
+- The public catalog, product, project, brand, and editorial pages still use their existing repository fixtures.
+- Payload Admin and the Delan preview currently validate the CMS/product-management foundation; they are not yet the public storefront data source.
+- Supabase remains active for the existing customer-facing authentication, profile, address, and order-request behavior.
+- `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
+- Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.
+- Temporary editorial images are under `public/placeholders`, and the hero video is under `public/videos/hero.mp4`.
 
-## Contribution checks
+## Contribution
 
-Run `npm run lint` and `npm run build` before pushing. Keep commits focused and use Conventional Commit messages such as `feat: add catalog filters`, `fix: validate checkout input`, or `docs: update setup instructions`.
-
-## Journal
-
-The Persian journal lives at `/blog`, with static article pages at `/blog/[slug]`. Content is maintained in `src/features/journal/posts.ts`; each entry contains its URL slug, category, real publication/update dates, image description, summary, sections, and related articles. Reading time is calculated from the content. No CMS or additional runtime dependency is required.
-
-Search and topic filters enhance the index; full article text and links render on the server. Article metadata, JSON-LD, homepage links, and sitemap entries use the same content source. The public header does not read auth cookies, and blog requests skip session refresh; account pages and order APIs retain their existing authentication checks.
-
-Review the starter editorial copy and existing placeholder imagery before publishing. Set `NEXT_PUBLIC_SITE_URL` before a production build, then submit the sitemap and validate live URLs with search tools. See `docs/blog-plan.md` for research sources, design decisions, and launch checks. Search rankings and AI citations are not guaranteed by technical SEO.
-
-After building, run `npm run test:journal` to verify the generated article HTML, metadata, internal anchors, and sitemap. With a production server running, `JOURNAL_TEST_URL=http://127.0.0.1:3100 npm run test:journal` also checks HTTP status codes, crawler access, static responses, and account redirects.
-
-## Projects and brands
-
-`/projects` and `/brands` are static directories with searchable, filterable cards. Their detail pages connect design ideas, catalog products, brand collections, and journal reading. Content lives in `src/features/showcase/data.ts`; client-safe brand names and product links live in `brand-registry.ts`. No new runtime dependencies were added.
-
-All initial projects and brands are **demo content**. They retain contextual concept labels and captions, return `noindex, follow`, and are omitted from the sitemap. The full-width demo notice banners were removed at the user’s request. Images are inspiration/catalog placeholders, not evidence of completed NP work or brand partnerships. Do not change a record to `published` until its copy, imagery rights, credits and relationships have been confirmed. The publication type requires `updatedAt`, `verification.approvedAt`, and `verification.evidence` (an internal reference, never credentials or personal data). These fields record editorial review; they cannot verify it automatically. Remove demo-specific wording and replace placeholder products before publishing.
-
-Directories show published entries once any exist; otherwise they remain demo previews. Metadata, structured lists and sitemap inclusion follow the same publication selection. The public proxy bypass covers blog, projects and brands only; account and order protection is unchanged.
-
-Run `npm run test:showcase` after building. To add live status/crawler/404 checks: `SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase`. The current regression fixtures intentionally expect demo/noindex output; update those expectations when real content is approved. See `docs/projects-brands-plan.md` for research and launch requirements.
-
-File-backed blog, project and brand details use `dynamicParams = false`: adding a record requires a rebuild. Unknown slugs use the shared Persian `src/app/(frontend)/not-found.tsx`, which renders useful recovery links even without JavaScript. See `docs/projects-brands-verification.md` for the completed checks and remaining launch work.
+Keep commits focused and use Conventional Commit messages such as `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, or `chore:`.

@@ -1,33 +1,35 @@
-# Nilper Payload Migration TODO — Dashboard First
+# Nilper Payload Migration TODO
 
 This is the execution plan for Codex working locally in `mohamad-gandomi/np-group`.
 
-Read `NILPER_ARCHITECTURE.md` completely before starting.
+Before implementation, read these files completely in order:
 
-## Why the plan is dashboard-first
+1. `NILPER_CONTEXT.md`
+2. `NILPER_TODO.md`
+3. `AGENTS.md`
 
-The Payload decision is not considered implementation-approved only because the framework works technically.
+`NILPER_CONTEXT.md` and `NILPER_TODO.md` are the only canonical Nilper architecture, planning, and progress documents.
 
-Before the project goes deep into migrations, product imports, cart logic, auth, or checkout, the developer must see and manually approve the **actual Payload Admin experience** that the Nilper team would use.
+## Current State
 
-This is intentional risk reduction, not throwaway design work.
+- **Active phase:** Phase 3 — Define the Nilper data model (`[~]` partially implemented).
+- **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
+- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
+- **Next implementation task:** Continue from the earliest unfinished Phase 3 item after reconciling the existing schema with this TODO.
+- **Later phases:** Phase 4+ remain not started and must not begin until Phase 3 completion criteria pass.
 
-The first implementation milestone must prove:
+## Latest Session Note
 
-- the existing Next.js storefront remains untouched visually
-- Payload runs inside the current app
-- `/admin` is real Payload Admin, not a custom mockup
-- Persian content entry is comfortable
-- RTL is correct enough for daily use
-- the Products area feels clean and understandable
-- relationships, arrays, specs, variants, and configuration controls are usable
-- only after manual approval may Codex continue into deeper backend work
+- **Date:** 2026-09-10
+- [x] Consolidated project continuity into `NILPER_CONTEXT.md` and `NILPER_TODO.md`.
+- [x] Removed superseded root architecture/dashboard-first documents and historical planning/verification files under `docs/`.
+- [x] Updated README to remain operational and point future sessions to the canonical files.
+- **Intentionally retained:** `AGENTS.md` unchanged for generated Next.js rules; `CLAUDE.md` retained only as a compatibility pointer to `AGENTS.md`; README retained for setup and commands.
+- **Current active phase:** Phase 3 — Define the Nilper data model.
+- **Latest relevant implementation commit:** `cdba415bc2d9045c078f093808816512f2eda7e2` (`chore(repo): remove obsolete WordPress backend`).
+- **Implementation work this session:** none; documentation cleanup only.
 
-If the dashboard is not acceptable, fix or reconsider the admin experience **before** investing in the rest of the migration.
-
----
-
-# Working rules for Codex
+## Working rules for Codex
 
 - Do not redesign or replace the existing public frontend.
 - Do not delete Supabase integration until its replacement is working and verified.
@@ -39,13 +41,12 @@ If the dashboard is not acceptable, fix or reconsider the admin experience **bef
 - Read root `AGENTS.md` before editing Next.js code.
 - For Next.js 16 APIs/conventions, inspect the relevant docs inside `node_modules/next/dist/docs/`.
 - Use current official Payload docs while implementing; do not guess APIs from older Payload versions.
-- **Hard rule:** after Phase 1, STOP. Do not start Phase 2+ until Mohamad manually approves the dashboard.
-- Dashboard preview work must use the real Payload Admin and near-real Nilper fields; do not build a fake standalone dashboard mockup.
-- Do not spend time polishing storefront pages during the dashboard validation milestone.
 
 ---
 
 # Phase 0 — Baseline and safety
+
+**Status: [x] Completed**
 
 ## 0.1 Create an implementation branch
 
@@ -83,33 +84,23 @@ At minimum inspect:
 - `src/features/catalog/catalog-query.ts`
 - `src/features/product/`
 - `src/features/cart/cart-context.tsx`
-- `src/app/api/orders/route.ts`
+- `src/app/(frontend)/api/orders/route.ts`
 - `src/features/account/account-data.ts`
 - `supabase/migrations/20260829000000_account_dashboard.sql`
 
 Do not start by modifying UI components.
 
-## 0.4 Preserve a clean rollback point
-
-Before Payload changes, ensure the branch is clean and the current app behavior is reproducible.
-
-Do not remove or rewrite Supabase code in this phase.
-
 ---
 
-# Phase 1 — ADMIN-FIRST Payload preview (HARD GATE)
+# Phase 1 — Payload foundation inside the existing Next.js app
 
-**Goal:** get to a realistic, reviewable Nilper admin as early as possible.
+**Status: [x] Completed**
 
-This phase intentionally does **not** migrate the storefront, cart, checkout, orders, authentication, or all product data.
-
-The output of Phase 1 is something Mohamad can open locally at `/admin`, click around, create/edit a representative Persian Nilper product, and judge the dashboard before deeper development continues.
-
-## 1.1 Install Payload foundation
+## 1.1 Install Payload dependencies
 
 The repo currently uses npm and has a `package-lock.json`; keep npm unless there is a concrete incompatibility.
 
-Use current compatible versions of:
+Expected packages include the current compatible versions of:
 
 ```text
 payload
@@ -121,27 +112,25 @@ payload
 sharp
 ```
 
+GraphQL is optional; do not install it unless actually used.
+
+Use versions compatible with the installed Next.js `16.3.4` and React versions. Let the package manager resolve a coherent Payload package version set; all `@payloadcms/*` packages should stay version-aligned.
+
+## 1.2 Add Payload to the existing app
+
+Follow the **current official "Adding to an existing app"** documentation.
+
 Requirements:
 
-- keep Payload packages version-aligned
-- use versions compatible with the installed Next.js and React versions
-- do not install GraphQL unless actually needed
-- follow current official Payload documentation for adding Payload to an existing Next.js app
+- add Payload's required `(payload)` App Router files without replacing current routes
+- wrap the existing `next.config.ts` with `withPayload`
+- preserve current `experimental.useTypeScriptCli = false`
+- create Payload config in the conventional supported location
+- configure Postgres adapter
+- add a Payload secret
+- add generated Payload types
 
-## 1.2 Add Payload to the existing Next.js app
-
-Requirements:
-
-- add Payload's supported `(payload)` App Router files without replacing current public routes
-- wrap existing `next.config.ts` with `withPayload`
-- preserve `experimental.useTypeScriptCli = false`
-- create Payload config in the current supported conventional location
-- configure the Postgres adapter
-- configure Payload secret
-- generate Payload types
-- keep current storefront routes unchanged
-
-Expected local env shape, adjusted to current Payload naming if needed:
+Potential env variables (exact names should follow current Payload version):
 
 ```env
 DATABASE_URI=
@@ -149,288 +138,72 @@ PAYLOAD_SECRET=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Do **not** remove Supabase variables yet.
+Do not remove Supabase variables yet.
 
-## 1.3 Connect local/dev Postgres
+## 1.3 Local Postgres
 
 Use an actual local/dev Postgres database.
 
-If Postgres already exists locally, use it.
+If the developer already has Postgres, use it.
 
-Only add Docker Compose if it genuinely improves local setup; do not introduce infrastructure merely for style.
+Only add Docker Compose if it is genuinely useful; do not introduce infrastructure just for style.
 
-Acceptance check:
+## 1.4 First Admin
 
-- Payload can connect
-- initial schema/migrations can run
-- `/admin` can create the first admin user
+Acceptance criteria:
 
-## 1.4 Configure the actual Payload Admin for Persian/RTL
-
-Use current Payload i18n/admin capabilities and `@payloadcms/translations` where appropriate.
-
-Important distinction:
-
-- **Admin UI language / RTL** is required.
-- **Multilingual product content** is not required.
-- Nilper product content can be Persian-only.
-
-Configure the smallest maintainable solution that makes Admin genuinely comfortable in Persian.
-
-Test RTL across:
-
-- main admin navigation/sidebar
-- dashboard cards
-- list/table views
-- search/filter controls
-- create/edit forms
-- text and textarea fields
-- rich text if present
-- select fields
-- relationship selectors
-- arrays
-- groups
-- tabs if used
-- dialogs/modals
-- validation messages
-- save/publish controls
-
-Do not accept a dashboard where only the text is Persian but layout controls remain confusingly LTR.
-
-Minor cosmetic issues can be documented, but structural RTL problems must be fixed before approval.
-
-## 1.5 Configure a representative real Product Admin, not a fake mockup
-
-To judge the dashboard properly, the preview form must resemble Nilper's eventual product workflow.
-
-Create only the minimum supporting collections needed to make the form realistic. These may include:
-
-- `users`
-- `media`
-- `brands`
-- `categories`
-- `product-series`
-- Payload Ecommerce `products`
-- Payload Ecommerce `variants`
-- minimal `configuration-groups`
-- minimal `configuration-options`
-
-Do not finalize the entire domain yet. This is a usability spike.
-
-The representative Product edit screen should expose enough real Nilper concepts to evaluate the UI.
-
-### Identity
-
-- Persian product title
-- slug
-- brand
-- category
-- product series
-- publish/status state
-
-### Sales behavior
-
-- sales mode, e.g. direct purchase / inquiry / made-to-order
-- availability
-- base/visible price where appropriate
-
-### Media
-
-- main image
-- gallery
-
-### Product information
-
-- Persian description
-- technical specifications using a repeatable array/group
-- dimensions
-- lead/order notes
-
-### Commerce complexity preview
-
-- at least one real-style Variant concept based on SKU / registration code
-- configuration groups such as wood finish and fabric/upholstery
-- relationships to related products where practical
-
-The purpose is to answer:
-
-> Would the Nilper team actually enjoy managing a complex product here every day?
-
-## 1.6 Seed only a small dashboard preview dataset
-
-Do **not** bulk import Excel files.
-
-Create a tiny representative dataset, preferably around **Delan** because it exposes the complexity we care about.
-
-Enough preview data to make Admin meaningful:
-
-- 1 brand
-- 2–3 categories if useful for navigation preview
-- 1 series (`دلان`)
-- 1 representative product
-- 2 real-style variants/SKUs if confidently identifiable
-- several wood finish options
-- several fabric/upholstery options
-- a few Persian technical specs
-- 2–3 media placeholders or existing safe images
-
-Source names/codes must remain traceable when taken from the sample workbook.
-
-Do not pretend uncertain Excel mappings are verified.
-
-## 1.7 Make Admin organization clean enough to judge
-
-Use Payload-supported Admin configuration to make the information architecture understandable.
-
-Review:
-
-- collection names in Persian where appropriate
-- navigation grouping
-- collection ordering
-- field labels
-- field descriptions/help text
-- tabs/groups only when they improve scanning
-- list view columns
-- representative product list view
-- representative product edit view
-
-Avoid heavy custom dashboard code at first.
-
-First evaluate what standard Payload can do with clean configuration. Add custom Admin components/CSS only where they solve a real usability problem.
-
-## 1.8 Do not integrate storefront yet
-
-During Phase 1:
-
-- keep `catalog-data.ts` working
-- keep current cart working
-- keep current checkout working
-- keep Supabase authentication/orders working
-- do not replace ProductCard/ProductView data sources
-- do not alter homepage catalog behavior
-
-The public frontend must remain a stable reference while Admin is being evaluated.
-
-## 1.9 Phase 1 acceptance criteria
-
-All of these must be true before asking for approval.
-
-### Technical
-
-- `npm run dev` works
-- existing public homepage still loads
-- current storefront remains visually unchanged
-- `/admin` loads real Payload Admin
-- first admin user works
-- Postgres works
-- generated types/migrations work
-- `npm run lint` passes or only has explicitly documented pre-existing failure
-- `npm run build` passes or only has explicitly documented pre-existing failure
-
-### Dashboard usability
-
-- Admin can be used in Persian comfortably
-- main layout direction feels correct in RTL
-- Persian input cursor/alignment feels correct
-- lists/tables are readable
-- dialogs and relationship pickers are usable
-- Product create/edit form is not visually chaotic
-- Variant fields are understandable
-- wood/fabric configuration UI is understandable
-- technical-spec array/group editing is understandable
-- long Persian values do not break the form
-- saving and reopening the sample product works
-
-### Review instructions Codex must print
-
-At the end of the run, Codex must tell Mohamad exactly:
-
-1. command to start local app
-2. local Admin URL
-3. how to create/login as admin
-4. which sample product to open
-5. which screens to inspect
-6. any known RTL limitations
-7. any intentionally unfinished fields
-8. files changed in Phase 1
+- app starts with `npm run dev`
+- public homepage still loads unchanged
+- `/admin` loads Payload Admin
+- first admin user can be created
+- Payload can connect to Postgres
+- migrations/schema generation works
+- no visual rewrite of the storefront
 
 Commit checkpoint:
 
 ```text
-feat(payload): add dashboard-first Payload preview
+feat(payload): add Payload foundation to existing Next app
 ```
 
 ---
 
-# Phase 2 — MANUAL DASHBOARD APPROVAL GATE
+# Phase 2 — Admin Persian/RTL usability spike
 
-**Codex must not automatically execute this phase.**
+**Status: [x] Completed and manually approved**
 
-Mohamad manually opens the local dashboard and reviews it before deeper development.
+## 2.1 Enable Persian Admin language where supported
 
-## Review checklist
+Use `@payloadcms/translations` and current Payload i18n configuration.
 
-Open `/admin` and explicitly judge:
+Goal: Admin users should be able to work comfortably with Persian content.
 
-### General dashboard
+## 2.2 RTL check
 
-- [ ] overall visual quality is acceptable
-- [ ] sidebar/navigation feels clear
-- [ ] Persian labels look natural
-- [ ] RTL feels native rather than patched
-- [ ] spacing and typography are acceptable
-- [ ] dialogs/dropdowns do not feel broken
+Do not enable multilingual content just to get RTL.
 
-### Products
+Test current Payload capabilities and use the smallest supported configuration/customization necessary.
 
-- [ ] product list is easy to scan
-- [ ] create/edit screen is understandable
-- [ ] long Persian descriptions are comfortable to edit
-- [ ] images/gallery are easy to manage
-- [ ] categories/brands/series relationships are clear
-- [ ] technical specifications are easy to add/reorder/edit
+Check:
 
-### Complex Nilper data
+- labels
+- text inputs
+- relationship selectors
+- arrays/groups
+- product edit form
+- variant edit form
+- tables/lists
+- dialogs
 
-- [ ] Variant vs configuration distinction is understandable in Admin
-- [ ] SKU/registration code is visible and easy to manage
-- [ ] wood finish editing is comfortable
-- [ ] fabric/upholstery editing is comfortable
-- [ ] made-to-order/direct/inquiry behavior can be understood by an editor
+Document minor cosmetic RTL issues; fix only issues that block actual use.
 
-## Approval outcomes
-
-### APPROVED
-
-If Mohamad approves the dashboard:
-
-- mark Dashboard Gate approved
-- continue to Phase 3
-- keep Payload as the locked architecture unless a proven technical blocker appears
-
-### APPROVED WITH CHANGES
-
-If the architecture is good but Admin needs improvement:
-
-- list concrete UI problems
-- fix only those issues
-- re-run the dashboard review
-- do not continue to Phase 3 until approved
-
-### REJECTED
-
-If Payload Admin fundamentally feels wrong for Nilper even after reasonable customization:
-
-- stop the deeper migration
-- do not delete Supabase/current storefront code
-- document exactly why it failed
-- reconsider the backend/admin decision before more sunk cost is created
-
-This gate is intentionally early so rejection is still cheap.
+Acceptance criteria: an editor can create/edit a Persian product without layout becoming confusing.
 
 ---
 
 # Phase 3 — Define the Nilper data model
+
+**Status: [~] In progress**
 
 Do not import Excel yet.
 
@@ -919,7 +692,7 @@ The original task **"Decide and lock Nilper backend & dashboard architecture"** 
 - Payload runs in the existing repo
 - existing frontend remains visually intact
 - Postgres works
-- Payload Admin has passed explicit manual Persian/RTL/dashboard approval before deeper implementation
+- Payload Admin is usable with Persian data
 - Delan product family is represented cleanly
 - real variants are separate from configuration options
 - cart supports configuration-aware item identity
@@ -936,30 +709,18 @@ After that, stop evaluating Medusa/Vendure/WooCommerce/NestJS unless a proven bl
 Give Codex these inputs together:
 
 1. the local `np-group` repository
-2. `NILPER_ARCHITECTURE.md`
+2. `NILPER_CONTEXT.md`
 3. `NILPER_TODO.md`
-4. the three sample spreadsheets when working on model/import tasks:
+4. `AGENTS.md`
+5. the three sample spreadsheets when working on model/import tasks:
    - `506(1).xlsx`
    - `886(1).xlsx`
    - `994(1).xlsx`
-5. local Postgres connection through environment variables (never paste production secrets into prompts)
-6. current official Payload docs if Codex needs API-specific verification
+6. local Postgres connection through environment variables (never paste production secrets into prompts)
+7. current official Payload docs if Codex needs API-specific verification
 
 Suggested opening prompt for a new Codex session:
 
-> Read `AGENTS.md`, `NILPER_ARCHITECTURE.md`, and `NILPER_TODO_DASHBOARD_FIRST.md` first. Inspect the existing repository before editing. Start with Phase 0 and Phase 1 only. This is an ADMIN-FIRST validation run: preserve the current storefront and Supabase behavior, add Payload to the existing Next.js app, connect local Postgres, configure the real Payload Admin with a representative Nilper product form, make Persian/RTL usable, seed only preview data, and STOP at the Dashboard Approval Gate. Do not migrate storefront data, cart, checkout, auth, orders, or remove Supabase. Run lint/build and summarize exactly how I can open and review `/admin` locally.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Continue from the earliest unfinished Phase 3 item. Do not repeat the completed Payload foundation or dashboard review, do not redesign the storefront, and do not begin Phase 4 until Phase 3 completion criteria pass.
 
-After Phase 1 is reviewed, start a new focused Codex request for the next phase instead of asking one agent run to perform the entire migration.
-
-## Current Implementation Status
-
-- **Last updated:** 2026-09-09
-- **Current phase:** Phase 1 complete; stopped before the Phase 2 manual approval decision.
-- **Last completed checkpoint:** `feat(payload): add dashboard-first Payload preview` (`55fa0ce836903ee63f7eae1997388c5fd99ba59d`).
-- **What is working:** Payload 3.88.0 in the existing Next.js 16.3.4 app; local PostgreSQL; generated types/import map; a clean-schema migration; Persian/RTL Admin; active admin login; idempotent Delan preview seed; products, real SKU-style variants, configuration groups/options, relationships, arrays, rich text, media placeholders, save/publish/reopen; unchanged storefront; green type check, lint, production build, journal tests, and showcase tests.
-- **Completed Phase 0:** [x] isolated branch; [x] green baseline; [x] existing boundaries reviewed; [x] storefront and Supabase rollback reference preserved.
-- **Completed Phase 1:** [x] Payload foundation; [x] supported route groups; [x] local Postgres workflow; [x] Persian/RTL Admin; [x] representative Nilper Product editor; [x] traceable `994.xlsx` Delan preview; [x] browser interaction review; [x] final verification.
-- **Intentionally unchanged:** storefront fixtures and UI, cart, checkout, public account/auth flows, orders, Supabase, payments, shipping, and all bulk-import behavior.
-- **Known issues / blockers:** no technical blocker to dashboard review. Toman is preview-only until Phase 3 validation. Minor upstream mixed-language accessibility strings and Gregorian-style Admin date formatting remain cosmetic. The current Payload release is still flagged by npm for its default unlock policy; this project explicitly restricts unlock access to admins. Other remaining audit findings are low/moderate transitive development/admin dependencies.
-- **Next allowed action:** Mohamad manually reviews `/admin` and records `APPROVED`, `APPROVED WITH CHANGES`, or `REJECTED`. Do not start Phase 3+ before that decision.
-- **Dashboard approval status:** **NOT REVIEWED**
+Keep each session focused on the current phase and update this file before ending.
