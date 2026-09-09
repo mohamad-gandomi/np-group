@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bookmark, LayoutDashboard, LogOut, MapPin, Package, UserRound } from "lucide-react";
 
-import { logoutAction } from "@/app/account/actions";
+import { logoutAction } from "@/app/(frontend)/account/actions";
 
 const links = [
   { href: "/account", label: "نمای کلی", icon: LayoutDashboard },

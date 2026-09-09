@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Payload migration files are generated and may contain intentionally unused hook arguments.
+    "src/payload/migrations/**",
   ]),
 ]);
 

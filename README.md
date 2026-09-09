@@ -4,13 +4,46 @@ A Persian RTL furniture and interiors storefront built with Next.js, React, Type
 
 ## Run locally
 
-For the local WordPress/WooCommerce backend and live plugin development, see [wordpress/README.md](wordpress/README.md). The frontend is not yet connected to WordPress; migration progress is tracked in [the backend checklist](docs/wordpress-backend-plan.md).
-
 ```bash
 npm ci
 cp .env.example .env.local
 npm run dev
 ```
+
+### Payload dashboard preview
+
+Phase 1 adds the real Payload Admin without changing the storefront data source, cart, checkout, or Supabase flows. Docker Desktop is required for the local PostgreSQL container.
+
+Add the following local-only values to `.env.local` (keep the existing Supabase variables if you use them):
+
+```env
+DATABASE_URI=postgres://nilper_payload:YOUR_PASSWORD@127.0.0.1:5433/nilper_payload
+PAYLOAD_SECRET=YOUR_LONG_RANDOM_SECRET
+PAYLOAD_DB_NAME=nilper_payload
+PAYLOAD_DB_USER=nilper_payload
+PAYLOAD_DB_PASSWORD=YOUR_PASSWORD
+```
+
+On first setup, start PostgreSQL, seed the dashboard preview, and run the app:
+
+```bash
+npm run payload:db:start
+npm run payload:seed
+npm run dev
+```
+
+For later runs, `npm run dev:payload` starts PostgreSQL and Next.js together. Open `http://localhost:3000/admin`, create the first admin user, then review **مبل دلان** (`NHSS 994`) under **محصولات**. Stop after this manual dashboard review; later migration phases remain gated by approval in [NILPER_TODO_DASHBOARD_FIRST.md](NILPER_TODO_DASHBOARD_FIRST.md).
+
+Payload maintenance commands:
+
+```bash
+npm run payload:generate
+npm run payload:migrate
+npm run payload:db:status
+npm run payload:db:stop
+```
+
+For the older local WordPress/WooCommerce backend experiment, see [wordpress/README.md](wordpress/README.md). The frontend is not connected to WordPress; its historical progress is tracked in [the backend checklist](docs/wordpress-backend-plan.md).
 
 Production verification:
 
@@ -30,7 +63,7 @@ npm run build
 
 ## Content to replace
 
-- Shared contact details are in `src/config/site.ts`. Store address, phone and hours were checked against the supplied Google Maps listing on 2026-08-31; see `docs/contact-verification.md`. The existing email remains unverified. Review brand copy in `src/app/page.tsx` and `src/components/layout/` before launch.
+- Shared contact details are in `src/config/site.ts`. Store address, phone and hours were checked against the supplied Google Maps listing on 2026-08-31; see `docs/contact-verification.md`. The existing email remains unverified. Review brand copy in `src/app/(frontend)/page.tsx` and `src/components/layout/` before launch.
 - Temporary editorial images live in `public/placeholders`.
 - The hero video is in `public/videos/hero.mp4`.
 
@@ -60,4 +93,4 @@ Directories show published entries once any exist; otherwise they remain demo pr
 
 Run `npm run test:showcase` after building. To add live status/crawler/404 checks: `SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase`. The current regression fixtures intentionally expect demo/noindex output; update those expectations when real content is approved. See `docs/projects-brands-plan.md` for research and launch requirements.
 
-File-backed blog, project and brand details use `dynamicParams = false`: adding a record requires a rebuild. Unknown slugs use the shared Persian `src/app/not-found.tsx`, which renders useful recovery links even without JavaScript. See `docs/projects-brands-verification.md` for the completed checks and remaining launch work.
+File-backed blog, project and brand details use `dynamicParams = false`: adding a record requires a rebuild. Unknown slugs use the shared Persian `src/app/(frontend)/not-found.tsx`, which renders useful recovery links even without JavaScript. See `docs/projects-brands-verification.md` for the completed checks and remaining launch work.

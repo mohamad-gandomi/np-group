@@ -1,0 +1,34 @@
+@font-face {
+  font-family: "Ravi Admin";
+  src: url("/fonts/ravi-vf.ttf") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
+html[dir="rtl"] body,
+html[lang="fa"] body {
+  font-family: "Ravi Admin", Tahoma, Arial, sans-serif;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] [contenteditable="true"] {
+  text-align: right;
+}
+
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="password"],
+html[dir="rtl"] input[name="slug"],
+html[dir="rtl"] input[name="key"],
+html[dir="rtl"] input[name="code"],
+html[dir="rtl"] input[name="nilperCode"] {
+  direction: ltr;
+  text-align: left;
+}
+
+html[dir="rtl"] .rich-text-lexical,
+html[dir="rtl"] .LexicalEditorTheme__paragraph {
+  direction: rtl;
+  text-align: right;
+}

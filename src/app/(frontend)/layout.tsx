@@ -48,7 +48,7 @@ export const viewport: Viewport = {
   themeColor: "#ff0021",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fa" dir="rtl" className={`${ravi.variable} antialiased`}>
       <body><SavedProvider><CartProvider><SiteHeader />{children}<SiteFooter /></CartProvider></SavedProvider></body>
