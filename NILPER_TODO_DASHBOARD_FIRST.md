@@ -4,31 +4,6 @@ This is the execution plan for Codex working locally in `mohamad-gandomi/np-grou
 
 Read `NILPER_ARCHITECTURE.md` completely before starting.
 
-## Current Implementation Status — 2026-09-09
-
-Dashboard Gate: **NOT REVIEWED — awaiting Mohamad's manual approval.**
-
-Completed in Phase 0:
-
-- [x] Created the isolated implementation branch `codex/payload-foundation`.
-- [x] Recorded a green baseline for install, lint, production build, journal tests, and showcase tests.
-- [x] Read the existing catalog, product, cart, order, account, Supabase, and Next.js boundaries.
-- [x] Preserved the storefront and Supabase implementation as the rollback reference.
-
-Completed in Phase 1:
-
-- [x] Installed and version-aligned Payload 3.88.0, PostgreSQL, Lexical, Persian translations, Ecommerce, and Sharp.
-- [x] Added the supported Payload App Router route group, generated types/import map, and a committed migration without changing public URLs.
-- [x] Added reproducible local PostgreSQL startup and a repeatable preview seed.
-- [x] Configured the real Payload Admin in Persian/RTL with grouped Nilper collections and focused RTL styling.
-- [x] Added a representative Product editor covering identity, sales state, media/gallery, rich text, specifications, dimensions, order notes, relationships, configuration groups, and real SKU-style variants.
-- [x] Seeded a small Delan preview from `994.xlsx`, preserving exact source codes and explicitly flagging the `940`/`994` discrepancy.
-- [x] Verified homepage stability and exercised Admin lists, forms, rich text, arrays, relationships, dropdowns, SKU drawer, save/publish, reload, logout/login, and first-user setup.
-- [x] Kept storefront fixtures, cart, checkout, authentication, orders, and Supabase behavior intentionally unchanged.
-- [x] Passed final type checking, lint, production build, journal tests, and showcase tests. See the implementation handoff for the exact final run results.
-
-Intentionally not started: Phase 2 approval decisions and every Phase 3+ migration item.
-
 ## Why the plan is dashboard-first
 
 The Payload decision is not considered implementation-approved only because the framework works technically.
@@ -975,3 +950,16 @@ Suggested opening prompt for a new Codex session:
 > Read `AGENTS.md`, `NILPER_ARCHITECTURE.md`, and `NILPER_TODO_DASHBOARD_FIRST.md` first. Inspect the existing repository before editing. Start with Phase 0 and Phase 1 only. This is an ADMIN-FIRST validation run: preserve the current storefront and Supabase behavior, add Payload to the existing Next.js app, connect local Postgres, configure the real Payload Admin with a representative Nilper product form, make Persian/RTL usable, seed only preview data, and STOP at the Dashboard Approval Gate. Do not migrate storefront data, cart, checkout, auth, orders, or remove Supabase. Run lint/build and summarize exactly how I can open and review `/admin` locally.
 
 After Phase 1 is reviewed, start a new focused Codex request for the next phase instead of asking one agent run to perform the entire migration.
+
+## Current Implementation Status
+
+- **Last updated:** 2026-09-09
+- **Current phase:** Phase 1 complete; stopped before the Phase 2 manual approval decision.
+- **Last completed checkpoint:** `feat(payload): add dashboard-first Payload preview` (`55fa0ce836903ee63f7eae1997388c5fd99ba59d`).
+- **What is working:** Payload 3.88.0 in the existing Next.js 16.3.4 app; local PostgreSQL; generated types/import map; a clean-schema migration; Persian/RTL Admin; active admin login; idempotent Delan preview seed; products, real SKU-style variants, configuration groups/options, relationships, arrays, rich text, media placeholders, save/publish/reopen; unchanged storefront; green type check, lint, production build, journal tests, and showcase tests.
+- **Completed Phase 0:** [x] isolated branch; [x] green baseline; [x] existing boundaries reviewed; [x] storefront and Supabase rollback reference preserved.
+- **Completed Phase 1:** [x] Payload foundation; [x] supported route groups; [x] local Postgres workflow; [x] Persian/RTL Admin; [x] representative Nilper Product editor; [x] traceable `994.xlsx` Delan preview; [x] browser interaction review; [x] final verification.
+- **Intentionally unchanged:** storefront fixtures and UI, cart, checkout, public account/auth flows, orders, Supabase, payments, shipping, and all bulk-import behavior.
+- **Known issues / blockers:** no technical blocker to dashboard review. Toman is preview-only until Phase 3 validation. Minor upstream mixed-language accessibility strings and Gregorian-style Admin date formatting remain cosmetic. The current Payload release is still flagged by npm for its default unlock policy; this project explicitly restricts unlock access to admins. Other remaining audit findings are low/moderate transitive development/admin dependencies.
+- **Next allowed action:** Mohamad manually reviews `/admin` and records `APPROVED`, `APPROVED WITH CHANGES`, or `REJECTED`. Do not start Phase 3+ before that decision.
+- **Dashboard approval status:** **NOT REVIEWED**
