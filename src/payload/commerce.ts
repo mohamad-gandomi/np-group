@@ -9,13 +9,44 @@ import {
   isCustomer,
   isDocumentOwner,
 } from "./access";
+import { measurementsField, sourceFields, technicalSpecsField } from "./domain-fields";
+import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
 
 const fieldNamed = (field: Field, name: string) => "name" in field && field.name === name;
+
+const withCommerceValidation = (field: Field): Field => {
+  if (field.type === "tabs") {
+    return {
+      ...field,
+      tabs: field.tabs.map((tab) => ({ ...tab, fields: tab.fields.map(withCommerceValidation) })),
+    };
+  }
+
+  if (field.type === "group" || field.type === "row" || field.type === "collapsible") {
+    return { ...field, fields: field.fields.map(withCommerceValidation) };
+  }
+
+  if (field.type === "array") {
+    return { ...field, fields: field.fields.map(withCommerceValidation) };
+  }
+
+  if (field.type === "number" && ["priceInTMN", "amount", "subtotal"].some((name) => fieldNamed(field, name))) {
+    return { ...field, validate: validateTomanAmount };
+  }
+
+  if (field.type === "number" && fieldNamed(field, "quantity")) {
+    return { ...field, validate: validateCommerceQuantity };
+  }
+
+  return field;
+};
 
 const productFields = (defaultCollection: CollectionConfig): Field[] => {
   const defaults = defaultCollection.fields;
   const variantField = (name: string) => defaults.find((field) => fieldNamed(field, name));
-  const priceFields = defaults.filter((field) => !("name" in field) || !field.name);
+  const priceFields = defaults
+    .filter((field) => !("name" in field) || !field.name)
+    .map(withCommerceValidation);
 
   return [
     {
@@ -80,37 +111,8 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
           label: "اطلاعات محصول",
           fields: [
             { name: "descriptionFa", type: "richText", label: "معرفی فارسی محصول", required: true },
-            {
-              name: "dimensions",
-              type: "group",
-              label: "ابعاد و اندازه‌ها",
-              fields: [
-                { name: "summaryFa", type: "textarea", label: "خلاصه ابعاد" },
-                { name: "weightKg", type: "number", label: "وزن (کیلوگرم)" },
-              ],
-            },
-            {
-              name: "technicalSpecs",
-              type: "array",
-              label: "مشخصات فنی",
-              labels: { singular: "مشخصه", plural: "مشخصات" },
-              fields: [
-                { name: "key", type: "text", label: "کلید", required: true },
-                { name: "labelFa", type: "text", label: "عنوان فارسی", required: true, admin: { rtl: true } },
-                { name: "valueFa", type: "textarea", label: "مقدار فارسی", required: true },
-                {
-                  name: "group",
-                  type: "select",
-                  label: "گروه",
-                  options: [
-                    { label: "ساخت", value: "construction" },
-                    { label: "راحتی", value: "comfort" },
-                    { label: "تحویل", value: "delivery" },
-                  ],
-                },
-                { name: "sortOrder", type: "number", label: "ترتیب", defaultValue: 0 },
-              ],
-            },
+            measurementsField("فقط اندازه‌های مشترک همه گونه‌ها؛ اندازه متفاوت هر کد ثبت در خود گونه نگهداری می‌شود."),
+            technicalSpecsField(),
             { name: "orderNotesFa", type: "textarea", label: "ملاحظات سفارش‌گیری" },
             { name: "leadTimeFa", type: "text", label: "زمان آماده‌سازی", admin: { rtl: true } },
           ],
@@ -121,24 +123,20 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
           fields: [
             { name: "configurationGroups", type: "relationship", relationTo: "configuration-groups", hasMany: true, label: "گروه‌های پیکربندی" },
             { name: "relatedProducts", type: "relationship", relationTo: "products", hasMany: true, label: "محصولات مرتبط" },
+            {
+              name: "matchingProducts",
+              type: "relationship",
+              relationTo: "products",
+              hasMany: true,
+              label: "محصولات ست / هماهنگ",
+              admin: { description: "رابطه صریح درج‌شده در منبع؛ از پیشنهاد عمومی «محصولات مرتبط» جدا است." },
+            },
             ...[variantField("enableVariants"), variantField("variantTypes"), variantField("variants")].filter((field): field is Field => Boolean(field)),
           ],
         },
         {
           label: "منبع داده",
-          fields: [
-            {
-              name: "sourceMetadata",
-              type: "group",
-              label: "ردیابی منبع",
-              fields: [
-                { name: "file", type: "text", label: "فایل منبع", required: true },
-                { name: "sheet", type: "text", label: "برگه منبع", required: true },
-                { name: "catalogCodeRaw", type: "text", label: "کد خام کاتالوگ" },
-                { name: "dataQualityNotes", type: "textarea", label: "یادداشت کیفیت داده" },
-              ],
-            },
-          ],
+          fields: sourceFields(),
         },
       ],
     },
@@ -148,27 +146,18 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
 const variantFields = (defaultCollection: CollectionConfig): Field[] => {
   const defaults = defaultCollection.fields;
   const take = (name: string) => defaults.find((field) => fieldNamed(field, name));
-  const priceFields = defaults.filter((field) => !("name" in field) || !field.name);
+  const priceFields = defaults
+    .filter((field) => !("name" in field) || !field.name)
+    .map(withCommerceValidation);
   return [
     take("product")!,
     { name: "nilperCode", type: "text", label: "کد ثبت نیلپر / SKU", required: true, unique: true },
     take("title")!,
     take("options")!,
     ...priceFields,
-    {
-      name: "dimensions",
-      type: "group",
-      label: "ابعاد این گونه",
-      fields: [
-        { name: "seatHeightCm", type: "number", label: "ارتفاع نشیمن (cm)" },
-        { name: "seatWidthCm", type: "number", label: "عرض نشیمن هر نفر (cm)" },
-        { name: "seatDepthCm", type: "number", label: "عمق نشیمن (cm)" },
-        { name: "fabricMeters", type: "number", label: "متراژ پارچه تک‌رنگ بدون کوسن" },
-      ],
-    },
+    measurementsField("فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه."),
     { name: "manufacturingNotesFa", type: "textarea", label: "یادداشت ساخت / سفارش" },
-    { name: "sourceCodeRaw", type: "text", label: "کد ثبت عیناً از منبع", required: true },
-    { name: "dataQualityNotes", type: "textarea", label: "یادداشت کیفیت داده" },
+    ...sourceFields(),
   ].filter((field): field is Field => Boolean(field));
 };
 
@@ -192,18 +181,20 @@ export const ecommerce = ecommercePlugin({
     cartsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
+      fields: defaultCollection.fields.map(withCommerceValidation),
     }),
   },
   customers: { slug: "users" },
   currencies: {
-    defaultCurrency: "TMN",
-    supportedCurrencies: [{ code: "TMN", decimals: 0, label: "تومان (پیش‌نمایش)", symbol: "تومان", symbolDisplay: "symbol" }],
+    ...NILPER_COMMERCE_CURRENCIES,
   },
+  // The supplied Nilper sheets contain orderability, not stock counts. Do not invent inventory.
   inventory: false,
   orders: {
     ordersCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
+      fields: defaultCollection.fields.map(withCommerceValidation),
     }),
   },
   products: {
@@ -246,6 +237,7 @@ export const ecommerce = ecommercePlugin({
     transactionsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
+      fields: defaultCollection.fields.map(withCommerceValidation),
     }),
   },
 });

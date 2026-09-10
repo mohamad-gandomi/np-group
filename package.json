@@ -13,9 +13,10 @@
     "test:showcase": "node scripts/showcase.test.mjs",
     "payload": "payload",
     "payload:generate": "payload generate:types && payload generate:importmap",
-    "payload:migrate:create": "payload migrate:create payload-foundation",
+    "payload:migrate:create": "payload migrate:create",
     "payload:migrate": "payload migrate",
     "payload:seed": "payload run src/payload/seed.ts",
+    "payload:verify:phase3": "payload run src/payload/verify-phase3.ts",
     "payload:db:start": "docker compose --env-file .env.local -f payload.compose.yaml up -d",
     "payload:db:stop": "docker compose --env-file .env.local -f payload.compose.yaml down",
     "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps"

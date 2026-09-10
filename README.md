@@ -74,8 +74,10 @@ npm run payload:db:start
 npm run payload:db:status
 npm run payload:db:stop
 npm run payload:generate
+npm run payload:migrate:create -- descriptive-name
 npm run payload:migrate
 npm run payload:seed
+npm run payload:verify:phase3
 ```
 
 The uploaded local Payload media directory is ignored by Git.
@@ -103,7 +105,7 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 ## Current operational boundaries
 
 - The public catalog, product, project, brand, and editorial pages still use their existing repository fixtures.
-- Payload Admin and the Delan preview currently validate the CMS/product-management foundation; they are not yet the public storefront data source.
+- Payload Admin and the Delan preview validate the completed product-domain foundation; they are not yet the public storefront data source.
 - Supabase remains active for the existing customer-facing authentication, profile, address, and order-request behavior.
 - `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
 - Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.

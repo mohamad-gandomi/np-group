@@ -4,6 +4,7 @@ import { getPayload } from "payload";
 
 import config from "../../payload.config";
 import type { Product } from "../payload-types";
+import { buildNilperSourceKey } from "./source-identity";
 
 const richText = (text: string): Product["descriptionFa"] => ({
   root: {
@@ -43,6 +44,17 @@ async function ensureBySlug(collection: "brands" | "categories" | "product-serie
   return await payload.create({ collection, data } as never) as unknown as Identified;
 }
 
+async function ensureProduct(sourceKey: string, slug: string, data: Record<string, unknown>): Promise<Identified> {
+  const existing = await payload.find({
+    collection: "products",
+    where: { or: [{ sourceKey: { equals: sourceKey } }, { slug: { equals: slug } }] },
+    limit: 1,
+  });
+  const productData = { ...data, sourceKey, slug };
+  if (existing.docs[0]) return await payload.update({ collection: "products", id: existing.docs[0].id, data: productData } as never) as unknown as Identified;
+  return await payload.create({ collection: "products", data: productData } as never) as unknown as Identified;
+}
+
 async function ensureByKey(key: string, data: Record<string, unknown>): Promise<Identified> {
   const existing = await payload.find({ collection: "configuration-groups", where: { key: { equals: key } }, limit: 1 });
   if (existing.docs[0]) return await payload.update({ collection: "configuration-groups", id: existing.docs[0].id, data } as never) as unknown as Identified;
@@ -76,9 +88,13 @@ async function ensureVariantOption(variantType: number, value: string, label: st
   return await payload.create({ collection: "variantOptions", data: { variantType, value, label } }) as Identified;
 }
 
-async function ensureVariant(nilperCode: string, data: Record<string, unknown>) {
-  const existing = await payload.find({ collection: "variants", where: { nilperCode: { equals: nilperCode } }, limit: 1 });
-  const variantData = { nilperCode, sourceCodeRaw: nilperCode, _status: "published" as const, ...data };
+async function ensureVariant(sourceKey: string, nilperCode: string, data: Record<string, unknown>) {
+  const existing = await payload.find({
+    collection: "variants",
+    where: { or: [{ sourceKey: { equals: sourceKey } }, { nilperCode: { equals: nilperCode } }] },
+    limit: 1,
+  });
+  const variantData = { nilperCode, sourceKey, _status: "published" as const, ...data };
   if (existing.docs[0]) return payload.update({ collection: "variants", id: existing.docs[0].id, data: variantData } as never);
   return payload.create({ collection: "variants", data: variantData } as never);
 }
@@ -128,6 +144,7 @@ const series = await ensureBySlug("product-series", "delan", {
   styleFa: "نئوکلاسیک",
   descriptionFa: "سری دلان شامل مبل، جلومبلی، عسلی و ست ناهارخوری هماهنگ است.",
   heroMedia: livingImage.id,
+  published: true,
 });
 
 const woodGroup = await ensureByKey("wood-finish", {
@@ -135,6 +152,7 @@ const woodGroup = await ensureByKey("wood-finish", {
   key: "wood-finish",
   inputType: "swatch",
   required: true,
+  active: true,
   helpTextFa: "این انتخاب پیکربندی است و به‌تنهایی گونه / SKU جدید تولید نمی‌کند.",
 });
 const fabricGroup = await ensureByKey("upholstery-palette", {
@@ -142,6 +160,7 @@ const fabricGroup = await ensureByKey("upholstery-palette", {
   key: "upholstery-palette",
   inputType: "select",
   required: true,
+  active: true,
   helpTextFa: "نام کالیته‌ها عیناً از بخش فارسی برگه HSS 994 نگهداری شده‌اند.",
 });
 
@@ -164,7 +183,13 @@ const variantType = await ensureVariantType();
 const singleSeat = await ensureVariantOption(variantType.id, "single-seat", "تک نفره");
 const threeSeat = await ensureVariantOption(variantType.id, "three-seat", "سه نفره");
 
-const relatedTable = await ensureBySlug("products", "delan-coffee-side-table", {
+const relatedTableSourceKey = buildNilperSourceKey({
+  workbookKey: "994",
+  sheet: "HFC 594-HFS 394",
+  entity: "product",
+  rawIdentity: "جلومبلی HFC 594-عسلی HFS 394",
+});
+const relatedTable = await ensureProduct(relatedTableSourceKey, "delan-coffee-side-table", {
   title: "جلومبلی و عسلی دلان",
   slug: "delan-coffee-side-table",
   catalogCode: "HFC 594 / HFS 394",
@@ -177,7 +202,6 @@ const relatedTable = await ensureBySlug("products", "delan-coffee-side-table", {
   mainImage: tableImage.id,
   gallery: [{ image: tableImage.id, captionFa: "تصویر نمایشی موقت" }],
   descriptionFa: richText("جلومبلی و عسلی دلان، با کیفیت ساخت بالا، طراحی زیبا و دقت در جزئیات ساخت، به همراه پایه‌های سم‌آهویی ساخته‌شده از چوب راش، انتخابی مناسب برای فضای پذیرایی است."),
-  dimensions: { summaryFa: "ابعاد دقیق جلومبلی و عسلی در برگه منبع ثبت شده است." },
   technicalSpecs: [
     { key: "table-top", labelFa: "جنس صفحه بالایی", valueFa: "MDF با روکش چوب راش", group: "construction", sortOrder: 10 },
     { key: "leg", labelFa: "جنس پایه", valueFa: "چوب راش", group: "construction", sortOrder: 20 },
@@ -186,15 +210,23 @@ const relatedTable = await ensureBySlug("products", "delan-coffee-side-table", {
   configurationGroups: [woodGroup.id],
   enableVariants: false,
   sourceMetadata: {
+    workbookKey: "994",
     file: "994.xlsx",
     sheet: "HFC 594-HFS 394",
+    identityRaw: "جلومبلی HFC 594-عسلی HFS 394",
     catalogCodeRaw: "جلومبلی HFC 594-عسلی HFS 394",
     dataQualityNotes: "رکورد رابطه‌ای پیش‌نمایش؛ هنوز واردات کامل انجام نشده است.",
   },
   _status: "published",
 });
 
-const delan = await ensureBySlug("products", "delan-sofa", {
+const delanSourceKey = buildNilperSourceKey({
+  workbookKey: "994",
+  sheet: "HSS 994",
+  entity: "product",
+  rawIdentity: "مبل خانگی NHSS 994",
+});
+const delan = await ensureProduct(delanSourceKey, "delan-sofa", {
   title: "مبل دلان",
   slug: "delan-sofa",
   catalogCode: "NHSS 994",
@@ -210,7 +242,6 @@ const delan = await ensureBySlug("products", "delan-sofa", {
     { image: livingImage.id, captionFa: "تصویر نمایشی فضای پذیرایی" },
   ],
   descriptionFa: richText("مبل دلان در سبک نئوکلاسیک و کاملاً دست‌ساز تولید شده است.\nاستفاده از چوب‌های منحنی با جزئیات متوسط در نما و فرم‌های هارمونیک و ریتمیک روی بدنه چوبی، در کنار پارچه‌های گران‌بها، حس خوشایند مبلمان پذیرایی و راحتی را منتقل می‌کند. مبلمان دلان شامل ست کاملی از مبل، جلومبلی و عسلی و ناهارخوری است."),
-  dimensions: { summaryFa: "گونه‌های تک‌نفره و سه‌نفره؛ اندازه‌های نشیمن در هر گونه ثبت شده‌اند." },
   technicalSpecs: [
     { key: "frame", labelFa: "جنس اسکلت بدنه و دسته", valueFa: "چوبی - از جنس چوب راش", group: "construction", sortOrder: 10 },
     { key: "suspension", labelFa: "نوع تعلیق", valueFa: "تسمه‌کشی", group: "comfort", sortOrder: 20 },
@@ -222,33 +253,59 @@ const delan = await ensureBySlug("products", "delan-sofa", {
   ],
   orderNotesFa: "با توجه به عمق نشیمن باید با کوسن استفاده شود. نوع پارچه مناسب: مخمل، شنل، ساده.",
   configurationGroups: [woodGroup.id, fabricGroup.id],
-  relatedProducts: [relatedTable.id],
+  matchingProducts: [relatedTable.id],
   enableVariants: true,
   variantTypes: [variantType.id],
   sourceMetadata: {
+    workbookKey: "994",
     file: "994.xlsx",
     sheet: "HSS 994",
+    identityRaw: "مبل خانگی NHSS 994",
     catalogCodeRaw: "مبل خانگی NHSS 994",
     dataQualityNotes: "کدهای ثبت تک‌رنگ در منبع با NHSS940 آغاز می‌شوند و با شماره کاتالوگ 994 هم‌خوان نیستند؛ عیناً و بدون اصلاح ثبت شده‌اند.",
   },
   _status: "published",
 });
 
-await ensureVariant("NHSS94012", {
+await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994", entity: "variant", rawIdentity: "NHSS94012" }), "NHSS94012", {
   product: delan.id,
   options: [singleSeat.id],
   priceInTMNEnabled: false,
-  dimensions: { seatHeightCm: 45.5, seatWidthCm: 62, seatDepthCm: 56, fabricMeters: 4.5 },
+  measurements: [
+    { key: "seat-height", labelFa: "ارتفاع نشیمن", value: 45.5, unit: "cm", sortOrder: 10 },
+    { key: "seat-width-per-person", labelFa: "عرض نشیمن به ازای هر نفر", value: 62, unit: "cm", sortOrder: 20 },
+    { key: "seat-depth", labelFa: "عمق نشیمن", value: 56, unit: "cm", sortOrder: 30 },
+    { key: "fabric-single-color", labelFa: "متراژ پارچه تک‌رنگ بدون کوسن", value: 4.5, unit: "m", sortOrder: 40 },
+  ],
   manufacturingNotesFa: "تک نفره، تک‌رنگ، بدون محاسبه پارچه کوسن.",
-  dataQualityNotes: "کد عیناً از HSS 994 سلول D40 ثبت شده است؛ اختلاف 940/994 نیازمند تأیید نیلپر است.",
+  sourceMetadata: {
+    workbookKey: "994",
+    file: "994.xlsx",
+    sheet: "HSS 994",
+    identityRaw: "NHSS94012",
+    catalogCodeRaw: "مبل خانگی NHSS 994",
+    dataQualityNotes: "کد عیناً از HSS 994 سلول D40 ثبت شده است؛ اختلاف 940/994 نیازمند تأیید نیلپر است.",
+  },
 });
-await ensureVariant("NHSS94015", {
+await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994", entity: "variant", rawIdentity: "NHSS94015" }), "NHSS94015", {
   product: delan.id,
   options: [threeSeat.id],
   priceInTMNEnabled: false,
-  dimensions: { seatHeightCm: 45.5, seatWidthCm: 66, seatDepthCm: 57.5, fabricMeters: 10.5 },
+  measurements: [
+    { key: "seat-height", labelFa: "ارتفاع نشیمن", value: 45.5, unit: "cm", sortOrder: 10 },
+    { key: "seat-width-per-person", labelFa: "عرض نشیمن به ازای هر نفر", value: 66, unit: "cm", sortOrder: 20 },
+    { key: "seat-depth", labelFa: "عمق نشیمن", value: 57.5, unit: "cm", sortOrder: 30 },
+    { key: "fabric-single-color", labelFa: "متراژ پارچه تک‌رنگ بدون کوسن", value: 10.5, unit: "m", sortOrder: 40 },
+  ],
   manufacturingNotesFa: "سه نفره، تک‌رنگ، بدون محاسبه پارچه کوسن.",
-  dataQualityNotes: "کد عیناً از HSS 994 سلول D42 ثبت شده است؛ اختلاف 940/994 نیازمند تأیید نیلپر است.",
+  sourceMetadata: {
+    workbookKey: "994",
+    file: "994.xlsx",
+    sheet: "HSS 994",
+    identityRaw: "NHSS94015",
+    catalogCodeRaw: "مبل خانگی NHSS 994",
+    dataQualityNotes: "کد عیناً از HSS 994 سلول D42 ثبت شده است؛ اختلاف 940/994 نیازمند تأیید نیلپر است.",
+  },
 });
 
 payload.logger.info("Nilper Payload dashboard preview seed is ready: open محصول «مبل دلان».");

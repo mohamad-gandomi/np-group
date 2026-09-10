@@ -274,6 +274,7 @@ export interface ProductSery {
   styleFa?: string | null;
   descriptionFa?: string | null;
   heroMedia?: (number | null) | Media;
+  published?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -287,6 +288,7 @@ export interface ConfigurationGroup {
   key: string;
   inputType: 'swatch' | 'select' | 'radio';
   required?: boolean | null;
+  active?: boolean | null;
   helpTextFa?: string | null;
   options?: {
     docs?: (number | ConfigurationOption)[];
@@ -391,15 +393,32 @@ export interface Variant {
   options: (number | VariantOption)[];
   priceInTMNEnabled?: boolean | null;
   priceInTMN?: number | null;
-  dimensions?: {
-    seatHeightCm?: number | null;
-    seatWidthCm?: number | null;
-    seatDepthCm?: number | null;
-    fabricMeters?: number | null;
-  };
+  /**
+   * فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه.
+   */
+  measurements?:
+    | {
+        key: string;
+        labelFa: string;
+        value: number;
+        unit: 'cm' | 'kg' | 'm' | 'unit';
+        sortOrder?: number | null;
+        id?: string | null;
+      }[]
+    | null;
   manufacturingNotesFa?: string | null;
-  sourceCodeRaw: string;
-  dataQualityNotes?: string | null;
+  /**
+   * برای واردات تکرارپذیر؛ از شماره ردیف، عنوان فارسی یا نام محلی فایل ساخته نمی‌شود.
+   */
+  sourceKey: string;
+  sourceMetadata: {
+    workbookKey: string;
+    file: string;
+    sheet: string;
+    identityRaw: string;
+    catalogCodeRaw?: string | null;
+    dataQualityNotes?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -446,16 +465,28 @@ export interface Product {
     };
     [k: string]: unknown;
   };
-  dimensions?: {
-    summaryFa?: string | null;
-    weightKg?: number | null;
-  };
+  /**
+   * فقط اندازه‌های مشترک همه گونه‌ها؛ اندازه متفاوت هر کد ثبت در خود گونه نگهداری می‌شود.
+   */
+  measurements?:
+    | {
+        key: string;
+        labelFa: string;
+        value: number;
+        unit: 'cm' | 'kg' | 'm' | 'unit';
+        sortOrder?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * مشخصاتی که برای همه گونه‌های این محصول یکسان‌اند.
+   */
   technicalSpecs?:
     | {
         key: string;
         labelFa: string;
         valueFa: string;
-        group?: ('construction' | 'comfort' | 'delivery') | null;
+        group: 'identity' | 'construction' | 'materials' | 'comfort' | 'finish' | 'delivery' | 'care' | 'other';
         sortOrder?: number | null;
         id?: string | null;
       }[]
@@ -464,6 +495,10 @@ export interface Product {
   leadTimeFa?: string | null;
   configurationGroups?: (number | ConfigurationGroup)[] | null;
   relatedProducts?: (number | Product)[] | null;
+  /**
+   * رابطه صریح درج‌شده در منبع؛ از پیشنهاد عمومی «محصولات مرتبط» جدا است.
+   */
+  matchingProducts?: (number | Product)[] | null;
   enableVariants?: boolean | null;
   variantTypes?: (number | VariantType)[] | null;
   variants?: {
@@ -471,9 +506,15 @@ export interface Product {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * برای واردات تکرارپذیر؛ از شماره ردیف، عنوان فارسی یا نام محلی فایل ساخته نمی‌شود.
+   */
+  sourceKey: string;
   sourceMetadata: {
+    workbookKey: string;
     file: string;
     sheet: string;
+    identityRaw: string;
     catalogCodeRaw?: string | null;
     dataQualityNotes?: string | null;
   };
@@ -835,6 +876,7 @@ export interface ProductSeriesSelect<T extends boolean = true> {
   styleFa?: T;
   descriptionFa?: T;
   heroMedia?: T;
+  published?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -847,6 +889,7 @@ export interface ConfigurationGroupsSelect<T extends boolean = true> {
   key?: T;
   inputType?: T;
   required?: T;
+  active?: T;
   helpTextFa?: T;
   options?: T;
   updatedAt?: T;
@@ -899,17 +942,28 @@ export interface VariantsSelect<T extends boolean = true> {
   options?: T;
   priceInTMNEnabled?: T;
   priceInTMN?: T;
-  dimensions?:
+  measurements?:
     | T
     | {
-        seatHeightCm?: T;
-        seatWidthCm?: T;
-        seatDepthCm?: T;
-        fabricMeters?: T;
+        key?: T;
+        labelFa?: T;
+        value?: T;
+        unit?: T;
+        sortOrder?: T;
+        id?: T;
       };
   manufacturingNotesFa?: T;
-  sourceCodeRaw?: T;
-  dataQualityNotes?: T;
+  sourceKey?: T;
+  sourceMetadata?:
+    | T
+    | {
+        workbookKey?: T;
+        file?: T;
+        sheet?: T;
+        identityRaw?: T;
+        catalogCodeRaw?: T;
+        dataQualityNotes?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -964,11 +1018,15 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   descriptionFa?: T;
-  dimensions?:
+  measurements?:
     | T
     | {
-        summaryFa?: T;
-        weightKg?: T;
+        key?: T;
+        labelFa?: T;
+        value?: T;
+        unit?: T;
+        sortOrder?: T;
+        id?: T;
       };
   technicalSpecs?:
     | T
@@ -984,14 +1042,18 @@ export interface ProductsSelect<T extends boolean = true> {
   leadTimeFa?: T;
   configurationGroups?: T;
   relatedProducts?: T;
+  matchingProducts?: T;
   enableVariants?: T;
   variantTypes?: T;
   variants?: T;
+  sourceKey?: T;
   sourceMetadata?:
     | T
     | {
+        workbookKey?: T;
         file?: T;
         sheet?: T;
+        identityRaw?: T;
         catalogCodeRaw?: T;
         dataQualityNotes?: T;
       };

@@ -9,8 +9,6 @@ const rtlText = (name: string, label: string, required = false): Field => ({
   admin: { rtl: true },
 });
 
-const authenticated: Access = ({ req }) => Boolean(req.user);
-
 const hasEditorialRole = (user: unknown) => {
   if (!user || typeof user !== "object" || !("role" in user)) return false;
   return user.role === "admin" || user.role === "editor";
@@ -43,11 +41,21 @@ const adminOrSelf: Access = ({ req }) => {
   return { id: { equals: req.user.id } };
 };
 
-const contentAccess: CollectionConfig["access"] = {
-  create: authenticated,
-  delete: authenticated,
+const editorialContentAccess: CollectionConfig["access"] = {
+  create: editorialOnly,
+  delete: editorialOnly,
   read: () => true,
-  update: authenticated,
+  update: editorialOnly,
+};
+
+const publishedContentAccess: CollectionConfig["access"] = {
+  ...editorialContentAccess,
+  read: ({ req }) => hasEditorialRole(req.user) || { published: { equals: true } },
+};
+
+const activeContentAccess: CollectionConfig["access"] = {
+  ...editorialContentAccess,
+  read: ({ req }) => hasEditorialRole(req.user) || { active: { equals: true } },
 };
 
 export const Users: CollectionConfig = {
@@ -95,7 +103,7 @@ export const Media: CollectionConfig = {
     ],
     adminThumbnail: "adminThumbnail",
   },
-  access: contentAccess,
+  access: editorialContentAccess,
   labels: { singular: "رسانه", plural: "رسانه‌ها" },
   admin: { group: "محتوا", useAsTitle: "alt", defaultColumns: ["alt", "filename", "updatedAt"] },
   fields: [rtlText("alt", "متن جایگزین فارسی", true), { name: "captionFa", type: "textarea", label: "توضیح تصویر" }],
@@ -103,7 +111,7 @@ export const Media: CollectionConfig = {
 
 export const Brands: CollectionConfig = {
   slug: "brands",
-  access: contentAccess,
+  access: publishedContentAccess,
   labels: { singular: "برند", plural: "برندها" },
   admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "slug", "published"] },
   fields: [
@@ -117,7 +125,7 @@ export const Brands: CollectionConfig = {
 
 export const Categories: CollectionConfig = {
   slug: "categories",
-  access: contentAccess,
+  access: publishedContentAccess,
   labels: { singular: "دسته‌بندی", plural: "دسته‌بندی‌ها" },
   admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "parent", "sortOrder", "published"] },
   fields: [
@@ -133,7 +141,7 @@ export const Categories: CollectionConfig = {
 
 export const ProductSeries: CollectionConfig = {
   slug: "product-series",
-  access: contentAccess,
+  access: publishedContentAccess,
   labels: { singular: "سری محصول", plural: "سری‌های محصول" },
   admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "styleFa", "slug"] },
   fields: [
@@ -142,12 +150,13 @@ export const ProductSeries: CollectionConfig = {
     rtlText("styleFa", "سبک طراحی"),
     { name: "descriptionFa", type: "textarea", label: "توضیح فارسی" },
     { name: "heroMedia", type: "upload", relationTo: "media", label: "تصویر اصلی" },
+    { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
   ],
 };
 
 export const ConfigurationGroups: CollectionConfig = {
   slug: "configuration-groups",
-  access: contentAccess,
+  access: activeContentAccess,
   labels: { singular: "گروه پیکربندی", plural: "گروه‌های پیکربندی" },
   admin: { group: "پیکربندی محصول", useAsTitle: "title", defaultColumns: ["title", "key", "inputType", "required"] },
   fields: [
@@ -165,6 +174,7 @@ export const ConfigurationGroups: CollectionConfig = {
       ],
     },
     { name: "required", type: "checkbox", label: "انتخاب اجباری", defaultValue: true },
+    { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
     { name: "helpTextFa", type: "textarea", label: "راهنمای فارسی" },
     {
       name: "options",
@@ -179,7 +189,7 @@ export const ConfigurationGroups: CollectionConfig = {
 
 export const ConfigurationOptions: CollectionConfig = {
   slug: "configuration-options",
-  access: contentAccess,
+  access: activeContentAccess,
   labels: { singular: "گزینه پیکربندی", plural: "گزینه‌های پیکربندی" },
   admin: { group: "پیکربندی محصول", useAsTitle: "title", defaultColumns: ["title", "group", "code", "active", "sortOrder"] },
   fields: [
