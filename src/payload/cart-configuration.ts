@@ -218,7 +218,7 @@ const itemIdentityKey = (
   configurationKey: string,
 ) => JSON.stringify([String(productID), variantID === undefined ? null : String(variantID), configurationKey]);
 
-const hydrateCommerceItems = async (items: unknown[], req: PayloadRequest) => {
+export const validateNilperCommerceItems = async (items: unknown[], req: PayloadRequest) => {
   const hydratedItems: RecordValue[] = [];
   const itemKeys = new Set<string>();
   let amount = 0;
@@ -417,7 +417,7 @@ export const nilperCommerceItemsHook = (
     validationError(req, "واحد پول این مسیر باید تومان (TMN) باشد.", "currency");
   }
 
-  const hydrated = await hydrateCommerceItems(items, req);
+  const hydrated = await validateNilperCommerceItems(items, req);
   data.items = hydrated.items;
   data[amountField] = hydrated.amount;
   return data;

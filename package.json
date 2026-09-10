@@ -18,6 +18,7 @@
     "payload:seed": "payload run src/payload/seed.ts",
     "payload:verify:phase3": "payload run src/payload/verify-phase3.ts",
     "payload:verify:phase4": "payload run src/payload/verify-phase4.ts",
+    "payload:verify:phase5": "payload run src/payload/verify-phase5.ts",
     "payload:db:start": "docker compose --env-file .env.local -f payload.compose.yaml up -d",
     "payload:db:stop": "docker compose --env-file .env.local -f payload.compose.yaml down",
     "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps"

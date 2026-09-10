@@ -5,8 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { categories, getCategory } from "../catalog-data";
+import { categories, getCategory, products } from "../catalog-data";
 import { getCatalogResults, type RawSearchParams } from "../catalog-query";
+import { getCatalogProducts } from "../payload-catalog-repository";
 import { ActiveFilters } from "./active-filters";
 import { CatalogFilters } from "./catalog-filters";
 import { CatalogPagination } from "./catalog-pagination";
@@ -16,10 +17,12 @@ import { SortSelect } from "./sort-select";
 
 const countFormatter = new Intl.NumberFormat("fa-IR");
 
-export function CatalogView({ params, categorySlug }: { params: RawSearchParams; categorySlug?: string }) {
+export async function CatalogView({ params, categorySlug }: { params: RawSearchParams; categorySlug?: string }) {
   const category = categorySlug ? getCategory(categorySlug) : undefined;
   const path = category ? `/shop/${category.slug}` : "/shop";
-  const results = getCatalogResults(params, categorySlug);
+  const payloadProducts = await getCatalogProducts();
+  const phase5Products = payloadProducts.filter((product) => product.slug === "delan-sofa");
+  const results = getCatalogResults(params, categorySlug, [...phase5Products, ...products]);
   const rawSearch = params.q;
   const searchValue = (Array.isArray(rawSearch) ? rawSearch[0] : rawSearch) ?? "";
   const activeFilterCount = ["category", "brand", "room", "material", "color", "availability", "minPrice", "maxPrice"].reduce((total, key) => {

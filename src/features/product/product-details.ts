@@ -3,8 +3,8 @@ import type { Product } from "@/features/catalog/catalog-types";
 
 type ProductPresentation = {
   description: string;
-  depth: number;
-  height: number;
+  depth: number | null;
+  height: number | null;
   leadTime: string;
   warranty: string;
   assembly: string;
@@ -33,6 +33,19 @@ export function getProduct(category: string, slug: string) {
 }
 
 export function getProductPresentation(product: Product): ProductPresentation {
+  if (product.source === "payload") {
+    const measurement = (key: string) => product.measurements?.find((item) => item.key === key)?.value ?? null;
+    return {
+      description: product.description ?? "",
+      depth: measurement("depth"),
+      height: measurement("height"),
+      leadTime: product.leadTime ?? "پس از بررسی مدل و پیکربندی",
+      warranty: "طبق شرایط رسمی نیلپر",
+      assembly: product.technicalSpecs?.find((item) => item.key === "delivery")?.value ?? "پس از ثبت سفارش هماهنگ می‌شود",
+      care: product.technicalSpecs?.find((item) => item.group === "care")?.value ?? "راهنمای نگهداری هنگام ثبت سفارش اعلام می‌شود",
+      gallery: product.gallery?.length ? product.gallery : [product.image],
+    };
+  }
   const category = categories.find((item) => item.slug === product.category);
   const defaults = categoryDetails[product.category] ?? categoryDetails.furniture;
   const gallery = [...new Set([product.image, ...product.room.map((room) => roomImages[room]), category?.image, "/placeholders/project.jpg"].filter((image): image is string => Boolean(image)))].slice(0, 3);
@@ -45,5 +58,6 @@ export function getProductPresentation(product: Product): ProductPresentation {
 }
 
 export function getRelatedProducts(product: Product) {
+  if (product.source === "payload") return [];
   return products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 3);
 }

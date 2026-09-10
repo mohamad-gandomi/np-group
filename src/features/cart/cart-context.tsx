@@ -10,13 +10,29 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import type { Product } from "@/features/catalog/catalog-types";
 
-export type CartItem = { key: string; product: Product; color: string; quantity: number };
+export type CartConfigurationSelection = {
+  groupKey: string;
+  groupLabel: string;
+  optionId: number;
+  optionLabel: string;
+  optionCode?: string;
+};
+
+export type CartSelection = {
+  color: string;
+  variantId?: number;
+  variantLabel?: string;
+  variantCode?: string;
+  configuration?: readonly CartConfigurationSelection[];
+};
+
+export type CartItem = CartSelection & { key: string; product: Product; quantity: number };
 
 type CartContextValue = {
   items: CartItem[];
   count: number;
   subtotal: number;
-  addItem: (product: Product, color: string, quantity?: number) => void;
+  addItem: (product: Product, selection: string | CartSelection, quantity?: number) => void;
   updateQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
   clear: () => void;
@@ -54,13 +70,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<CartContextValue>(() => ({
     items,
     count: items.reduce((sum, item) => sum + item.quantity, 0),
-    subtotal: items.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
-    addItem(product, color, quantity = 1) {
-      const key = `${product.id}-${color}`;
+    subtotal: items.reduce((sum, item) => sum + (item.product.price ?? 0) * item.quantity, 0),
+    addItem(product, selection, quantity = 1) {
+      const normalized = typeof selection === "string" ? { color: selection } : selection;
+      const configurationKey = [...(normalized.configuration ?? [])]
+        .sort((left, right) => left.groupKey.localeCompare(right.groupKey, "en"))
+        .map(({ groupKey, optionId }) => [groupKey, optionId]);
+      const key = JSON.stringify([product.id, normalized.variantId ?? null, configurationKey, normalized.color]);
       setItems((current) => {
         const existing = current.find((item) => item.key === key);
         if (existing) return current.map((item) => item.key === key ? { ...item, quantity: item.quantity + quantity } : item);
-        return [...current, { key, product, color, quantity }];
+        return [...current, { key, product, ...normalized, quantity }];
       });
     },
     updateQuantity(key, quantity) {
@@ -98,7 +118,9 @@ export function CartButton() {
 
 export function CartLine({ item, compact = false }: { item: CartItem; compact?: boolean }) {
   const { updateQuantity, removeItem } = useCart();
-  return <div className={`grid border-b border-black/10 ${compact ? "grid-cols-[4rem_minmax(0,1fr)] gap-x-3 gap-y-3 py-4" : "grid-cols-[5.5rem_minmax(0,1fr)] gap-4 py-5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center"}`}><div className="relative aspect-square overflow-hidden bg-secondary"><Image src={item.product.image} alt={item.product.name} fill sizes={compact ? "64px" : "112px"} className="object-cover" /></div><div className="min-w-0"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><Link href={`/shop/${item.product.category}/${item.product.slug}`} className={`block truncate font-medium hover:text-wine ${compact ? "text-sm" : "text-base sm:text-lg"}`}>{item.product.name}</Link><p className="mt-1 truncate text-xs text-muted-foreground">{item.product.brand} · رنگ {item.color}</p><p className="mt-1 text-xs text-muted-foreground">{item.product.availability === "in-stock" ? "آماده ارسال" : "ساخت سفارشی"}</p></div><Button type="button" variant="ghost" size="icon-xs" onClick={() => removeItem(item.key)} className="shrink-0 text-muted-foreground hover:text-wine" aria-label={`حذف ${item.product.name}`}>{compact ? <X /> : <Trash2 />}</Button></div>{compact ? null : <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><QuantityControl value={item.quantity} onChange={(value) => updateQuantity(item.key, value)} /><strong className="whitespace-nowrap text-sm text-wine sm:text-base">{priceFormatter.format(item.product.price * item.quantity)} <span className="text-xs font-normal text-muted-foreground">تومان</span></strong></div>}</div>{compact ? <div className="col-span-2 flex items-center justify-between gap-3"><QuantityControl value={item.quantity} onChange={(value) => updateQuantity(item.key, value)} compact /><strong className="whitespace-nowrap text-sm text-wine">{priceFormatter.format(item.product.price * item.quantity)} <span className="text-[0.62rem] font-normal text-muted-foreground">تومان</span></strong></div> : null}</div>;
+  const price = item.product.price ?? 0;
+  const choices = item.configuration?.map((selection) => `${selection.groupLabel}: ${selection.optionLabel}`).join(" · ");
+  return <div className={`grid border-b border-black/10 ${compact ? "grid-cols-[4rem_minmax(0,1fr)] gap-x-3 gap-y-3 py-4" : "grid-cols-[5.5rem_minmax(0,1fr)] gap-4 py-5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center"}`}><div className="relative aspect-square overflow-hidden bg-secondary"><Image src={item.product.image} alt={item.product.name} fill sizes={compact ? "64px" : "112px"} className="object-cover" /></div><div className="min-w-0"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><Link href={`/shop/${item.product.category}/${item.product.slug}`} className={`block truncate font-medium hover:text-wine ${compact ? "text-sm" : "text-base sm:text-lg"}`}>{item.product.name}</Link><p className="mt-1 truncate text-xs text-muted-foreground">{item.product.brand}{item.variantLabel ? ` · ${item.variantLabel}` : ` · رنگ ${item.color}`}</p>{choices ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{choices}</p> : null}<p className="mt-1 text-xs text-muted-foreground">{item.product.availability === "in-stock" ? "آماده ارسال" : "ساخت سفارشی"}</p></div><Button type="button" variant="ghost" size="icon-xs" onClick={() => removeItem(item.key)} className="shrink-0 text-muted-foreground hover:text-wine" aria-label={`حذف ${item.product.name}`}>{compact ? <X /> : <Trash2 />}</Button></div>{compact ? null : <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><QuantityControl value={item.quantity} onChange={(value) => updateQuantity(item.key, value)} /><strong className="whitespace-nowrap text-sm text-wine sm:text-base">{priceFormatter.format(price * item.quantity)} <span className="text-xs font-normal text-muted-foreground">تومان</span></strong></div>}</div>{compact ? <div className="col-span-2 flex items-center justify-between gap-3"><QuantityControl value={item.quantity} onChange={(value) => updateQuantity(item.key, value)} compact /><strong className="whitespace-nowrap text-sm text-wine">{priceFormatter.format(price * item.quantity)} <span className="text-[0.62rem] font-normal text-muted-foreground">تومان</span></strong></div> : null}</div>;
 }
 
 export function QuantityControl({ value, onChange, compact = false }: { value: number; onChange: (value: number) => void; compact?: boolean }) {

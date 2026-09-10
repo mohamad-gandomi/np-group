@@ -22,7 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
             <p className="flex shrink-0 items-center gap-1 text-[0.62rem] text-muted-foreground"><span className={`size-1.5 rounded-full ${product.availability === "in-stock" ? "bg-emerald-600" : "bg-amber-500"}`} />{product.availability === "in-stock" ? "آماده ارسال" : "سفارشی"}</p>
           </div>
           <h3 className="mt-2 line-clamp-2 min-h-11 text-sm font-medium leading-6 sm:min-h-0 sm:text-lg">{product.name}</h3>
-          <p className="mt-2.5 whitespace-nowrap text-sm font-semibold text-wine sm:text-base">{priceFormatter.format(product.price)} <span className="text-[0.62rem] font-normal text-muted-foreground sm:text-xs">تومان</span></p>
+          <p className="mt-2.5 whitespace-nowrap text-sm font-semibold text-wine sm:text-base">{product.price === null ? "استعلام قیمت" : <>{priceFormatter.format(product.price)} <span className="text-[0.62rem] font-normal text-muted-foreground sm:text-xs">تومان</span></>}</p>
           <div className="mt-3 flex items-center gap-1.5" aria-label={`رنگ‌های ${product.name}`}>{product.colors.map((color) => <span key={color} title={color} className="size-3 rounded-full border border-black/15 ring-1 ring-white sm:size-3.5" style={{ backgroundColor: colorValues[color] ?? "#d8d2ca" }} />)}</div>
         </div>
       </Link>
