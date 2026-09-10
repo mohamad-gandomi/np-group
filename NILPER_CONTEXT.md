@@ -36,8 +36,8 @@ main
 Latest reviewed commit:
 
 ```text
-cdba415bc2d9045c078f093808816512f2eda7e2
-chore(repo): remove obsolete WordPress backend
+2126eb5c0dded21016fb500be641f17b9001a0cb
+docs: consolidate Nilper project documentation
 ```
 
 Important recent commits:
@@ -51,7 +51,15 @@ docs(payload): record dashboard gate status
 
 cdba415bc2d9045c078f093808816512f2eda7e2
 chore(repo): remove obsolete WordPress backend
+
+2126eb5c0dded21016fb500be641f17b9001a0cb
+docs: consolidate Nilper project documentation
+
+79ddd109c24b7a24ac879500d9ebaf2a8cc101a4
+feat(catalog): define Nilper Payload product domain
 ```
+
+Phase 3 was completed on branch `codex/payload-phase-3`; the implementation commit above is not yet on `main` at this snapshot.
 
 The old WordPress/WooCommerce experiment, its Docker setup, plugin and WordPress planning documents have been removed from the repository.
 
@@ -86,8 +94,10 @@ npm run payload:db:stop
 npm run payload:db:status
 
 npm run payload:generate
+npm run payload:migrate:create -- descriptive-name
 npm run payload:migrate
 npm run payload:seed
+npm run payload:verify:phase3
 
 npm run lint
 npm run build
@@ -300,14 +310,16 @@ mainImage
 gallery
 
 descriptionFa
-dimensions
+measurements
 technicalSpecs
 orderNotesFa
 leadTimeFa
 
 configurationGroups
 relatedProducts
+matchingProducts
 
+sourceKey
 sourceMetadata
 ```
 
@@ -337,13 +349,19 @@ nilperCode / SKU
 title
 options
 price fields from Payload Ecommerce
-variant dimensions
+variant measurements
 manufacturing notes
-sourceCodeRaw
-dataQualityNotes
+sourceKey
+sourceMetadata
 ```
 
 A Nilper SKU/registration code is intentionally separate from fabric/wood/customization choices.
+
+Shared specifications and measurements belong on Product. Measurements that differ by operational registration code belong on Variant. Both use flexible key/label/value structures so furniture, bedroom and dining records do not require hundreds of nullable category-specific columns.
+
+`matchingProducts` records explicit set/coordination relationships from Nilper source material. `relatedProducts` remains available for general merchandising recommendations; the two meanings must not be merged.
+
+Products and variants carry a unique stable `sourceKey` plus raw source metadata. Spreadsheet imports must derive the key from the stable workbook key, worksheet, entity type and raw product/registration identity. Row numbers, display titles and local filenames are deliberately excluded. Raw worksheet names, codes and inconsistencies remain in source metadata and quality notes.
 
 ### Commerce features currently configured
 
@@ -363,11 +381,11 @@ Current preview choices:
 - orders are hidden from Admin.
 - transactions are hidden from Admin.
 - guest carts are disabled.
-- inventory is currently disabled.
+- inventory is intentionally disabled until an authoritative stock-quantity source exists.
 - Stripe is not implemented.
 - Iranian payment is not implemented.
 
-These are not necessarily all final business decisions.
+The supplied spreadsheets describe orderability and manufacturing choices, not stock counts. Until a real stock source is connected, use `salesMode` and `availabilityMode`; do not manufacture numeric inventory. Payload inventory can be reconsidered later only for direct/in-stock SKUs with authoritative quantities.
 
 ---
 
@@ -375,7 +393,7 @@ These are not necessarily all final business decisions.
 
 The project storefront uses integer **Toman** values.
 
-Payload currently has a preview custom currency:
+Payload Ecommerce uses this finalized application currency:
 
 ```text
 code: TMN
@@ -383,28 +401,16 @@ decimals: 0
 label: تومان
 ```
 
-This is **NOT YET A FINAL VALIDATED MONEY DECISION**.
+`src/payload/money.ts` is the single source of truth. Product prices, variant prices, cart subtotals, order amounts and transaction amounts are non-negative integer Toman values. The Payload Ecommerce Provider accepts and formats the zero-decimal `TMN` currency, and the Nilper-facing formatter produces Persian `تومان` output. Local API serialization preserves the same unscaled integer values.
 
-Phase 3 must validate the currency through the real commerce path before real catalog prices are imported.
-
-Required validation:
-
-- product price field.
-- variant price field.
-- cart subtotal.
-- order amount.
-- transaction amount.
-- formatting.
-- serialization/API behavior.
-- future payment-adapter boundary.
-- whether any Payload/plugin/provider boundary requires strict ISO-4217 semantics.
+`TMN` is an application code rather than a claim that every external gateway recognizes it as ISO-4217. A payment adapter must explicitly call the centralized gateway conversion and name whether the gateway expects Toman or Rial. Rial conversion is performed only at that boundary by multiplying the validated Toman integer by 10.
 
 Rules:
 
 - Never silently mix Rial and Toman.
-- Never scatter `* 10` or `/ 10` conversions across components.
+- Never scatter `* 10` or `/ 10` conversions across components or adapters.
 - Centralize money semantics.
-- If IRR is needed at a payment boundary, conversion must be explicit and documented.
+- If Rial is needed at a payment boundary, conversion must be explicit and use the centralized helper.
 
 ---
 
@@ -471,9 +477,9 @@ Product
 Three real Nilper workbooks were previously supplied for architecture/data-model validation:
 
 ```text
-506(1).xlsx
-886(1).xlsx
-994(1).xlsx
+506.xlsx
+886.xlsx
+994.xlsx
 ```
 
 Only Persian data is required for this project.
@@ -565,7 +571,7 @@ It creates representative preview data for:
 
 Important:
 
-This seed was built to prove Admin usability and the early domain shape.
+This seed proves Admin usability and the finalized Phase 3 domain shape, including stable source identity, flexible measurements/specifications and explicit matching products.
 
 It is **not** a full product importer and must not be treated as authoritative bulk catalog data.
 
@@ -664,15 +670,16 @@ Historical orders must not be reconstructed from the current mutable product sta
 
 At the current reviewed state:
 
-### Phase 3 gaps
+### Phase 3 completion
 
-- Existing preview schema must be treated as a baseline and finalized, not recreated.
-- Toman/TMN requires end-to-end validation.
-- Inventory policy is not decided; Payload inventory is currently disabled.
-- Technical specs must be checked against all representative real product types.
-- Stable import identity/idempotency rules must be finalized before bulk import.
-- `relatedProducts` exists; whether Nilper needs a distinct `matchingProducts` relationship should be decided based on real workflow/data rather than added automatically.
-- Phase 3 schema changes need clean migrations and clean-database verification.
+- The preview schema was evolved through a committed, data-preserving migration rather than recreated.
+- Integer Toman behavior was verified through products, variants, Provider formatting, carts, orders, transactions and Local API serialization.
+- The only Rial conversion is the explicit payment-gateway boundary.
+- Inventory remains disabled because no supplied source contains authoritative stock quantities.
+- Flexible Persian technical specs and measurements were checked against the representative 506, 886 and 994 workbooks.
+- Stable source identity and idempotent seed/upsert rules are finalized before bulk import.
+- Explicit `matchingProducts` and general `relatedProducts` are separate relationships.
+- Migration up/down/up and Phase 3 integration verification passed on a disposable clean database.
 
 ### Phase 4 gaps
 

@@ -12,22 +12,26 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 3 — Define the Nilper data model (`[~]` partially implemented).
+- **Active phase:** Phase 3 — Define the Nilper data model (`[x]` completed); Phase 4 is next but not started.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Continue from the earliest unfinished Phase 3 item after reconciling the existing schema with this TODO.
-- **Later phases:** Phase 4+ remain not started and must not begin until Phase 3 completion criteria pass.
+- **Next implementation task:** Begin Phase 4.1 by extending Payload cart items with normalized Nilper configuration snapshots and server-owned identity fields.
+- **Later phases:** Phase 4+ remain not started. Phase 3 completion criteria now pass.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-10
-- [x] Consolidated project continuity into `NILPER_CONTEXT.md` and `NILPER_TODO.md`.
-- [x] Removed superseded root architecture/dashboard-first documents and historical planning/verification files under `docs/`.
-- [x] Updated README to remain operational and point future sessions to the canonical files.
-- **Intentionally retained:** `AGENTS.md` unchanged for generated Next.js rules; `CLAUDE.md` retained only as a compatibility pointer to `AGENTS.md`; README retained for setup and commands.
-- **Current active phase:** Phase 3 — Define the Nilper data model.
-- **Latest relevant implementation commit:** `cdba415bc2d9045c078f093808816512f2eda7e2` (`chore(repo): remove obsolete WordPress backend`).
-- **Implementation work this session:** none; documentation cleanup only.
+- [x] Reviewed all representative workbooks (`506.xlsx`, `886.xlsx`, `994.xlsx`) and preserved their raw code/worksheet inconsistencies as source-quality notes.
+- [x] Finalized flexible Product/Variant measurements, Persian technical specs, stable import identity, publication/active access rules, and separate matching-product relationships.
+- [x] Finalized integer Toman handling through Payload products, variants, Provider formatting, carts, orders, transactions and Local API serialization; centralized the only explicit Toman/Rial payment boundary.
+- [x] Finalized inventory as disabled until an authoritative quantity source exists; orderability remains represented by sales and availability modes.
+- [x] Added a data-preserving Phase 3 migration and verified migrate up/down/up plus domain tests on a disposable clean PostgreSQL database.
+- [x] Verified the idempotent Delan seed, TypeScript, lint, production build, journal tests and showcase tests.
+- **Files added:** `src/payload/domain-fields.ts`, `src/payload/money.ts`, `src/payload/source-identity.ts`, `src/payload/verify-phase3.ts`, and migration `20260909_220639_nilper_product_domain`.
+- **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
+- **Current active phase:** Phase 3 completed; Phase 4 is the next phase and was not started in this session.
+- **Latest relevant implementation commit:** `79ddd109c24b7a24ac879500d9ebaf2a8cc101a4` (`feat(catalog): define Nilper Payload product domain`).
+- **Next implementation task:** Phase 4.1 — configuration-aware Payload cart item storage and normalized snapshot shape.
 
 ## Working rules for Codex
 
@@ -203,7 +207,7 @@ Acceptance criteria: an editor can create/edit a Persian product without layout 
 
 # Phase 3 — Define the Nilper data model
 
-**Status: [~] In progress**
+**Status: [x] Completed**
 
 Do not import Excel yet.
 
@@ -286,6 +290,17 @@ Commit checkpoint:
 feat(catalog): define Nilper Payload product domain
 ```
 
+Completion record:
+
+- [x] Base and commerce collections finalized with editorial/public access controls.
+- [x] Flexible shared Product specs and Product/Variant measurements implemented.
+- [x] Variant operational identity remains separate from configuration choices.
+- [x] Stable source identity and raw traceability implemented for idempotent future imports.
+- [x] Explicit matching-product relationships separated from general recommendations.
+- [x] Integer `TMN` application currency and explicit gateway-unit conversion finalized.
+- [x] Inventory policy finalized without inventing quantities absent from source data.
+- [x] Data-preserving migration and clean-database up/down/up verification passed.
+
 ---
 
 # Phase 4 — Cart configuration extension
@@ -339,7 +354,7 @@ Never trust client-sent price.
 
 # Phase 5 — Delan vertical slice (architecture gate)
 
-Use `994(1).xlsx` as the primary real source sample.
+Use `994.xlsx` as the primary real source sample.
 
 Do NOT bulk-import the entire workbook automatically yet. Manually/seed a minimal accurate slice to prove the model.
 
@@ -392,7 +407,7 @@ These must not generate combinatorial variants.
 The seeded/imported document must retain traceability:
 
 ```text
-source file: 994(1).xlsx
+source file: 994.xlsx
 source sheet: HSS 994
 ```
 
@@ -461,9 +476,9 @@ Suggested local/import working path:
 
 ```text
 data/source-products/
-  506(1).xlsx
-  886(1).xlsx
-  994(1).xlsx
+  506.xlsx
+  886.xlsx
+  994.xlsx
 ```
 
 Do not expose these files through `public/`.
@@ -493,8 +508,8 @@ Known sample anomalies exist.
 Generate a report such as:
 
 ```text
-WARN 994(1).xlsx / HSS 994: registration code does not obviously match catalog code
-WARN 886(1).xlsx / NBSD585: worksheet/catalog numbering differs
+WARN 994.xlsx / HSS 994: registration code does not obviously match catalog code
+WARN 886.xlsx / NBSD585: worksheet/catalog numbering differs
 ```
 
 Require manual approval/override for questionable identity fields.
@@ -713,14 +728,14 @@ Give Codex these inputs together:
 3. `NILPER_TODO.md`
 4. `AGENTS.md`
 5. the three sample spreadsheets when working on model/import tasks:
-   - `506(1).xlsx`
-   - `886(1).xlsx`
-   - `994(1).xlsx`
+   - `506.xlsx`
+   - `886.xlsx`
+   - `994.xlsx`
 6. local Postgres connection through environment variables (never paste production secrets into prompts)
 7. current official Payload docs if Codex needs API-specific verification
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Continue from the earliest unfinished Phase 3 item. Do not repeat the completed Payload foundation or dashboard review, do not redesign the storefront, and do not begin Phase 4 until Phase 3 completion criteria pass.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phase 3 is complete. Continue from Phase 4.1 without repeating the Payload foundation, dashboard review or product-domain work, and do not begin Phase 5 until Phase 4 completion criteria pass.
 
 Keep each session focused on the current phase and update this file before ending.
