@@ -595,7 +595,7 @@ It creates representative preview data for:
 - real-style variant/registration-code records.
 - Persian technical specifications.
 - source metadata.
-- placeholder media.
+- supplied Delan product photography plus placeholder media for the lightweight related-product record.
 
 Important:
 
@@ -603,7 +603,28 @@ This seed proves Admin usability and the finalized domain shape, including stabl
 
 It is **not** a full product importer and must not be treated as authoritative bulk catalog data.
 
-Placeholder images are explicitly not sourced from the Excel files.
+The Delan main image now comes from the supplied `HSS 994-SET.zip` media package. The lightweight related table record still uses an explicit placeholder until its media is curated.
+
+### Manually curated catalog
+
+Eight additional products were manually reviewed from the supplied workbook/media ZIP packages and added to the idempotent seed:
+
+```text
+تخت خواب داران     NBSB 886
+تخت خواب ژیوار     NBSB 850
+تخت خواب اورامان   NBSB 853
+تخت خواب مانی      NBSB 852
+صندلی بار ویونا    NDTN506
+تخت خواب لاوان     NBSB 885
+تخت خواب ماهور     NBSB 851
+مبل دایان          NHSS871
+```
+
+These records include optimized supplied photography, Persian descriptions and specifications, confirmed dimensions, configuration relationships, source traceability, and 22 distinct operational registration-code variants. No price was present, so every addition remains made-to-order with pricing disabled.
+
+Known inconsistencies remain explicit: the 852 worksheet/width values, 506/507 registration-code mismatch, absent 850 width-180 codes, and duplicate Dayan code `NHSS871002`. Ambiguous records were omitted rather than corrected or duplicated.
+
+The curated records are available in Payload Admin. The public shop still deliberately opts only Delan into its hybrid listing until Phase 7 replaces fixture-backed catalog surfaces.
 
 ---
 
@@ -743,6 +764,7 @@ At the current reviewed state:
 ### Remaining boundary after the gate
 
 - The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
+- Eight additional manually curated products and their real images are now available in Payload for the Phase 7 catalog migration.
 - The rest of the demo catalog remains fixture-backed until Phase 7.
 - Browser cart persistence and Supabase checkout remain in place until Phase 8.
 - Full customer/account migration remains Phase 9 work.

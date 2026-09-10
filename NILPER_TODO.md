@@ -12,15 +12,22 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 6 is intentionally deferred by the owner; Phase 7 is the next implementation phase once enough products have been entered and reviewed manually in Payload.
+- **Active phase:** Manual catalog preparation completed after Phase 6 was deferred; Phase 7 is ready to start but has not begun.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Wait for a manually curated Payload catalog, then begin Phase 7.1 from the existing repository/mapper boundary. Do not build an Excel importer or copy source workbooks into the repository unless the owner explicitly reopens that work.
+- **Next implementation task:** Begin Phase 7.1 from the existing repository/mapper boundary and replace fixture-backed catalog surfaces incrementally with the reviewed Payload records.
 - **Later phases:** Phase 7+ remain not started. The Delan architecture gate passes and Payload architecture is locked.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-10
+- [x] Manually reviewed the supplied ZIP packages as source material without creating an automated importer or committing any ZIP/XLSX source file.
+- [x] Added eight source-backed products: تخت داران، تخت ژیوار، تخت اورامان، تخت مانی، صندلی بار ویونا، تخت لاوان، تخت ماهور و مبل دایان.
+- [x] Added 22 operational variants using the registration codes exactly as supplied; wood, upholstery and finish selections remain separate from SKU identity.
+- [x] Preserved source anomalies instead of repairing them: 852 worksheet/width inconsistency, 506/507 code mismatch, missing 850 width-180 registration codes, and duplicated Dayan code `NHSS871002`.
+- [x] Added optimized product photography for the eight additions and replaced the Delan main placeholder with supplied Delan photography.
+- [x] Extended the idempotent seed and added a repeatable manual-catalog verification; two consecutive seed runs produced no duplicate product slugs or variants.
+- [x] Verified TypeScript, lint, production build, manual catalog, Payload Phase 3–5, journal, and showcase suites.
 - [x] Stopped Phase 6 before implementation at the owner's request because the workbooks require different extraction rules and manual handling.
 - [x] Confirmed that no workbook was copied, changed, staged, or committed and no importer dependency or importer code was added.
 - [x] Marked the automated Excel import pipeline as deferred; manual Payload catalog preparation is the interim path.
@@ -35,9 +42,9 @@ Before implementation, read these files completely in order:
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Files added:** `src/features/catalog/payload-catalog-repository.ts`, `src/features/catalog/payload-catalog-mapper.ts`, `src/app/(frontend)/api/payload-cart/quote/route.ts`, and `src/payload/verify-phase5.ts`.
 - **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 6 deferred by owner; Phase 7 is next after manually curated catalog data is ready.
-- **Latest relevant implementation commit:** `b9eb22c` (`fix(catalog): normalize Payload media URLs`); Phase 5 implementation checkpoint: `4b82054d389e37cbc26f87127fa8f52858101f9e`.
-- **Next implementation task:** After manual catalog preparation, start Phase 7.1 and replace fixture-backed catalog surfaces incrementally through the existing Payload repository/mapper boundary.
+- **Current active phase:** Manual catalog preparation completed; Phase 7 is ready and not started.
+- **Latest relevant implementation commit:** `a3289fd` (`feat(catalog): add manually curated Nilper products`).
+- **Next implementation task:** Start Phase 7.1 and replace fixture-backed catalog surfaces incrementally through the existing Payload repository/mapper boundary.
 
 ## Working rules for Codex
 

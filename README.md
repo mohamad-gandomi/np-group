@@ -80,6 +80,7 @@ npm run payload:seed
 npm run payload:verify:phase3
 npm run payload:verify:phase4
 npm run payload:verify:phase5
+npm run payload:verify:manual-catalog
 ```
 
 The uploaded local Payload media directory is ignored by Git.
@@ -106,7 +107,7 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 
 ## Current operational boundaries
 
-- The shop uses a deliberate hybrid boundary: Delan is read from Payload through a server repository/mapper, while the remaining product, project, brand, and editorial content still uses existing fixtures.
+- Payload contains Delan plus eight manually curated products with supplied photography. The shop still uses a deliberate hybrid boundary: only Delan is currently read through the server repository/mapper, while the remaining public product listing and the project, brand, and editorial content still use existing fixtures.
 - Delan has no authoritative source price, so it renders as inquiry-only. Entering an approved variant price activates its server-validated configuration cart path without changing the UI model.
 - Payload carts, orders, and transactions persist configuration and trusted price/title/code snapshots. The existing browser cart uses the trusted quote response, but full Payload cart persistence and checkout migration remain Phase 8 work.
 - Supabase remains active for the existing customer-facing authentication, profile, address, and order-request behavior.
