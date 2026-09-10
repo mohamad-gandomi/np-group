@@ -9,6 +9,12 @@ import {
   isCustomer,
   isDocumentOwner,
 } from "./access";
+import {
+  nilperCartItemMatcher,
+  nilperCommerceBeforeOperation,
+  nilperCommerceItemsHook,
+  withNilperCommerceItemFields,
+} from "./cart-configuration";
 import { measurementsField, sourceFields, technicalSpecsField } from "./domain-fields";
 import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
 
@@ -30,7 +36,7 @@ const withCommerceValidation = (field: Field): Field => {
     return { ...field, fields: field.fields.map(withCommerceValidation) };
   }
 
-  if (field.type === "number" && ["priceInTMN", "amount", "subtotal"].some((name) => fieldNamed(field, name))) {
+  if (field.type === "number" && ["priceInTMN", "unitPriceInTMN", "amount", "subtotal"].some((name) => fieldNamed(field, name))) {
     return { ...field, validate: validateTomanAmount };
   }
 
@@ -178,10 +184,22 @@ export const ecommerce = ecommercePlugin({
   },
   carts: {
     allowGuestCarts: false,
+    cartItemMatcher: nilperCartItemMatcher,
     cartsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
-      fields: defaultCollection.fields.map(withCommerceValidation),
+      fields: defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+      hooks: {
+        ...defaultCollection.hooks,
+        beforeOperation: [
+          ...(defaultCollection.hooks?.beforeOperation ?? []),
+          nilperCommerceBeforeOperation("cart"),
+        ],
+        beforeValidate: [
+          ...(defaultCollection.hooks?.beforeValidate ?? []),
+          nilperCommerceItemsHook("cart"),
+        ],
+      },
     }),
   },
   customers: { slug: "users" },
@@ -194,7 +212,18 @@ export const ecommerce = ecommercePlugin({
     ordersCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
-      fields: defaultCollection.fields.map(withCommerceValidation),
+      fields: defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+      hooks: {
+        ...defaultCollection.hooks,
+        beforeOperation: [
+          ...(defaultCollection.hooks?.beforeOperation ?? []),
+          nilperCommerceBeforeOperation("order"),
+        ],
+        beforeValidate: [
+          ...(defaultCollection.hooks?.beforeValidate ?? []),
+          nilperCommerceItemsHook("order"),
+        ],
+      },
     }),
   },
   products: {
@@ -237,7 +266,18 @@ export const ecommerce = ecommercePlugin({
     transactionsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
-      fields: defaultCollection.fields.map(withCommerceValidation),
+      fields: defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+      hooks: {
+        ...defaultCollection.hooks,
+        beforeOperation: [
+          ...(defaultCollection.hooks?.beforeOperation ?? []),
+          nilperCommerceBeforeOperation("transaction"),
+        ],
+        beforeValidate: [
+          ...(defaultCollection.hooks?.beforeValidate ?? []),
+          nilperCommerceItemsHook("transaction"),
+        ],
+      },
     }),
   },
 });

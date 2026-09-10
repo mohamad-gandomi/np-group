@@ -568,6 +568,24 @@ export interface Cart {
         product?: (number | null) | Product;
         variant?: (number | null) | Variant;
         quantity: number;
+        /**
+         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         */
+        configuration?:
+          | {
+              groupKey: string;
+              group?: (number | null) | ConfigurationGroup;
+              groupLabelFaSnapshot: string;
+              option?: (number | null) | ConfigurationOption;
+              optionCodeSnapshot?: string | null;
+              labelFaSnapshot: string;
+              id?: string | null;
+            }[]
+          | null;
+        configurationKey: string;
+        productTitleSnapshot: string;
+        variantCodeSnapshot?: string | null;
+        unitPriceInTMN: number;
         id?: string | null;
       }[]
     | null;
@@ -591,6 +609,24 @@ export interface Order {
         product?: (number | null) | Product;
         variant?: (number | null) | Variant;
         quantity: number;
+        /**
+         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         */
+        configuration?:
+          | {
+              groupKey: string;
+              group?: (number | null) | ConfigurationGroup;
+              groupLabelFaSnapshot: string;
+              option?: (number | null) | ConfigurationOption;
+              optionCodeSnapshot?: string | null;
+              labelFaSnapshot: string;
+              id?: string | null;
+            }[]
+          | null;
+        configurationKey: string;
+        productTitleSnapshot: string;
+        variantCodeSnapshot?: string | null;
+        unitPriceInTMN: number;
         id?: string | null;
       }[]
     | null;
@@ -627,6 +663,24 @@ export interface Transaction {
         product?: (number | null) | Product;
         variant?: (number | null) | Variant;
         quantity: number;
+        /**
+         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         */
+        configuration?:
+          | {
+              groupKey: string;
+              group?: (number | null) | ConfigurationGroup;
+              groupLabelFaSnapshot: string;
+              option?: (number | null) | ConfigurationOption;
+              optionCodeSnapshot?: string | null;
+              labelFaSnapshot: string;
+              id?: string | null;
+            }[]
+          | null;
+        configurationKey: string;
+        productTitleSnapshot: string;
+        variantCodeSnapshot?: string | null;
+        unitPriceInTMN: number;
         id?: string | null;
       }[]
     | null;
@@ -1073,6 +1127,21 @@ export interface CartsSelect<T extends boolean = true> {
         product?: T;
         variant?: T;
         quantity?: T;
+        configuration?:
+          | T
+          | {
+              groupKey?: T;
+              group?: T;
+              groupLabelFaSnapshot?: T;
+              option?: T;
+              optionCodeSnapshot?: T;
+              labelFaSnapshot?: T;
+              id?: T;
+            };
+        configurationKey?: T;
+        productTitleSnapshot?: T;
+        variantCodeSnapshot?: T;
+        unitPriceInTMN?: T;
         id?: T;
       };
   secret?: T;
@@ -1095,6 +1164,21 @@ export interface OrdersSelect<T extends boolean = true> {
         product?: T;
         variant?: T;
         quantity?: T;
+        configuration?:
+          | T
+          | {
+              groupKey?: T;
+              group?: T;
+              groupLabelFaSnapshot?: T;
+              option?: T;
+              optionCodeSnapshot?: T;
+              labelFaSnapshot?: T;
+              id?: T;
+            };
+        configurationKey?: T;
+        productTitleSnapshot?: T;
+        variantCodeSnapshot?: T;
+        unitPriceInTMN?: T;
         id?: T;
       };
   shippingAddress?:
@@ -1132,6 +1216,21 @@ export interface TransactionsSelect<T extends boolean = true> {
         product?: T;
         variant?: T;
         quantity?: T;
+        configuration?:
+          | T
+          | {
+              groupKey?: T;
+              group?: T;
+              groupLabelFaSnapshot?: T;
+              option?: T;
+              optionCodeSnapshot?: T;
+              labelFaSnapshot?: T;
+              id?: T;
+            };
+        configurationKey?: T;
+        productTitleSnapshot?: T;
+        variantCodeSnapshot?: T;
+        unitPriceInTMN?: T;
         id?: T;
       };
   billingAddress?:

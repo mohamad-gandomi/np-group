@@ -190,7 +190,16 @@ try {
   });
   remember("variants", variant.id);
 
-  const item = { product: product.id, variant: variant.id, quantity: 2, currency: "TMN" as const };
+  const item = {
+    product: product.id,
+    variant: variant.id,
+    quantity: 2,
+    configuration: [],
+    configurationKey: "[]",
+    productTitleSnapshot: product.title,
+    variantCodeSnapshot: variant.nilperCode,
+    unitPriceInTMN: variant.priceInTMN!,
+  };
   const expectedAmount = 4_691_356;
 
   const cart = await payload.create({ collection: "carts", data: { currency: "TMN", items: [item] } });
@@ -208,10 +217,8 @@ try {
   remember("orders", order.id);
   assert.equal(order.amount, expectedAmount);
   assert.equal(order.currency, "TMN");
-  await assert.rejects(
-    payload.update({ collection: "orders", id: order.id, data: { amount: 1.5 } }),
-    "Fractional order amounts must be rejected.",
-  );
+  const protectedOrder = await payload.update({ collection: "orders", id: order.id, data: { amount: 1.5 } });
+  assert.equal(protectedOrder.amount, expectedAmount, "Order amount updates without items must be ignored.");
 
   const transaction = await payload.create({
     collection: "transactions",
@@ -220,10 +227,8 @@ try {
   remember("transactions", transaction.id);
   assert.equal(transaction.amount, expectedAmount);
   assert.equal(transaction.currency, "TMN");
-  await assert.rejects(
-    payload.update({ collection: "transactions", id: transaction.id, data: { amount: 1.5 } }),
-    "Fractional transaction amounts must be rejected.",
-  );
+  const protectedTransaction = await payload.update({ collection: "transactions", id: transaction.id, data: { amount: 1.5 } });
+  assert.equal(protectedTransaction.amount, expectedAmount, "Transaction amount updates without items must be ignored.");
 
   const apiProduct = await payload.findByID({ collection: "products", id: product.id, depth: 0 });
   const apiVariant = await payload.findByID({ collection: "variants", id: variant.id, depth: 0 });
