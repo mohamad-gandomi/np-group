@@ -27,11 +27,12 @@ Before implementation, read these files completely in order:
 - [x] Added a server cart-quote bridge that reuses Phase 4 validation before a Payload-backed product enters the browser cart.
 - [x] Added a repeatable Phase 5 test for Delan mapping, same/different configuration cart identity, trusted totals, and historical order snapshots.
 - [x] Kept the production seed price-disabled because the source has no authoritative price; the verification uses and restores a temporary test-only price.
+- [x] Normalized same-app Payload media to `/api/media/file/...` paths so `next/image` never captures the local Payload server hostname; added a regression assertion.
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Files added:** `src/features/catalog/payload-catalog-repository.ts`, `src/features/catalog/payload-catalog-mapper.ts`, `src/app/(frontend)/api/payload-cart/quote/route.ts`, and `src/payload/verify-phase5.ts`.
 - **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
 - **Current active phase:** Phase 5 completed; Phase 6 is next and was not started in this session.
-- **Latest relevant implementation commit:** `4b82054d389e37cbc26f87127fa8f52858101f9e` (`feat(commerce): complete Delan Payload vertical slice`).
+- **Latest relevant implementation commit:** `b9eb22c` (`fix(catalog): normalize Payload media URLs`); Phase 5 implementation checkpoint: `4b82054d389e37cbc26f87127fa8f52858101f9e`.
 - **Next implementation task:** Phase 6.1 — decide the private source-workbook location and confidentiality/Git policy before building the staged importer.
 
 ## Working rules for Codex
