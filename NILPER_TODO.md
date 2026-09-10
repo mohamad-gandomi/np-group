@@ -12,15 +12,19 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 5 — Delan vertical slice (`[x]` completed); Phase 6 is next but not started.
+- **Active phase:** Phase 6 is intentionally deferred by the owner; Phase 7 is the next implementation phase once enough products have been entered and reviewed manually in Payload.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Begin Phase 6.1 by deciding and documenting the non-public local location and Git/confidentiality policy for the three source workbooks; do not move or commit client source files without explicit approval.
-- **Later phases:** Phase 6+ remain not started. The Delan architecture gate passes and Payload architecture is locked.
+- **Next implementation task:** Wait for a manually curated Payload catalog, then begin Phase 7.1 from the existing repository/mapper boundary. Do not build an Excel importer or copy source workbooks into the repository unless the owner explicitly reopens that work.
+- **Later phases:** Phase 7+ remain not started. The Delan architecture gate passes and Payload architecture is locked.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-10
+- [x] Stopped Phase 6 before implementation at the owner's request because the workbooks require different extraction rules and manual handling.
+- [x] Confirmed that no workbook was copied, changed, staged, or committed and no importer dependency or importer code was added.
+- [x] Marked the automated Excel import pipeline as deferred; manual Payload catalog preparation is the interim path.
+- [x] Preserved the existing Delan source metadata and stable identity fields because current seeded records, migrations, and verification suites actively depend on them.
 - [x] Reused and verified the existing `994.xlsx` / `HSS 994` Delan seed foundation without duplicating or bulk-importing records.
 - [x] Added the server-only Payload catalog repository and mapper while preserving the existing serializable storefront Product DTO.
 - [x] Added Delan to the hybrid shop listing and rendered its real source-backed description, media, variants, specifications and configuration choices in the existing Product UI.
@@ -31,15 +35,15 @@ Before implementation, read these files completely in order:
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Files added:** `src/features/catalog/payload-catalog-repository.ts`, `src/features/catalog/payload-catalog-mapper.ts`, `src/app/(frontend)/api/payload-cart/quote/route.ts`, and `src/payload/verify-phase5.ts`.
 - **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 5 completed; Phase 6 is next and was not started in this session.
+- **Current active phase:** Phase 6 deferred by owner; Phase 7 is next after manually curated catalog data is ready.
 - **Latest relevant implementation commit:** `b9eb22c` (`fix(catalog): normalize Payload media URLs`); Phase 5 implementation checkpoint: `4b82054d389e37cbc26f87127fa8f52858101f9e`.
-- **Next implementation task:** Phase 6.1 — decide the private source-workbook location and confidentiality/Git policy before building the staged importer.
+- **Next implementation task:** After manual catalog preparation, start Phase 7.1 and replace fixture-backed catalog surfaces incrementally through the existing Payload repository/mapper boundary.
 
 ## Working rules for Codex
 
 - Do not redesign or replace the existing public frontend.
 - Do not delete Supabase integration until its replacement is working and verified.
-- Do not bulk-import product data before the Delan vertical slice succeeds.
+- Do not build or run an Excel product importer unless the owner explicitly reopens the deferred Phase 6 work.
 - Do not treat every fabric/wood/color choice as a Variant.
 - Do not silently correct source Excel codes or names.
 - Keep commits small and focused.
@@ -506,65 +510,26 @@ feat(commerce): complete Delan Payload vertical slice
 
 ---
 
-# Phase 6 — Source import pipeline
+# Phase 6 — Automated source import pipeline
 
-Only start after the architecture gate passes.
+**Status: [!] Deferred by owner on 2026-09-10; intentionally omitted from the current execution plan**
 
-## 6.1 Store source files outside public assets
+The supplied workbooks use different structures and require workbook-specific decisions plus manual review. No automated Excel importer, staging pipeline, source directory, or import dependency should be added now.
 
-Suggested local/import working path:
+Current rules:
 
-```text
-data/source-products/
-  506.xlsx
-  886.xlsx
-  994.xlsx
-```
-
-Do not expose these files through `public/`.
-
-Decide whether source spreadsheets belong in Git based on client confidentiality. If not, ignore the directory and keep a documented local path.
-
-## 6.2 Build importer as staging + validation, not blind import
-
-Importer responsibilities:
-
-- read Persian values only
-- map source workbook/sheet to series/products
-- extract raw catalog codes
-- extract raw registration codes
-- extract descriptions/specifications
-- extract dimensions/weights
-- extract order notes
-- identify potential variants
-- identify configuration choices
-- retain source metadata
-- emit warnings for uncertain mappings
-
-## 6.3 Never auto-fix suspicious data
-
-Known sample anomalies exist.
-
-Generate a report such as:
-
-```text
-WARN 994.xlsx / HSS 994: registration code does not obviously match catalog code
-WARN 886.xlsx / NBSD585: worksheet/catalog numbering differs
-```
-
-Require manual approval/override for questionable identity fields.
-
-## 6.4 Make imports idempotent
-
-Use a stable source key so re-running an import updates/stages the same source record rather than duplicating products.
-
-Never key solely on a human-readable Persian title.
+- keep the source workbooks outside the repository and outside `public/`;
+- enter and review catalog records manually in Payload for the current implementation;
+- retain raw codes and uncertainty notes when data is entered manually;
+- do not silently correct suspicious catalog or registration identities;
+- preserve existing `sourceKey` and `sourceMetadata` fields used by the Delan seed and current migrations;
+- reopen this phase only when the owner supplies explicit workbook-by-workbook mapping and approval rules.
 
 ---
 
 # Phase 7 — Replace static catalog data
 
-After enough real products are imported:
+After enough real products are entered and reviewed manually in Payload:
 
 ## 7.1 Remove runtime dependence on `catalog-data.ts`
 
@@ -767,15 +732,13 @@ Give Codex these inputs together:
 2. `NILPER_CONTEXT.md`
 3. `NILPER_TODO.md`
 4. `AGENTS.md`
-5. the three sample spreadsheets when working on model/import tasks:
-   - `506.xlsx`
-   - `886.xlsx`
-   - `994.xlsx`
-6. local Postgres connection through environment variables (never paste production secrets into prompts)
-7. current official Payload docs if Codex needs API-specific verification
+5. local Postgres connection through environment variables (never paste production secrets into prompts)
+6. current official Payload docs if Codex needs API-specific verification
+
+The three source workbooks are not a required session input while Phase 6 is deferred. Do not request, copy, inspect, or automate them unless the owner explicitly reopens that work.
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and the architecture gate are complete. Continue from Phase 6.1 without repeating the Payload foundation, dashboard review, product-domain, cart-extension or Delan vertical-slice work, and do not begin Phase 7 until Phase 6 completion criteria pass.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and the architecture gate are complete. Phase 6 is deferred by the owner; do not build an Excel importer. Continue with Phase 7 only after enough catalog data has been entered and reviewed manually in Payload.
 
 Keep each session focused on the current phase and update this file before ending.

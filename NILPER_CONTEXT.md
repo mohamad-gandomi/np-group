@@ -369,7 +369,7 @@ Shared specifications and measurements belong on Product. Measurements that diff
 
 `matchingProducts` records explicit set/coordination relationships from Nilper source material. `relatedProducts` remains available for general merchandising recommendations; the two meanings must not be merged.
 
-Products and variants carry a unique stable `sourceKey` plus raw source metadata. Spreadsheet imports must derive the key from the stable workbook key, worksheet, entity type and raw product/registration identity. Row numbers, display titles and local filenames are deliberately excluded. Raw worksheet names, codes and inconsistencies remain in source metadata and quality notes.
+Products and variants carry a unique stable `sourceKey` plus raw source metadata. For the existing source-backed seed, the key derives from the stable workbook key, worksheet, entity type and raw product/registration identity. Row numbers, display titles and local filenames are deliberately excluded. Raw worksheet names, codes and inconsistencies remain in source metadata and quality notes.
 
 ### Commerce features currently configured
 
@@ -569,6 +569,14 @@ Never silently repair:
 
 Retain raw source traceability and add data-quality notes.
 
+### Automated import status
+
+The owner deferred the automated Excel import pipeline on 2026-09-10 because the workbooks require different extraction rules and manual handling. The workbooks remain outside the repository and must not be copied into `public/` or committed.
+
+For the current implementation, catalog records are prepared and reviewed manually in Payload. Do not add an Excel parser, staging pipeline, or workbook-specific automation unless the owner explicitly reopens that work with approved mapping rules.
+
+The existing `sourceKey` and `sourceMetadata` fields remain part of the domain. They are already used by the Delan seed, committed migrations, and verification suites, and continue to preserve provenance for manually reviewed source-backed records.
+
 ---
 
 ## 11. Current Delan preview
@@ -709,7 +717,7 @@ At the current reviewed state:
 - The only Rial conversion is the explicit payment-gateway boundary.
 - Inventory remains disabled because no supplied source contains authoritative stock quantities.
 - Flexible Persian technical specs and measurements were checked against the representative 506, 886 and 994 workbooks.
-- Stable source identity and idempotent seed/upsert rules are finalized before bulk import.
+- Stable source identity and idempotent seed/upsert rules remain in place for the existing source-backed records; automated bulk import is deferred.
 - Explicit `matchingProducts` and general `relatedProducts` are separate relationships.
 - Migration up/down/up and Phase 3 integration verification passed on a disposable clean database.
 
@@ -734,6 +742,7 @@ At the current reviewed state:
 
 ### Remaining boundary after the gate
 
+- The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
 - The rest of the demo catalog remains fixture-backed until Phase 7.
 - Browser cart persistence and Supabase checkout remain in place until Phase 8.
 - Full customer/account migration remains Phase 9 work.
