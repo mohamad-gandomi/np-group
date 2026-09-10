@@ -12,26 +12,27 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 4 — Cart configuration extension (`[x]` completed); Phase 5 is next but not started.
+- **Active phase:** Phase 5 — Delan vertical slice (`[x]` completed); Phase 6 is next but not started.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Begin Phase 5.6 with a Payload-backed storefront catalog repository/mapper. The existing idempotent Delan seed already satisfies the Phase 5.1–5.5 data foundation and must be reused, not recreated.
-- **Later phases:** Phase 5 storefront/cart integration and the architecture gate remain not started. Phase 4 completion criteria pass.
+- **Next implementation task:** Begin Phase 6.1 by deciding and documenting the non-public local location and Git/confidentiality policy for the three source workbooks; do not move or commit client source files without explicit approval.
+- **Later phases:** Phase 6+ remain not started. The Delan architecture gate passes and Payload architecture is locked.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-10
-- [x] Extended cart, order, and transaction items with normalized configuration IDs and readable product/variant/group/option/price snapshots.
-- [x] Added a configuration-order-independent cart matcher: identical product + variant + selections merge; different selections remain separate lines.
-- [x] Added server validation for publication, variant ownership, allowed groups, option membership/activity, required groups, quantity, server-owned price, and trusted totals.
-- [x] Preserved historical order/transaction snapshots on non-item updates after mutable catalog records change.
-- [x] Added a data-preserving Phase 4 migration and verified migrate up/down/up plus Phase 4 integration on a disposable clean PostgreSQL database.
-- [x] Verified the idempotent Delan seed, Phase 3 regression suite, Phase 4 suite, TypeScript, lint, production build, journal tests, and showcase tests.
-- **Files added:** `src/payload/cart-configuration.ts`, `src/payload/verify-phase4.ts`, and migration `20260910_065423_nilper_cart_configuration`.
+- [x] Reused and verified the existing `994.xlsx` / `HSS 994` Delan seed foundation without duplicating or bulk-importing records.
+- [x] Added the server-only Payload catalog repository and mapper while preserving the existing serializable storefront Product DTO.
+- [x] Added Delan to the hybrid shop listing and rendered its real source-backed description, media, variants, specifications and configuration choices in the existing Product UI.
+- [x] Added a server cart-quote bridge that reuses Phase 4 validation before a Payload-backed product enters the browser cart.
+- [x] Added a repeatable Phase 5 test for Delan mapping, same/different configuration cart identity, trusted totals, and historical order snapshots.
+- [x] Kept the production seed price-disabled because the source has no authoritative price; the verification uses and restores a temporary test-only price.
+- [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
+- **Files added:** `src/features/catalog/payload-catalog-repository.ts`, `src/features/catalog/payload-catalog-mapper.ts`, `src/app/(frontend)/api/payload-cart/quote/route.ts`, and `src/payload/verify-phase5.ts`.
 - **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 4 completed; Phase 5 is next and was not started in this session.
-- **Latest relevant implementation commit:** `8c9a0c8663d5264b3324c3bfd277235aef7789a9` (`feat(commerce): add configuration-aware cart items`).
-- **Next implementation task:** Phase 5.6 — expose the already-seeded Delan slice through a Payload-backed repository/mapper while preserving the existing storefront DTO boundary.
+- **Current active phase:** Phase 5 completed; Phase 6 is next and was not started in this session.
+- **Latest relevant implementation commit:** `4b82054d389e37cbc26f87127fa8f52858101f9e` (`feat(commerce): complete Delan Payload vertical slice`).
+- **Next implementation task:** Phase 6.1 — decide the private source-workbook location and confidentiality/Git policy before building the staged importer.
 
 ## Working rules for Codex
 
@@ -367,7 +368,7 @@ Completion record:
 
 # Phase 5 — Delan vertical slice (architecture gate)
 
-**Status: [ ] Not started; existing seed foundation for 5.1–5.5 must be reused**
+**Status: [x] Completed; architecture implementation gate passed**
 
 Use `994.xlsx` as the primary real source sample.
 
@@ -482,6 +483,19 @@ Create a test order and prove that after product/configuration records are edite
 ### Architecture gate
 
 If all Phase 5 acceptance criteria pass, mark Payload architecture **LOCKED** and do not compare frameworks again.
+
+Completion record:
+
+- [x] Existing Delan series, sofa, operational variants, configuration groups and source metadata reused and verified.
+- [x] Server-only Payload repository and mapper implemented without leaking generated Payload types through UI components.
+- [x] Delan included in the hybrid shop listing and rendered through the existing Product UI.
+- [x] Real Persian content replaces fixture-derived descriptions/specifications on the Payload product path.
+- [x] Missing authoritative dimensions/prices stay explicit; no fake Delan price was introduced.
+- [x] Configuration selections are validated by the server before a trusted line enters the browser cart.
+- [x] Delan cart merge/split, quantity, and trusted total behavior verified against real seeded IDs.
+- [x] Delan order snapshots remain historical after product, variant, group, option and price changes.
+- [x] Production build and all applicable regression suites pass.
+- [x] Payload architecture is **LOCKED** after the vertical-slice gate.
 
 Commit checkpoint:
 
@@ -761,6 +775,6 @@ Give Codex these inputs together:
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phase 3 is complete. Continue from Phase 4.1 without repeating the Payload foundation, dashboard review or product-domain work, and do not begin Phase 5 until Phase 4 completion criteria pass.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and the architecture gate are complete. Continue from Phase 6.1 without repeating the Payload foundation, dashboard review, product-domain, cart-extension or Delan vertical-slice work, and do not begin Phase 7 until Phase 6 completion criteria pass.
 
 Keep each session focused on the current phase and update this file before ending.

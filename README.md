@@ -79,6 +79,7 @@ npm run payload:migrate
 npm run payload:seed
 npm run payload:verify:phase3
 npm run payload:verify:phase4
+npm run payload:verify:phase5
 ```
 
 The uploaded local Payload media directory is ignored by Git.
@@ -105,9 +106,9 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 
 ## Current operational boundaries
 
-- The public catalog, product, project, brand, and editorial pages still use their existing repository fixtures.
-- Payload Admin and the Delan preview validate the completed product-domain foundation; they are not yet the public storefront data source.
-- Payload carts, orders, and transactions now persist configuration and trusted price/title/code snapshots; the existing storefront cart has not yet been switched to that Payload path.
+- The shop uses a deliberate hybrid boundary: Delan is read from Payload through a server repository/mapper, while the remaining product, project, brand, and editorial content still uses existing fixtures.
+- Delan has no authoritative source price, so it renders as inquiry-only. Entering an approved variant price activates its server-validated configuration cart path without changing the UI model.
+- Payload carts, orders, and transactions persist configuration and trusted price/title/code snapshots. The existing browser cart uses the trusted quote response, but full Payload cart persistence and checkout migration remain Phase 8 work.
 - Supabase remains active for the existing customer-facing authentication, profile, address, and order-request behavior.
 - `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
 - Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.

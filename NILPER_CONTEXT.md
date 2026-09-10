@@ -36,8 +36,8 @@ main
 Latest reviewed commit:
 
 ```text
-041932ecb51336bf1744faf9b19dc8b81294c4b7
-docs: record Phase 3 completion
+ec77be0f7d818568c93931863ada075a373d23a2
+docs: record Phase 4 completion
 ```
 
 Important recent commits:
@@ -60,9 +60,12 @@ feat(catalog): define Nilper Payload product domain
 
 8c9a0c8663d5264b3324c3bfd277235aef7789a9
 feat(commerce): add configuration-aware cart items
+
+4b82054d389e37cbc26f87127fa8f52858101f9e
+feat(commerce): complete Delan Payload vertical slice
 ```
 
-Phase 3 is merged into `main`. Phase 4 was completed on branch `codex/payload-phase-4`; its implementation commit is not yet on `main` at this snapshot.
+Phases 3 and 4 are merged into `main`. Phase 5 was completed on branch `codex/payload-phase-5`; its implementation commit is not yet on `main` at this snapshot.
 
 The old WordPress/WooCommerce experiment, its Docker setup, plugin and WordPress planning documents have been removed from the repository.
 
@@ -102,6 +105,7 @@ npm run payload:migrate
 npm run payload:seed
 npm run payload:verify:phase3
 npm run payload:verify:phase4
+npm run payload:verify:phase5
 
 npm run lint
 npm run build
@@ -587,7 +591,7 @@ It creates representative preview data for:
 
 Important:
 
-This seed proves Admin usability and the finalized Phase 3 domain shape, including stable source identity, flexible measurements/specifications and explicit matching products.
+This seed proves Admin usability and the finalized domain shape, including stable source identity, flexible measurements/specifications and explicit matching products. Phase 5 now also maps the primary Delan sofa into the public storefront DTO and existing Product UI.
 
 It is **not** a full product importer and must not be treated as authoritative bulk catalog data.
 
@@ -597,7 +601,7 @@ Placeholder images are explicitly not sourced from the Excel files.
 
 ## 12. Current storefront boundary
 
-The public storefront is still intentionally using its existing static fixture layer.
+The public storefront now uses a deliberate hybrid boundary for the Phase 5 vertical slice.
 
 `src/features/catalog/catalog-data.ts` still contains demo:
 
@@ -611,13 +615,25 @@ The public storefront is still intentionally using its existing static fixture l
 
 README also states that product/project/brand/editorial content currently uses static fixtures.
 
-Therefore:
+Current behavior:
 
 ```text
-Payload Admin data != public storefront catalog yet
+Payload Delan sofa
+    -> server-only Payload Local API repository
+    -> storefront mapper
+    -> existing Product DTO and Product UI
+
+remaining demo catalog
+    -> existing fixture layer
 ```
 
-This is intentional.
+`getCatalogProducts()` and `getProductBySlug()` live in `src/features/catalog/payload-catalog-repository.ts`. Raw generated Payload shapes remain server-side; `src/features/catalog/payload-catalog-mapper.ts` creates the serializable storefront DTO. The shop currently opts only `delan-sofa` into its hybrid listing because the related table record is intentionally still a lightweight preview.
+
+The Delan detail route renders its real Persian description, media, operational variant codes, measurements, specifications, wood finishes and upholstery palettes in the existing Product UI. Missing source dimensions are shown as unknown instead of receiving category-wide fixture values.
+
+No authoritative price exists in the source workbook or seed. Delan therefore displays an inquiry state. When an administrator supplies an approved server price, the same UI posts product/variant/configuration IDs to `/api/payload-cart/quote`; the server reuses the canonical Phase 4 validator and returns trusted title/code/configuration/price snapshots before the browser cart accepts the line.
+
+The Phase 5 verification assigns a clearly test-only variant price, exercises real Payload cart merging/splitting and totals, creates an order, mutates the source records, verifies historical snapshots, and restores every seeded value. The test price is never retained as catalog data.
 
 Future migration must use an adapter/repository boundary:
 
@@ -706,15 +722,21 @@ At the current reviewed state:
 - The data-preserving migration passed clean-database up/down/up verification.
 - Phase 3 and Phase 4 Payload verification, seed continuity, TypeScript, lint, production build, journal tests, and showcase tests pass.
 
-### Phase 5 gaps
+### Phase 5 completion
 
-The Admin-side Delan preview exists, but the true vertical slice is incomplete:
+- The existing Delan seed is reused; no duplicate source records or bulk importer were created.
+- A server-only Payload repository and mapper preserve the storefront DTO boundary.
+- Delan is discoverable in the existing shop and renders in the existing Product UI with real source-backed fields.
+- Configuration selection and the trusted cart quote bridge are wired into the browser cart without beginning the Phase 8 persistence/checkout migration.
+- Real Payload cart identity, quantity merging, configuration splitting, trusted totals, and Delan order snapshots pass the repeatable Phase 5 verification.
+- Delan remains inquiry-only until Nilper supplies an authoritative price; the verification price is temporary and restored.
+- The Phase 5 architecture implementation gate passed. Payload architecture is **LOCKED**; do not compare or introduce alternative commerce frameworks without a proven blocker.
 
-- Payload-backed storefront repository/mapper not completed.
-- existing Product UI not yet proven with Payload Delan data.
-- existing storefront cart UI is not yet connected to the Payload configuration-aware cart path.
-- the generic historical snapshot behavior is proven, but the Delan-specific end-to-end storefront/order slice is not yet proven.
-- architecture implementation gate not yet passed.
+### Remaining boundary after the gate
+
+- The rest of the demo catalog remains fixture-backed until Phase 7.
+- Browser cart persistence and Supabase checkout remain in place until Phase 8.
+- Full customer/account migration remains Phase 9 work.
 
 ---
 
