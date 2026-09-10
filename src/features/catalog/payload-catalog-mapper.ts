@@ -34,7 +34,14 @@ const storefrontCategory = (category: Category | undefined) => {
 
 const mediaURL = (value: number | Media | null | undefined) => {
   if (!isDocument(value)) return undefined;
-  return value.url ?? (value.filename ? `/api/media/file/${encodeURIComponent(value.filename)}` : undefined);
+  if (value.filename) return `/api/media/file/${encodeURIComponent(value.filename)}`;
+  if (!value.url) return undefined;
+  try {
+    const url = new URL(value.url);
+    return url.pathname.startsWith("/api/media/file/") ? `${url.pathname}${url.search}` : undefined;
+  } catch {
+    return value.url.startsWith("/") ? value.url : undefined;
+  }
 };
 
 const lexicalText = (value: unknown): string => {

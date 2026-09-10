@@ -69,6 +69,8 @@ try {
   });
   assert.equal(mapped.source, "payload");
   assert.equal(mapped.name, "مبل دلان");
+  assert.match(mapped.image, /^\/api\/media\/file\//, "Same-app Payload media must use a local image path.");
+  assert(!mapped.image.includes("localhost"), "Storefront image URLs must not capture Payload's local server URL.");
   assert(mapped.description?.includes("نئوکلاسیک"));
   assert.equal(mapped.configurationGroups?.length, 2);
   assert(mapped.configurationGroups?.every((item) => item.options.length > 1));
