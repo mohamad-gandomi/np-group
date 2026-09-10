@@ -12,26 +12,26 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 3 — Define the Nilper data model (`[x]` completed); Phase 4 is next but not started.
+- **Active phase:** Phase 4 — Cart configuration extension (`[x]` completed); Phase 5 is next but not started.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Begin Phase 4.1 by extending Payload cart items with normalized Nilper configuration snapshots and server-owned identity fields.
-- **Later phases:** Phase 4+ remain not started. Phase 3 completion criteria now pass.
+- **Next implementation task:** Begin Phase 5.6 with a Payload-backed storefront catalog repository/mapper. The existing idempotent Delan seed already satisfies the Phase 5.1–5.5 data foundation and must be reused, not recreated.
+- **Later phases:** Phase 5 storefront/cart integration and the architecture gate remain not started. Phase 4 completion criteria pass.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-10
-- [x] Reviewed all representative workbooks (`506.xlsx`, `886.xlsx`, `994.xlsx`) and preserved their raw code/worksheet inconsistencies as source-quality notes.
-- [x] Finalized flexible Product/Variant measurements, Persian technical specs, stable import identity, publication/active access rules, and separate matching-product relationships.
-- [x] Finalized integer Toman handling through Payload products, variants, Provider formatting, carts, orders, transactions and Local API serialization; centralized the only explicit Toman/Rial payment boundary.
-- [x] Finalized inventory as disabled until an authoritative quantity source exists; orderability remains represented by sales and availability modes.
-- [x] Added a data-preserving Phase 3 migration and verified migrate up/down/up plus domain tests on a disposable clean PostgreSQL database.
-- [x] Verified the idempotent Delan seed, TypeScript, lint, production build, journal tests and showcase tests.
-- **Files added:** `src/payload/domain-fields.ts`, `src/payload/money.ts`, `src/payload/source-identity.ts`, `src/payload/verify-phase3.ts`, and migration `20260909_220639_nilper_product_domain`.
+- [x] Extended cart, order, and transaction items with normalized configuration IDs and readable product/variant/group/option/price snapshots.
+- [x] Added a configuration-order-independent cart matcher: identical product + variant + selections merge; different selections remain separate lines.
+- [x] Added server validation for publication, variant ownership, allowed groups, option membership/activity, required groups, quantity, server-owned price, and trusted totals.
+- [x] Preserved historical order/transaction snapshots on non-item updates after mutable catalog records change.
+- [x] Added a data-preserving Phase 4 migration and verified migrate up/down/up plus Phase 4 integration on a disposable clean PostgreSQL database.
+- [x] Verified the idempotent Delan seed, Phase 3 regression suite, Phase 4 suite, TypeScript, lint, production build, journal tests, and showcase tests.
+- **Files added:** `src/payload/cart-configuration.ts`, `src/payload/verify-phase4.ts`, and migration `20260910_065423_nilper_cart_configuration`.
 - **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 3 completed; Phase 4 is the next phase and was not started in this session.
-- **Latest relevant implementation commit:** `79ddd109c24b7a24ac879500d9ebaf2a8cc101a4` (`feat(catalog): define Nilper Payload product domain`).
-- **Next implementation task:** Phase 4.1 — configuration-aware Payload cart item storage and normalized snapshot shape.
+- **Current active phase:** Phase 4 completed; Phase 5 is next and was not started in this session.
+- **Latest relevant implementation commit:** `8c9a0c8663d5264b3324c3bfd277235aef7789a9` (`feat(commerce): add configuration-aware cart items`).
+- **Next implementation task:** Phase 5.6 — expose the already-seeded Delan slice through a Payload-backed repository/mapper while preserving the existing storefront DTO boundary.
 
 ## Working rules for Codex
 
@@ -305,6 +305,8 @@ Completion record:
 
 # Phase 4 — Cart configuration extension
 
+**Status: [x] Completed**
+
 ## 4.1 Add custom configuration to cart items
 
 Extend Payload Ecommerce cart collection/items so a line can store selected Nilper configuration.
@@ -350,9 +352,22 @@ On add-to-cart / checkout server path:
 
 Never trust client-sent price.
 
+Completion record:
+
+- [x] Stable group/option relationships and readable Persian snapshots added to carts, orders, and transactions.
+- [x] Product/variant/configuration identity is normalized before cart-line matching.
+- [x] Same configuration merges quantities; different wood/fabric selections split lines.
+- [x] Current records and required selections are validated on the server.
+- [x] Unit prices, subtotals, and order/transaction amounts are server-owned integer Toman values.
+- [x] Historical order/transaction snapshots remain unchanged when source product/configuration records are edited.
+- [x] Inventory validation is intentionally not applicable while Payload inventory remains disabled for lack of authoritative quantities.
+- [x] Migration and integration verification passed on both the development database and a disposable clean database.
+
 ---
 
 # Phase 5 — Delan vertical slice (architecture gate)
+
+**Status: [ ] Not started; existing seed foundation for 5.1–5.5 must be reused**
 
 Use `994.xlsx` as the primary real source sample.
 
@@ -360,9 +375,13 @@ Do NOT bulk-import the entire workbook automatically yet. Manually/seed a minima
 
 ## 5.1 Create Delan series
 
+**Existing foundation: [x] Present in the idempotent seed; verify, do not recreate.**
+
 Create `دلان` as a Product Series.
 
 ## 5.2 Create at least one real Delan product
+
+**Existing foundation: [x] Seeded from `994.xlsx` / `HSS 994`; verify, do not recreate.**
 
 Recommended first product: Delan sofa from sheet `HSS 994`.
 
@@ -382,6 +401,8 @@ Persian data to represent includes:
 
 ## 5.3 Create real variants only
 
+**Existing foundation: [x] Source-traceable operational codes are seeded without correcting the recorded 940/994 inconsistency.**
+
 Use the registration/order-code section to decide the initial variants.
 
 Example business distinction in the sheet includes:
@@ -395,6 +416,8 @@ Before creating a variant, confirm the registration code exactly as written in t
 
 ## 5.4 Add configuration groups
 
+**Existing foundation: [x] Wood finish and upholstery palette groups are seeded separately from variants.**
+
 At minimum:
 
 - wood finish
@@ -403,6 +426,8 @@ At minimum:
 These must not generate combinatorial variants.
 
 ## 5.5 Add source metadata
+
+**Existing foundation: [x] File, sheet, raw identities, and data-quality notes are seeded.**
 
 The seeded/imported document must retain traceability:
 

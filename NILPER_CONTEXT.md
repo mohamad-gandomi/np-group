@@ -36,8 +36,8 @@ main
 Latest reviewed commit:
 
 ```text
-2126eb5c0dded21016fb500be641f17b9001a0cb
-docs: consolidate Nilper project documentation
+041932ecb51336bf1744faf9b19dc8b81294c4b7
+docs: record Phase 3 completion
 ```
 
 Important recent commits:
@@ -57,9 +57,12 @@ docs: consolidate Nilper project documentation
 
 79ddd109c24b7a24ac879500d9ebaf2a8cc101a4
 feat(catalog): define Nilper Payload product domain
+
+8c9a0c8663d5264b3324c3bfd277235aef7789a9
+feat(commerce): add configuration-aware cart items
 ```
 
-Phase 3 was completed on branch `codex/payload-phase-3`; the implementation commit above is not yet on `main` at this snapshot.
+Phase 3 is merged into `main`. Phase 4 was completed on branch `codex/payload-phase-4`; its implementation commit is not yet on `main` at this snapshot.
 
 The old WordPress/WooCommerce experiment, its Docker setup, plugin and WordPress planning documents have been removed from the repository.
 
@@ -98,6 +101,7 @@ npm run payload:migrate:create -- descriptive-name
 npm run payload:migrate
 npm run payload:seed
 npm run payload:verify:phase3
+npm run payload:verify:phase4
 
 npm run lint
 npm run build
@@ -384,6 +388,18 @@ Current preview choices:
 - inventory is intentionally disabled until an authoritative stock-quantity source exists.
 - Stripe is not implemented.
 - Iranian payment is not implemented.
+
+Configuration-aware commerce behavior is implemented in `src/payload/cart-configuration.ts`:
+
+- every cart, order, and transaction item stores normalized configuration selections plus readable Persian snapshots.
+- one cart-line identity is product + optional variant + normalized `(groupKey, option ID)` selections; input order does not affect matching.
+- the server verifies publication state, product/variant ownership, allowed and active groups, option membership/activity, required selections, positive integer quantity, and the current server price.
+- client-provided title, code, configuration labels, identity keys, subtotals, amounts, and unit prices are overwritten or ignored.
+- cart totals are recalculated against current trusted records; order and transaction snapshots remain historical during updates that do not explicitly replace their items.
+- configuration relationship columns are nullable with readable snapshots retained, so later deletion of a source option/group does not erase historical order wording.
+- inventory quantities are not checked because inventory is intentionally disabled until an authoritative stock source exists.
+
+Guest carts remain disabled. Therefore Payload's guest-cart merge path is outside the current supported boundary; it must be re-evaluated if guest carts are enabled later.
 
 The supplied spreadsheets describe orderability and manufacturing choices, not stock counts. Until a real stock source is connected, use `salesMode` and `availabilityMode`; do not manufacture numeric inventory. Payload inventory can be reconsidered later only for direct/in-stock SKUs with authoritative quantities.
 
@@ -681,9 +697,14 @@ At the current reviewed state:
 - Explicit `matchingProducts` and general `relatedProducts` are separate relationships.
 - Migration up/down/up and Phase 3 integration verification passed on a disposable clean database.
 
-### Phase 4 gaps
+### Phase 4 completion
 
-No final configuration-aware Payload cart item model / matcher / server validation has been completed.
+- Configuration-aware item storage is implemented across carts, orders, and transactions.
+- Cart matching normalizes selection ordering and separates otherwise-identical lines with different selections.
+- Server validation and server-owned prices/totals are enforced.
+- Historical product, variant, price, group, and option snapshots are preserved for orders and transactions.
+- The data-preserving migration passed clean-database up/down/up verification.
+- Phase 3 and Phase 4 Payload verification, seed continuity, TypeScript, lint, production build, journal tests, and showcase tests pass.
 
 ### Phase 5 gaps
 
@@ -691,8 +712,8 @@ The Admin-side Delan preview exists, but the true vertical slice is incomplete:
 
 - Payload-backed storefront repository/mapper not completed.
 - existing Product UI not yet proven with Payload Delan data.
-- configuration-aware cart path not completed.
-- historical order configuration snapshot not proven.
+- existing storefront cart UI is not yet connected to the Payload configuration-aware cart path.
+- the generic historical snapshot behavior is proven, but the Delan-specific end-to-end storefront/order slice is not yet proven.
 - architecture implementation gate not yet passed.
 
 ---
