@@ -4,6 +4,7 @@ import { getPayload } from "payload";
 
 import config from "../../payload.config";
 import type { Product } from "../payload-types";
+import { manualCatalogProducts } from "./manual-catalog";
 import { buildNilperSourceKey } from "./source-identity";
 
 const richText = (text: string): Product["descriptionFa"] => ({
@@ -31,10 +32,12 @@ async function ensureMedia(filename: string, source: string, alt: string): Promi
   const existing = await payload.find({ collection: "media", where: { filename: { equals: filename } }, limit: 1 });
   if (existing.docs[0]) return existing.docs[0] as Identified;
   const data = await fs.readFile(path.resolve(process.cwd(), source));
+  const extension = path.extname(filename).toLowerCase();
+  const mimetype = extension === ".webp" ? "image/webp" : extension === ".png" ? "image/png" : "image/jpeg";
   return await payload.create({
     collection: "media",
-    data: { alt, captionFa: "تصویر نمایشی موقت؛ از فایل اکسل استخراج نشده است." },
-    file: { data, mimetype: "image/jpeg", name: filename, size: data.length },
+    data: { alt, captionFa: "تصویر محصول از بسته رسانه‌ای تأییدشده نیلپر." },
+    file: { data, mimetype, name: filename, size: data.length },
   }) as Identified;
 }
 
@@ -72,10 +75,10 @@ async function ensureConfigurationOption(group: number, title: string, data: Rec
   return await payload.create({ collection: "configuration-options", data: optionData } as never) as unknown as Identified;
 }
 
-async function ensureVariantType(): Promise<Identified> {
-  const existing = await payload.find({ collection: "variantTypes", where: { name: { equals: "seating-form" } }, limit: 1 });
+async function ensureVariantType(name: string, label: string): Promise<Identified> {
+  const existing = await payload.find({ collection: "variantTypes", where: { name: { equals: name } }, limit: 1 });
   if (existing.docs[0]) return existing.docs[0] as Identified;
-  return await payload.create({ collection: "variantTypes", data: { label: "فرم نشیمن", name: "seating-form" } }) as Identified;
+  return await payload.create({ collection: "variantTypes", data: { label, name } }) as Identified;
 }
 
 async function ensureVariantOption(variantType: number, value: string, label: string): Promise<Identified> {
@@ -100,7 +103,7 @@ async function ensureVariant(sourceKey: string, nilperCode: string, data: Record
 }
 
 const [sofaImage, livingImage, tableImage] = await Promise.all([
-  ensureMedia("delan-sofa-preview.jpg", "public/placeholders/sofa.jpg", "تصویر نمایشی مبل دلان"),
+  ensureMedia("delan-sofa.webp", "src/payload/seed-assets/catalog/delan-sofa.webp", "مبل دلان"),
   ensureMedia("delan-living-preview.jpg", "public/placeholders/living.jpg", "تصویر نمایشی فضای پذیرایی دلان"),
   ensureMedia("delan-table-preview.jpg", "public/placeholders/dining.jpg", "تصویر نمایشی میز هماهنگ دلان"),
 ]);
@@ -179,7 +182,7 @@ await Promise.all(
   ),
 );
 
-const variantType = await ensureVariantType();
+const variantType = await ensureVariantType("seating-form", "فرم نشیمن");
 const singleSeat = await ensureVariantOption(variantType.id, "single-seat", "تک نفره");
 const threeSeat = await ensureVariantOption(variantType.id, "three-seat", "سه نفره");
 
@@ -308,5 +311,117 @@ await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994",
   },
 });
 
-payload.logger.info("Nilper Payload dashboard preview seed is ready: open محصول «مبل دلان».");
+const bedroom = await ensureBySlug("categories", "bedroom-furniture", {
+  title: "سرویس خواب",
+  slug: "bedroom-furniture",
+  descriptionFa: "تخت خواب و اجزای هماهنگ سرویس خواب.",
+  sortOrder: 40,
+  published: true,
+});
+const diningSeating = await ensureBySlug("categories", "dining-seating", {
+  title: "صندلی ناهارخوری و بار",
+  slug: "dining-seating",
+  descriptionFa: "صندلی‌های ناهارخوری، کانتر و بار.",
+  sortOrder: 50,
+  published: true,
+});
+
+const categoryIDs = {
+  bedroom: bedroom.id,
+  "dining-seating": diningSeating.id,
+  "home-furniture": furniture.id,
+};
+const configurationGroupIDs = {
+  "wood-finish": woodGroup.id,
+  "upholstery-palette": fabricGroup.id,
+};
+
+for (const sourceProduct of manualCatalogProducts) {
+  const image = await ensureMedia(sourceProduct.image.filename, sourceProduct.image.source, sourceProduct.image.alt);
+  const productSeries = await ensureBySlug("product-series", sourceProduct.series.slug, {
+    title: sourceProduct.series.title,
+    slug: sourceProduct.series.slug,
+    styleFa: sourceProduct.series.styleFa,
+    descriptionFa: sourceProduct.series.descriptionFa,
+    heroMedia: image.id,
+    published: true,
+  });
+
+  const optionIDs = new Map<string, number>();
+  const variantTypeIDs: number[] = [];
+  for (const type of sourceProduct.variantTypes) {
+    const ensuredType = await ensureVariantType(type.name, type.label);
+    variantTypeIDs.push(ensuredType.id);
+    for (const option of type.options) {
+      const ensuredOption = await ensureVariantOption(ensuredType.id, option.value, option.label);
+      optionIDs.set(`${type.name}:${option.value}`, ensuredOption.id);
+    }
+  }
+
+  const sourceKey = buildNilperSourceKey({
+    workbookKey: sourceProduct.workbookKey,
+    sheet: sourceProduct.sheet,
+    entity: "product",
+    rawIdentity: sourceProduct.identityRaw,
+  });
+  const catalogProduct = await ensureProduct(sourceKey, sourceProduct.slug, {
+    title: sourceProduct.title,
+    catalogCode: sourceProduct.catalogCode,
+    brand: brand.id,
+    categories: [categoryIDs[sourceProduct.category]],
+    series: productSeries.id,
+    salesMode: "made_to_order",
+    availabilityMode: "orderable",
+    priceInTMNEnabled: false,
+    mainImage: image.id,
+    gallery: [{ image: image.id, captionFa: sourceProduct.image.alt }],
+    descriptionFa: richText(sourceProduct.descriptionFa),
+    measurements: sourceProduct.measurements ?? [],
+    technicalSpecs: sourceProduct.technicalSpecs,
+    orderNotesFa: sourceProduct.orderNotesFa,
+    configurationGroups: (sourceProduct.configurationGroupKeys ?? []).map((key) => configurationGroupIDs[key]),
+    enableVariants: sourceProduct.variants.length > 0,
+    variantTypes: variantTypeIDs,
+    sourceMetadata: {
+      workbookKey: sourceProduct.workbookKey,
+      file: sourceProduct.file,
+      sheet: sourceProduct.sheet,
+      identityRaw: sourceProduct.identityRaw,
+      catalogCodeRaw: sourceProduct.identityRaw,
+      dataQualityNotes: sourceProduct.dataQualityNotes,
+    },
+    _status: "published",
+  });
+
+  for (const sourceVariant of sourceProduct.variants) {
+    const options = sourceVariant.options.map((key) => {
+      const optionID = optionIDs.get(key);
+      if (!optionID) throw new Error(`Missing manual variant option ${key} for ${sourceProduct.slug}.`);
+      return optionID;
+    });
+    await ensureVariant(buildNilperSourceKey({
+      workbookKey: sourceProduct.workbookKey,
+      sheet: sourceProduct.sheet,
+      entity: "variant",
+      rawIdentity: sourceVariant.code,
+    }), sourceVariant.code, {
+      product: catalogProduct.id,
+      title: sourceVariant.title,
+      options,
+      priceInTMNEnabled: false,
+      measurements: sourceVariant.measurements ?? [],
+      manufacturingNotesFa: sourceVariant.manufacturingNotesFa,
+      sourceMetadata: {
+        workbookKey: sourceProduct.workbookKey,
+        file: sourceProduct.file,
+        sheet: sourceProduct.sheet,
+        identityRaw: sourceVariant.code,
+        catalogCodeRaw: sourceProduct.identityRaw,
+        dataQualityNotes: sourceVariant.dataQualityNotes,
+      },
+    });
+  }
+}
+
+payload.logger.info(`Nilper Payload catalog seed is ready: ${manualCatalogProducts.length + 2} curated products.`);
 await payload.destroy();
