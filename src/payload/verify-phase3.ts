@@ -212,7 +212,17 @@ try {
 
   const order = await payload.create({
     collection: "orders",
-    data: { amount: expectedAmount, currency: "TMN", items: [item], status: "processing" },
+    data: {
+      amount: expectedAmount,
+      currency: "TMN",
+      items: [item],
+      status: "pending_review",
+      orderNumber: `NP-P3-${shortID}`,
+      contactName: "مشتری آزمون",
+      contactPhone: "09120000000",
+      deliveryMethod: "advisor",
+      paymentMethod: "invoice",
+    },
   });
   remember("orders", order.id);
   assert.equal(order.amount, expectedAmount);

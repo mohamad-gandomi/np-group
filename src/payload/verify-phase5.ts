@@ -120,7 +120,17 @@ try {
   assert(trustedLine);
   const order = await payload.create({
     collection: "orders",
-    data: { amount: 1, currency: "TMN", items: [trustedLine], status: "processing" },
+    data: {
+      amount: 1,
+      currency: "TMN",
+      items: [trustedLine],
+      status: "pending_review",
+      orderNumber: `NP-P5-${runID.slice(0, 8)}`,
+      contactName: "مشتری آزمون",
+      contactPhone: "09120000000",
+      deliveryMethod: "advisor",
+      paymentMethod: "invoice",
+    },
   });
   created.orders.push(order.id);
   assert.equal(order.amount, testPrice * 3);
@@ -130,7 +140,7 @@ try {
   await payload.update({ collection: "configuration-groups", id: group.id, data: { title: `گروه موقت ${runID}` } });
   await payload.update({ collection: "configuration-options", id: option.id, data: { title: `گزینه موقت ${runID}` } });
 
-  const preserved = await payload.update({ collection: "orders", id: order.id, data: { status: "completed" } });
+  const preserved = await payload.update({ collection: "orders", id: order.id, data: { status: "confirmed" } });
   assert.equal(preserved.amount, testPrice * 3);
   assert.equal(preserved.items?.[0]?.productTitleSnapshot, originalProductTitle);
   assert.equal(preserved.items?.[0]?.variantCodeSnapshot, originalVariantCode);

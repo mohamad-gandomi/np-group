@@ -357,7 +357,12 @@ try {
       amount: 1,
       currency: "TMN",
       items: [currentCart.items![0]!],
-      status: "processing",
+      status: "pending_review",
+      orderNumber: `NP-P4-${shortID}`,
+      contactName: "مشتری آزمون",
+      contactPhone: "09120000000",
+      deliveryMethod: "advisor",
+      paymentMethod: "invoice",
     },
   });
   remember("orders", order.id);
@@ -385,7 +390,7 @@ try {
   const preservedOrder = await payload.update({
     collection: "orders",
     id: order.id,
-    data: { amount: 1, status: "completed" },
+    data: { amount: 1, status: "confirmed" },
   });
   assert.equal(preservedOrder.amount, 750_000);
   assert.equal(preservedOrder.items?.[0]?.productTitleSnapshot, product.title);

@@ -10,7 +10,8 @@
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "OrderStatus".
  */
-export type OrderStatus = ('processing' | 'completed' | 'cancelled' | 'refunded') | null;
+export type OrderStatus =
+  ('pending_review' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled') | null;
 /**
  * Supported timezones in IANA format.
  *
@@ -595,6 +596,7 @@ export interface Cart {
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
   currency?: 'TMN' | null;
+  storefrontCustomerKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -649,6 +651,13 @@ export interface Order {
   status?: OrderStatus;
   amount?: number | null;
   currency?: 'TMN' | null;
+  orderNumber: string;
+  sourceCart?: (number | null) | Cart;
+  contactName: string;
+  contactPhone: string;
+  deliveryMethod: 'advisor';
+  paymentMethod: 'gateway' | 'invoice';
+  storefrontCustomerKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1150,6 +1159,7 @@ export interface CartsSelect<T extends boolean = true> {
   status?: T;
   subtotal?: T;
   currency?: T;
+  storefrontCustomerKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1202,6 +1212,13 @@ export interface OrdersSelect<T extends boolean = true> {
   status?: T;
   amount?: T;
   currency?: T;
+  orderNumber?: T;
+  sourceCart?: T;
+  contactName?: T;
+  contactPhone?: T;
+  deliveryMethod?: T;
+  paymentMethod?: T;
+  storefrontCustomerKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }

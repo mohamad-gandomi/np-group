@@ -2,11 +2,11 @@ import "server-only";
 
 import { isSupabaseConfigured } from "@/features/auth/auth-config";
 import type { AuthUser } from "@/features/auth/session";
+import type { AccountOrder, OrderStatus } from "@/features/commerce/order-types";
+import { getPayloadAccountOrders } from "@/features/commerce/payload-orders";
 import { createClient } from "@/lib/supabase/server";
 
-export type OrderStatus = "pending_review" | "confirmed" | "in_production" | "ready" | "shipped" | "delivered" | "cancelled";
-export type AccountOrderItem = { id: string; productName: string; image: string; color: string; quantity: number; unitPrice: number };
-export type AccountOrder = { id: string; orderNumber: string; status: OrderStatus; total: number; createdAt: string; address: string; items: AccountOrderItem[] };
+export type { AccountOrder, OrderStatus } from "@/features/commerce/order-types";
 export type AccountAddress = { id: string; title: string; recipient: string; phone: string; city: string; address: string; postalCode: string; isDefault: boolean };
 
 export const statusLabels: Record<OrderStatus, string> = {
@@ -35,7 +35,10 @@ type OrderRow = { id: string; order_number: string; status: OrderStatus; total: 
 type AddressRow = { id: string; title: string; recipient: string; phone: string; city: string; address_line: string; postal_code: string; is_default: boolean };
 
 export async function getAccountData(user: AuthUser) {
-  if (!isSupabaseConfigured) return { orders: demoOrders, addresses: demoAddresses(user) };
+  const payloadOrders = await getPayloadAccountOrders(user);
+  if (!isSupabaseConfigured) {
+    return { orders: payloadOrders.length ? payloadOrders : demoOrders, addresses: demoAddresses(user) };
+  }
 
   const supabase = await createClient();
   const [ordersResult, addressesResult] = await Promise.all([
@@ -43,7 +46,7 @@ export async function getAccountData(user: AuthUser) {
     supabase.from("addresses").select("id, title, recipient, phone, city, address_line, postal_code, is_default").order("is_default", { ascending: false }),
   ]);
 
-  const orders = ((ordersResult.data ?? []) as unknown as OrderRow[]).map((order) => ({
+  const legacyOrders: AccountOrder[] = ((ordersResult.data ?? []) as unknown as OrderRow[]).map((order) => ({
     id: order.id,
     orderNumber: order.order_number,
     status: order.status,
@@ -53,6 +56,8 @@ export async function getAccountData(user: AuthUser) {
     items: (order.order_items ?? []).map((item) => ({ id: item.id, productName: item.product_name, image: item.image, color: item.color, quantity: item.quantity, unitPrice: item.unit_price })),
   }));
   const addresses = ((addressesResult.data ?? []) as unknown as AddressRow[]).map((address) => ({ id: address.id, title: address.title, recipient: address.recipient, phone: address.phone, city: address.city, address: address.address_line, postalCode: address.postal_code, isDefault: address.is_default }));
+  const orders = [...payloadOrders, ...legacyOrders]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
   return { orders, addresses };
 }
 

@@ -21,9 +21,14 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setSubmitError("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contact: Object.fromEntries(form), items: items.map((item) => ({ productId: item.product.id, color: item.color, quantity: item.quantity })) }) });
+    const response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contact: Object.fromEntries(form) }) });
     if (response.status === 401) { router.push("/login?next=/checkout"); return; }
-    if (!response.ok) { setSubmitting(false); setSubmitError("ثبت سفارش انجام نشد. لطفاً دوباره تلاش کنید."); return; }
+    if (!response.ok) {
+      const result = await response.json().catch(() => null) as { error?: string } | null;
+      setSubmitting(false);
+      setSubmitError(result?.error ?? "ثبت سفارش انجام نشد. لطفاً دوباره تلاش کنید.");
+      return;
+    }
     setSubmitted(true);
     clear();
   };

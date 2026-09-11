@@ -1,5 +1,6 @@
 import { ecommercePlugin } from "@payloadcms/plugin-ecommerce";
 import type { CollectionConfig, Field } from "payload";
+import { randomUUID } from "node:crypto";
 
 import {
   adminOnlyFieldAccess,
@@ -19,6 +20,34 @@ import { measurementsField, sourceFields, technicalSpecsField } from "./domain-f
 import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
 
 const fieldNamed = (field: Field, name: string) => "name" in field && field.name === name;
+
+const NILPER_ORDER_STATUSES = [
+  { label: "در حال بررسی", value: "pending_review" },
+  { label: "تأیید شده", value: "confirmed" },
+  { label: "در حال آماده‌سازی", value: "in_production" },
+  { label: "آماده ارسال", value: "ready" },
+  { label: "ارسال شده", value: "shipped" },
+  { label: "تحویل شده", value: "delivered" },
+  { label: "لغو شده", value: "cancelled" },
+] as const;
+
+const withNilperOrderStatus = (field: Field): Field => {
+  if (field.type === "tabs") {
+    return { ...field, tabs: field.tabs.map((tab) => ({ ...tab, fields: tab.fields.map(withNilperOrderStatus) })) };
+  }
+  if (field.type === "group" || field.type === "row" || field.type === "collapsible") {
+    return { ...field, fields: field.fields.map(withNilperOrderStatus) };
+  }
+  if (field.type === "select" && fieldNamed(field, "status")) {
+    return {
+      ...field,
+      label: "وضعیت سفارش",
+      defaultValue: "pending_review",
+      options: [...NILPER_ORDER_STATUSES],
+    };
+  }
+  return field;
+};
 
 const withCommerceValidation = (field: Field): Field => {
   if (field.type === "tabs") {
@@ -188,7 +217,20 @@ export const ecommerce = ecommercePlugin({
     cartsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
-      fields: defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+      fields: [
+        ...defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+        {
+          name: "storefrontCustomerKey",
+          type: "text",
+          index: true,
+          admin: { hidden: true, readOnly: true },
+          access: {
+            create: () => false,
+            read: () => false,
+            update: () => false,
+          },
+        },
+      ],
       hooks: {
         ...defaultCollection.hooks,
         beforeOperation: [
@@ -211,8 +253,65 @@ export const ecommerce = ecommercePlugin({
   orders: {
     ordersCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
-      admin: { ...defaultCollection.admin, hidden: true },
-      fields: defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+      labels: { singular: "سفارش", plural: "سفارش‌ها" },
+      admin: {
+        ...defaultCollection.admin,
+        hidden: false,
+        group: "فروشگاه",
+        useAsTitle: "orderNumber",
+        defaultColumns: ["orderNumber", "contactName", "contactPhone", "status", "amount", "createdAt"],
+      },
+      fields: [
+        ...defaultCollection.fields
+          .map(withNilperCommerceItemFields)
+          .map(withCommerceValidation)
+          .map(withNilperOrderStatus),
+        {
+          name: "orderNumber",
+          type: "text",
+          label: "شماره سفارش",
+          required: true,
+          unique: true,
+          index: true,
+          defaultValue: () => `NP-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`,
+          admin: { position: "sidebar", readOnly: true },
+        },
+        {
+          name: "sourceCart",
+          type: "relationship",
+          relationTo: "carts",
+          label: "سبد مبدأ",
+          unique: true,
+          admin: { position: "sidebar", readOnly: true },
+          access: { create: () => false, update: () => false },
+        },
+        { name: "contactName", type: "text", label: "نام مشتری", required: true, admin: { rtl: true } },
+        { name: "contactPhone", type: "text", label: "شماره موبایل", required: true, admin: { position: "sidebar" } },
+        {
+          name: "deliveryMethod",
+          type: "select",
+          label: "روش تحویل",
+          required: true,
+          options: [{ label: "هماهنگی تحویل و نصب توسط NPGroup", value: "advisor" }],
+        },
+        {
+          name: "paymentMethod",
+          type: "select",
+          label: "روش پرداخت درخواستی",
+          required: true,
+          options: [
+            { label: "درگاه پرداخت آنلاین", value: "gateway" },
+            { label: "فاکتور و پرداخت مرحله‌ای", value: "invoice" },
+          ],
+        },
+        {
+          name: "storefrontCustomerKey",
+          type: "text",
+          index: true,
+          admin: { hidden: true, readOnly: true },
+          access: { create: () => false, read: () => false, update: () => false },
+        },
+      ],
       hooks: {
         ...defaultCollection.hooks,
         beforeOperation: [
