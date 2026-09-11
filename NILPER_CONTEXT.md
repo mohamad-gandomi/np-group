@@ -624,41 +624,33 @@ These records include optimized supplied photography, Persian descriptions and s
 
 Known inconsistencies remain explicit: the 852 worksheet/width values, 506/507 registration-code mismatch, absent 850 width-180 codes, and duplicate Dayan code `NHSS871002`. Ambiguous records were omitted rather than corrected or duplicated.
 
-The curated records are available in Payload Admin. The public shop still deliberately opts only Delan into its hybrid listing until Phase 7 replaces fixture-backed catalog surfaces.
+The curated records are available in Payload Admin and now drive the public catalog through the Phase 7 Payload repository/mapper boundary.
 
 ---
 
 ## 12. Current storefront boundary
 
-The public storefront now uses a deliberate hybrid boundary for the Phase 5 vertical slice.
-
-`src/features/catalog/catalog-data.ts` still contains demo:
-
-- categories.
-- products.
-- prices.
-- materials.
-- room filters.
-- colors.
-- availability.
-
-README also states that product/project/brand/editorial content currently uses static fixtures.
-
-Current behavior:
+Phase 7 replaced the hybrid public catalog with a Payload-backed boundary:
 
 ```text
-Payload Delan sofa
+reviewed Payload catalog records
     -> server-only Payload Local API repository
-    -> storefront mapper
-    -> existing Product DTO and Product UI
-
-remaining demo catalog
-    -> existing fixture layer
+    -> storefront taxonomy + DTO mapper
+    -> existing catalog, navigation, homepage and Product UI
 ```
 
-`getCatalogProducts()` and `getProductBySlug()` live in `src/features/catalog/payload-catalog-repository.ts`. Raw generated Payload shapes remain server-side; `src/features/catalog/payload-catalog-mapper.ts` creates the serializable storefront DTO. The shop currently opts only `delan-sofa` into its hybrid listing because the related table record is intentionally still a lightweight preview.
+`getCatalogProducts()`, `queryCatalogProducts()`, `getProductBySlug()` and the related category/facet/path helpers live in `src/features/catalog/payload-catalog-repository.ts`. Raw generated Payload shapes remain server-side; `src/features/catalog/payload-catalog-mapper.ts` creates the serializable storefront DTO, and `src/features/catalog/catalog-taxonomy.ts` maps source categories to stable public slugs/titles/room facets.
 
-The Delan detail route renders its real Persian description, media, operational variant codes, measurements, specifications, wood finishes and upholstery palettes in the existing Product UI. Missing source dimensions are shown as unknown instead of receiving category-wide fixture values.
+Payload now drives public category/product listings, database-backed filters/search/sort/pagination, product details, related products, homepage selections, desktop/mobile navigation and sitemap entries. Product routes are generated from reviewed Payload records and catalog reads use a five-minute Next.js revalidation policy.
+
+`src/features/catalog/catalog-data.ts` is intentionally retained for two non-catalog-migration boundaries only:
+
+- explicitly labeled, non-interactive demo product references on the static brand/project showcase pages;
+- the legacy Supabase order-request endpoint, which Phase 8 will replace.
+
+Fixture records no longer create public product-detail routes or appear in the shop, navigation, homepage product selection, or sitemap.
+
+Every reviewed Payload product renders its source-backed Persian description, media, operational variant codes, measurements, specifications and configuration choices in the existing Product UI. Missing authoritative dimensions/prices remain explicit instead of receiving category-wide fixture values.
 
 No authoritative price exists in the source workbook or seed. Delan therefore displays an inquiry state. When an administrator supplies an approved server price, the same UI posts product/variant/configuration IDs to `/api/payload-cart/quote`; the server reuses the canonical Phase 4 validator and returns trusted title/code/configuration/price snapshots before the browser cart accepts the line.
 
@@ -761,11 +753,22 @@ At the current reviewed state:
 - Delan remains inquiry-only until Nilper supplies an authoritative price; the verification price is temporary and restored.
 - The Phase 5 architecture implementation gate passed. Payload architecture is **LOCKED**; do not compare or introduce alternative commerce frameworks without a proven blocker.
 
+### Phase 7 completion
+
+- The public catalog now reads reviewed products, categories and filter values from Payload through the established repository/mapper DTO boundary.
+- Filtering, sorting and pagination are database-backed; categories, facets and product paths are derived from real catalog records.
+- Product details and related products no longer fall back to fixtures.
+- Homepage catalog sections, header navigation and the sitemap use the same Payload source.
+- Product/static route output uses a five-minute Next.js revalidation policy and preserves SEO/server rendering.
+- Demo showcase fixtures remain non-interactive and cannot link to retired catalog product URLs.
+- A localized routing-level 404 is enabled for the app's multiple root layouts.
+- TypeScript, lint, build, browser/HTTP checks, journal/showcase suites, Payload Phase 3–5 and manual-catalog verification pass.
+
 ### Remaining boundary after the gate
 
 - The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
-- Eight additional manually curated products and their real images are now available in Payload for the Phase 7 catalog migration.
-- The rest of the demo catalog remains fixture-backed until Phase 7.
+- Eight additional manually curated products and their real images are live through the Payload-backed storefront catalog.
+- Demo catalog fixtures remain only for non-interactive brand/project references and the legacy Supabase order request boundary.
 - Browser cart persistence and Supabase checkout remain in place until Phase 8.
 - Full customer/account migration remains Phase 9 work.
 

@@ -12,15 +12,23 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Manual catalog preparation completed after Phase 6 was deferred; Phase 7 is ready to start but has not begun.
+- **Active phase:** Phase 7 is complete; Phase 8 is ready but has not begun.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Begin Phase 7.1 from the existing repository/mapper boundary and replace fixture-backed catalog surfaces incrementally with the reviewed Payload records.
-- **Later phases:** Phase 7+ remain not started. The Delan architecture gate passes and Payload architecture is locked.
+- **Next implementation task:** Begin Phase 8.1 by replacing the browser-only cart boundary with authenticated, configuration-aware Payload cart persistence while preserving the existing UI and Supabase flows until their replacements pass verification.
+- **Later phases:** Phase 8+ remain not started. Payload architecture is locked and Phase 7 storefront catalog migration is complete.
 
 ## Latest Session Note
 
-- **Date:** 2026-09-10
+- **Date:** 2026-09-11
+- [x] Completed Phase 7: all public shop categories, product listings, facets, search, filtering, sorting, pagination, product details, related products, homepage selections, header navigation, static product paths and sitemap entries now read reviewed records through the server-only Payload repository/mapper boundary.
+- [x] Moved category, brand, room/use, material, color/configuration, availability, price and newest sorting logic to Payload Local API queries; filters with no useful real data are hidden.
+- [x] Added a durable storefront taxonomy adapter for mapping source category slugs to stable public routes without exposing generated Payload document types to UI components.
+- [x] Added five-minute Next.js catalog caching/revalidation and Payload-backed static product generation while preserving server rendering and existing public URLs.
+- [x] Removed stale demo product-detail links from brand/project showcase pages; their fixture cards remain explicitly non-interactive demo references and link only to the current catalog.
+- [x] Added the documented Next.js 16 global 404 convention for this app's multiple root layouts, preserving the existing Persian recovery UI for unmatched routes.
+- [x] Verified the live shop, search, category, material/color filters, pagination, product detail, related product, homepage, sitemap and localized 404 behavior in a browser and through HTTP with no browser errors or framework overlay.
+- [x] Passed TypeScript, lint, production build, Payload Phase 3–5, manual catalog, journal and showcase suites, including their live HTTP checks.
 - [x] Manually reviewed the supplied ZIP packages as source material without creating an automated importer or committing any ZIP/XLSX source file.
 - [x] Added eight source-backed products: تخت داران، تخت ژیوار، تخت اورامان، تخت مانی، صندلی بار ویونا، تخت لاوان، تخت ماهور و مبل دایان.
 - [x] Added 22 operational variants using the registration codes exactly as supplied; wood, upholstery and finish selections remain separate from SKU identity.
@@ -40,11 +48,11 @@ Before implementation, read these files completely in order:
 - [x] Kept the production seed price-disabled because the source has no authoritative price; the verification uses and restores a temporary test-only price.
 - [x] Normalized same-app Payload media to `/api/media/file/...` paths so `next/image` never captures the local Payload server hostname; added a regression assertion.
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
-- **Files added:** `src/features/catalog/payload-catalog-repository.ts`, `src/features/catalog/payload-catalog-mapper.ts`, `src/app/(frontend)/api/payload-cart/quote/route.ts`, and `src/payload/verify-phase5.ts`.
-- **Files intentionally retained:** existing storefront fixtures and Supabase customer/order flows remain unchanged; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Manual catalog preparation completed; Phase 7 is ready and not started.
-- **Latest relevant implementation commit:** `a3289fd` (`feat(catalog): add manually curated Nilper products`).
-- **Next implementation task:** Start Phase 7.1 and replace fixture-backed catalog surfaces incrementally through the existing Payload repository/mapper boundary.
+- **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
+- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references and the legacy Supabase order endpoint until later migration; Supabase customer/order flows remain active; `AGENTS.md` and its generated Next.js block remain untouched.
+- **Current active phase:** Phase 7 completed; Phase 8 is ready and not started.
+- **Latest relevant implementation commit:** `0a64eb6` (`refactor(catalog): switch storefront from fixtures to Payload`).
+- **Next implementation task:** Start Phase 8.1 with authenticated Payload cart persistence and keep the existing browser/cart UI stable.
 
 ## Working rules for Codex
 
@@ -536,6 +544,8 @@ Current rules:
 
 # Phase 7 — Replace static catalog data
 
+**Status: [x] Completed**
+
 After enough real products are entered and reviewed manually in Payload:
 
 ## 7.1 Remove runtime dependence on `catalog-data.ts`
@@ -576,6 +586,16 @@ Do not force a filter merely because the demo fixture had it. Real catalog data 
 Current product pages use fixture-backed static params. Rework only as needed for Payload-backed dynamic catalog while retaining good SEO/server rendering.
 
 Follow Next.js 16 current caching/rendering rules, not older Next.js assumptions.
+
+Completion record:
+
+- [x] Shop category and product listings, live facets, search, detail pages, related products, homepage selections, navigation and sitemap use reviewed Payload records through the storefront DTO mapper.
+- [x] Filtering, sorting and pagination run through Payload Local API queries rather than loading and filtering fixture arrays in memory.
+- [x] Real-data facets preserve category, brand, room/use, material, color/configuration, availability and price behavior only when useful values exist.
+- [x] Product routes are generated from Payload records, remain server-rendered/SEO-safe and revalidate on a five-minute cache policy.
+- [x] Demo showcase fixture cards are retained only as labeled, non-interactive references; they no longer create broken shop product URLs.
+- [x] The legacy Supabase order endpoint retains its fixture lookup until Phase 8 replaces that commerce boundary; no catalog surface depends on it.
+- [x] Browser/HTTP verification and all applicable regression and Payload integrity suites pass.
 
 Commit checkpoint:
 
@@ -746,6 +766,6 @@ The three source workbooks are not a required session input while Phase 6 is def
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and the architecture gate are complete. Phase 6 is deferred by the owner; do not build an Excel importer. Continue with Phase 7 only after enough catalog data has been entered and reviewed manually in Payload.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and Phase 7 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer. Continue with the earliest unfinished Phase 8 task without removing Supabase until its replacement is working and verified.
 
 Keep each session focused on the current phase and update this file before ending.

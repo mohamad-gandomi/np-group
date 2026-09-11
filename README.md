@@ -107,8 +107,9 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 
 ## Current operational boundaries
 
-- Payload contains Delan plus eight manually curated products with supplied photography. The shop still uses a deliberate hybrid boundary: only Delan is currently read through the server repository/mapper, while the remaining public product listing and the project, brand, and editorial content still use existing fixtures.
-- Delan has no authoritative source price, so it renders as inquiry-only. Entering an approved variant price activates its server-validated configuration cart path without changing the UI model.
+- Payload contains Delan plus eight manually curated products with supplied photography. The public shop, category/product pages, filters, search, homepage selections, navigation and sitemap now read those reviewed records through the server repository/mapper boundary.
+- No curated product has an authoritative source price, so the current catalog renders inquiry-only. Entering an approved server price activates the existing server-validated configuration cart path without changing the UI model.
+- Static fixture products remain only as clearly labeled, non-interactive references on demo brand/project pages and inside the legacy Supabase order-request endpoint until its Phase 8 replacement; they do not create public catalog routes.
 - Payload carts, orders, and transactions persist configuration and trusted price/title/code snapshots. The existing browser cart uses the trusted quote response, but full Payload cart persistence and checkout migration remain Phase 8 work.
 - Supabase remains active for the existing customer-facing authentication, profile, address, and order-request behavior.
 - `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
