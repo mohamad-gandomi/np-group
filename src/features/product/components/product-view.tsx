@@ -3,18 +3,15 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { SectionHeading } from "@/components/section-heading";
 import { siteConfig } from "@/config/site";
-import { getCategory } from "@/features/catalog/catalog-data";
 import type { Product } from "@/features/catalog/catalog-types";
-import { getProductPresentation, getRelatedProducts } from "../product-details";
+import { getProductPresentation } from "../product-details";
 import { ProductGallery } from "./product-gallery";
 import { ProductSpecifications } from "./product-specifications";
 import { ProductSummary } from "./product-summary";
 
-export function ProductView({ product }: { product: Product }) {
+export function ProductView({ product, relatedProducts = [] }: { product: Product; relatedProducts?: readonly Product[] }) {
   const details = getProductPresentation(product);
-  const category = getCategory(product.category);
-  const categoryTitle = category?.title ?? "مبلمان خانگی";
-  const related = getRelatedProducts(product);
+  const categoryTitle = product.categoryTitle ?? "مبلمان خانگی";
   const path = `/shop/${product.category}/${product.slug}`;
   const schemas = [
     { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
@@ -39,7 +36,7 @@ export function ProductView({ product }: { product: Product }) {
 
       <section className="border-y bg-card py-14 sm:py-20"><div className="container-shell"><div className="mb-8 max-w-2xl"><p className="text-xs font-semibold tracking-[0.16em] text-wine">جزئیات محصول</p><h2 className="mt-3 text-3xl font-medium sm:text-4xl">اطلاعاتی برای انتخاب مطمئن‌تر</h2></div><ProductSpecifications product={product} depth={details.depth} height={details.height} warranty={details.warranty} assembly={details.assembly} care={details.care} /></div></section>
 
-      {related.length ? <section className="py-16 sm:py-24"><div className="container-shell"><SectionHeading eyebrow="انتخاب‌های نزدیک" title="محصولات مرتبط" link="مشاهده مجموعه" href={`/shop/${product.category}`} /><div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3">{related.map((item) => <ProductCard key={item.id} product={item} />)}</div></div></section> : null}
+      {relatedProducts.length ? <section className="py-16 sm:py-24"><div className="container-shell"><SectionHeading eyebrow="انتخاب‌های نزدیک" title="محصولات مرتبط" link="مشاهده مجموعه" href={`/shop/${product.category}`} /><div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div></div></section> : null}
     </main>
   );
 }

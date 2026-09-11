@@ -1,13 +1,14 @@
 import type { MetadataRoute } from "next";
 
 import { siteConfig } from "@/config/site";
-import { categories, products } from "@/features/catalog/catalog-data";
+import { getCatalogCategories, getCatalogProducts } from "@/features/catalog/payload-catalog-repository";
 import { journalPosts } from "@/features/journal/posts";
 import { absoluteJournalUrl } from "@/features/journal/seo";
 import { brands, projects } from "@/features/showcase/data";
 import { absoluteShowcaseUrl } from "@/features/showcase/seo";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [categories, products] = await Promise.all([getCatalogCategories(), getCatalogProducts()]);
   const routes = [
     { path: "", priority: 1, changeFrequency: "weekly" as const },
     { path: "/shop", priority: 0.9, changeFrequency: "daily" as const },

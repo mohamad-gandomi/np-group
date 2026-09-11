@@ -15,6 +15,7 @@ import type {
   ProductMeasurement,
   ProductVariant,
 } from "./catalog-types";
+import { storefrontTaxonomyForPayloadCategory } from "./catalog-taxonomy";
 
 export type PayloadCatalogRelations = {
   configurationGroups: readonly ConfigurationGroup[];
@@ -25,12 +26,8 @@ export type PayloadCatalogRelations = {
 const isDocument = <T extends { id: number }>(value: number | T | null | undefined): value is T =>
   Boolean(value) && typeof value === "object";
 
-const storefrontCategory = (category: Category | undefined) => {
-  if (!category) return "furniture";
-  if (category.slug === "home-furniture") return "furniture";
-  if (category.slug === "coffee-side-tables" || category.slug === "dining") return "tables";
-  return category.slug;
-};
+const relationshipIDs = <T extends { id: number }>(values: Array<number | T> | null | undefined) =>
+  (values ?? []).map((value) => typeof value === "number" ? value : value.id);
 
 const mediaURL = (value: number | Media | null | undefined) => {
   if (!isDocument(value)) return undefined;
@@ -107,6 +104,7 @@ const mapVariants = (variants: readonly Variant[]): ProductVariant[] => variants
 export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCatalogRelations): Product {
   const brand = isDocument<Brand>(product.brand) ? product.brand : undefined;
   const category = product.categories.find((value): value is Category => isDocument(value));
+  const taxonomy = storefrontTaxonomyForPayloadCategory(category?.slug ?? "furniture", category?.title ?? "مبلمان خانگی");
   const mainImage = mediaURL(product.mainImage) ?? "/placeholders/sofa.jpg";
   const gallery = [
     mainImage,
@@ -137,8 +135,9 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     slug: product.slug,
     name: product.title,
     brand: brand?.title ?? "نیلپر",
-    category: storefrontCategory(category),
-    room: category?.slug === "home-furniture" ? ["پذیرایی"] : [],
+    category: taxonomy.slug,
+    categoryTitle: taxonomy.title,
+    room: taxonomy.rooms,
     material,
     colors: groups.find((group) => group.inputType === "swatch")?.options.map((option) => option.label) ?? [],
     price,
@@ -156,5 +155,9 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     technicalSpecs,
     variants,
     configurationGroups: groups,
+    relatedPayloadProductIds: [...new Set([
+      ...relationshipIDs(product.matchingProducts),
+      ...relationshipIDs(product.relatedProducts),
+    ])],
   };
 }

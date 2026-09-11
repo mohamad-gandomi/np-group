@@ -5,9 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { categories, getCategory, products } from "../catalog-data";
-import { getCatalogResults, type RawSearchParams } from "../catalog-query";
-import { getCatalogProducts } from "../payload-catalog-repository";
+import type { RawSearchParams } from "../catalog-query";
+import { getCatalogFacets, queryCatalogProducts } from "../payload-catalog-repository";
 import { ActiveFilters } from "./active-filters";
 import { CatalogFilters } from "./catalog-filters";
 import { CatalogPagination } from "./catalog-pagination";
@@ -18,11 +17,12 @@ import { SortSelect } from "./sort-select";
 const countFormatter = new Intl.NumberFormat("fa-IR");
 
 export async function CatalogView({ params, categorySlug }: { params: RawSearchParams; categorySlug?: string }) {
-  const category = categorySlug ? getCategory(categorySlug) : undefined;
+  const [facets, results] = await Promise.all([
+    getCatalogFacets(),
+    queryCatalogProducts(params, categorySlug),
+  ]);
+  const category = categorySlug ? facets.categories.find((item) => item.slug === categorySlug) : undefined;
   const path = category ? `/shop/${category.slug}` : "/shop";
-  const payloadProducts = await getCatalogProducts();
-  const phase5Products = payloadProducts.filter((product) => product.slug === "delan-sofa");
-  const results = getCatalogResults(params, categorySlug, [...phase5Products, ...products]);
   const rawSearch = params.q;
   const searchValue = (Array.isArray(rawSearch) ? rawSearch[0] : rawSearch) ?? "";
   const activeFilterCount = ["category", "brand", "room", "material", "color", "availability", "minPrice", "maxPrice"].reduce((total, key) => {
@@ -48,7 +48,7 @@ export async function CatalogView({ params, categorySlug }: { params: RawSearchP
         </div>
       </section>
 
-      {!category ? <section className="border-b bg-white py-6"><div className="container-shell"><div className="grid auto-cols-[72%] grid-flow-col gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:auto-cols-[38%] lg:grid-flow-row lg:grid-cols-5 lg:overflow-visible lg:pb-0">{categories.map((item, index) => <Link key={item.slug} href={`/shop/${item.slug}`} className="group relative min-h-40 overflow-hidden"><Image src={item.image} alt={item.title} fill sizes="(max-width: 640px) 72vw, (max-width: 1024px) 38vw, 20vw" loading={index === 0 ? "eager" : "lazy"} className="object-cover transition-transform duration-500 group-hover:scale-105" /><div className="image-wash absolute inset-0" /><div className="absolute inset-x-0 bottom-0 p-4 text-white"><p className="text-xs text-white/65">{item.count}</p><h2 className="mt-1 text-lg font-medium">{item.title}</h2></div></Link>)}</div></div></section> : null}
+      {!category ? <section className="border-b bg-white py-6"><div className="container-shell"><div className="grid auto-cols-[72%] grid-flow-col gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:auto-cols-[38%] lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible lg:pb-0">{facets.categories.map((item, index) => <Link key={item.slug} href={`/shop/${item.slug}`} className="group relative min-h-40 overflow-hidden"><Image src={item.image} alt={item.title} fill sizes="(max-width: 640px) 72vw, (max-width: 1024px) 38vw, 25vw" loading={index === 0 ? "eager" : "lazy"} className="object-cover transition-transform duration-500 group-hover:scale-105" /><div className="image-wash absolute inset-0" /><div className="absolute inset-x-0 bottom-0 p-4 text-white"><p className="text-xs text-white/65">{item.count}</p><h2 className="mt-1 text-lg font-medium">{item.title}</h2></div></Link>)}</div></div></section> : null}
 
       <section id="products" className="bg-card py-8 sm:py-12 lg:py-16">
         <div className="container-shell">
@@ -58,11 +58,11 @@ export async function CatalogView({ params, categorySlug }: { params: RawSearchP
           </div>
           <div className="sticky top-0 z-30 -mx-4 mb-6 space-y-2 border-y bg-card/95 px-4 py-3 backdrop-blur lg:hidden">
             <SearchField path={path} value={searchValue} />
-            <div className="flex gap-2"><MobileFilters count={results.total} activeCount={activeFilterCount} clearHref={path}><CatalogFilters params={params} path={path} showCategories={!category} /></MobileFilters><SortSelect params={params} path={path} className="min-w-0 flex-1" /></div>
+            <div className="flex gap-2"><MobileFilters count={results.total} activeCount={activeFilterCount} clearHref={path}><CatalogFilters facets={facets} params={params} path={path} showCategories={!category} /></MobileFilters><SortSelect params={params} path={path} className="min-w-0 flex-1" /></div>
           </div>
-          <ActiveFilters params={params} path={path} />
+          <ActiveFilters facets={facets} params={params} path={path} />
           <div className="grid gap-8 lg:grid-cols-[15rem_1fr] xl:grid-cols-[17rem_1fr]">
-            <aside className="hidden lg:block" aria-label="فیلتر محصولات"><div className="filter-scrollbar sticky top-4 max-h-[calc(100svh-2rem)] overflow-y-auto bg-white" dir="ltr"><div className="p-5" dir="rtl"><CatalogFilters params={params} path={path} showCategories={!category} /></div></div></aside>
+            <aside className="hidden lg:block" aria-label="فیلتر محصولات"><div className="filter-scrollbar sticky top-4 max-h-[calc(100svh-2rem)] overflow-y-auto bg-white" dir="ltr"><div className="p-5" dir="rtl"><CatalogFilters facets={facets} params={params} path={path} showCategories={!category} /></div></div></aside>
             <div>
               {results.products.length ? <div className="grid grid-cols-2 gap-x-3 gap-y-7 min-[430px]:gap-x-4 sm:gap-x-5 sm:gap-y-10 md:grid-cols-3 xl:gap-x-6">{results.products.map((product) => <ProductCard key={product.id} product={product} />)}</div> : <div className="grid min-h-80 place-items-center border bg-white p-8 text-center"><div><h2 className="text-2xl font-medium">محصولی پیدا نشد</h2><p className="mt-3 text-sm text-muted-foreground">چند فیلتر را حذف کنید و دوباره ببینید.</p><Button asChild className="mt-6 rounded-none bg-wine"><Link href={path}>پاک کردن فیلترها</Link></Button></div></div>}
               <CatalogPagination page={results.page} pageCount={results.pageCount} params={params} path={path} />

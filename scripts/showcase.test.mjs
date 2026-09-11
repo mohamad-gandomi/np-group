@@ -71,15 +71,18 @@ for (const kind of ["projects", "brands"]) {
       const body = visible(html);
       assert.ok(body.replace(/<[^>]+>/g, " ").split(/\s+/).length > 250, "detail content is rendered without JavaScript");
       assert.ok(body.includes("/contact"));
-      assert.ok(body.includes('href="/shop/'), "detail links to real catalog routes");
+      assert.ok(body.includes('href="/shop"'), "detail links to the current catalog");
       if (kind === "projects") assert.match(body, /حضور آن‌ها در تصاویر/);
     });
   }
 }
 
-test("product detail links back to its brand profile", async () => {
-  const product = await readBuild("server/app/shop/furniture/luna-sofa.html");
-  assert.ok(visible(product).includes('href="/brands/noma"'));
+test("demo product references do not link to retired fixture detail routes", async () => {
+  for (const path of ["projects/a-welcoming-lobby", "brands/noma"]) {
+    const html = visible(await readBuild(`server/app/${path}.html`));
+    assert.doesNotMatch(html, /href="\/shop\/[^"?#]+\/[^"?#]+"/);
+    assert.ok(html.includes('href="/shop"'));
+  }
 });
 
 if (process.env.SHOWCASE_TEST_URL) {

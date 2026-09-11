@@ -46,6 +46,7 @@ export type Product = {
   name: string;
   brand: string;
   category: string;
+  categoryTitle?: string;
   room: readonly string[];
   material: readonly string[];
   colors: readonly string[];
@@ -67,6 +68,7 @@ export type Product = {
   technicalSpecs?: readonly ProductSpecification[];
   variants?: readonly ProductVariant[];
   configurationGroups?: readonly ProductConfigurationGroup[];
+  relatedPayloadProductIds?: readonly number[];
 };
 
 export type CatalogCategory = {
@@ -75,4 +77,19 @@ export type CatalogCategory = {
   count: string;
   image: string;
   className: string;
+};
+
+export type CatalogFilterOption = {
+  label: string;
+  value: string;
+};
+
+export type CatalogFacets = {
+  categories: readonly CatalogCategory[];
+  brand: readonly CatalogFilterOption[];
+  room: readonly CatalogFilterOption[];
+  material: readonly CatalogFilterOption[];
+  color: readonly CatalogFilterOption[];
+  availability: readonly CatalogFilterOption[];
+  hasPrices: boolean;
 };

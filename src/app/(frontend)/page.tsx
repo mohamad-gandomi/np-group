@@ -16,7 +16,7 @@ import { ProductCard } from "@/components/product-card";
 import { SectionHeading } from "@/components/section-heading";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { categories, products } from "@/features/catalog/catalog-data";
+import { getCatalogFacets, getCatalogProducts } from "@/features/catalog/payload-catalog-repository";
 import { categoryLabel, journalPosts } from "@/features/journal/posts";
 import { formatJournalDate } from "@/features/journal/format";
 import { brandRegistry, brandPath } from "@/features/showcase/brand-registry";
@@ -35,7 +35,9 @@ const services = [
   { title: "رستوران و تجاری", description: "ساخت تجربه‌ای ماندگار از ورودی تا آخرین جزئیات فضا.", icon: Sparkles },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const [facets, products] = await Promise.all([getCatalogFacets(), getCatalogProducts()]);
+  const categories = facets.categories;
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",

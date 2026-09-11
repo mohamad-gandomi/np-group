@@ -9,8 +9,8 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { siteConfig } from "@/config/site";
-import { categories, products } from "@/features/catalog/catalog-data";
 import { matchesProductSearch } from "@/features/catalog/catalog-search";
+import type { CatalogCategory, Product } from "@/features/catalog/catalog-types";
 import "./site-navigation.css";
 
 export const mainLinks = [["برندها", "/brands"], ["پروژه‌ها", "/projects"], ["مجله", "/blog"], ["درباره ما", "/about"], ["تماس", "/contact"]] as const;
@@ -48,7 +48,7 @@ function MenuContact({ close }: { close: () => void }) {
   </div>;
 }
 
-export function DesktopNavigation() {
+export function DesktopNavigation({ categories, products }: { categories: readonly CatalogCategory[]; products: readonly Product[] }) {
   const menu = useMenu();
   const pathname = usePathname();
   const [category, setCategory] = useState("all");
@@ -91,7 +91,7 @@ export function DesktopNavigation() {
   </nav>;
 }
 
-export function MobileNavigation() {
+export function MobileNavigation({ categories }: { categories: readonly CatalogCategory[] }) {
   const menu = useMenu();
   const pathname = usePathname();
   return <Sheet open={menu.open} onOpenChange={menu.setOpen}>

@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { RotateCcw, X } from "lucide-react";
 
-import { categories } from "../catalog-data";
 import { shopHref, type RawSearchParams } from "../catalog-query";
+import type { CatalogFacets } from "../catalog-types";
 
-const labels: Record<string, string> = { "in-stock": "آماده ارسال", "made-to-order": "ساخت سفارشی", ...Object.fromEntries(categories.map((category) => [category.slug, category.title])) };
 const filterKeys = ["category", "brand", "room", "material", "color", "availability"] as const;
 type Chip = { key: string; value: string; label: string; remaining?: string[] };
 
-export function ActiveFilters({ params, path }: { params: RawSearchParams; path: string }) {
+export function ActiveFilters({ facets, params, path }: { facets: CatalogFacets; params: RawSearchParams; path: string }) {
+  const labels: Record<string, string> = {
+    ...Object.fromEntries(facets.categories.map((category) => [category.slug, category.title])),
+    ...Object.fromEntries([facets.brand, facets.room, facets.material, facets.color, facets.availability].flat().map((option) => [option.value, option.label])),
+  };
   const chips: Chip[] = filterKeys.flatMap((key) => {
     const raw = params[key];
     const values = raw ? (Array.isArray(raw) ? raw : [raw]) : [];

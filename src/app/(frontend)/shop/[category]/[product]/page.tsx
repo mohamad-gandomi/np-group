@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { products } from "@/features/catalog/catalog-data";
-import { getProductBySlug } from "@/features/catalog/payload-catalog-repository";
-import { getProduct } from "@/features/product/product-details";
+import { getCatalogProductPaths, getProductBySlug, getRelatedProducts } from "@/features/catalog/payload-catalog-repository";
 import { ProductView } from "@/features/product/components/product-view";
 
 type Props = { params: Promise<{ category: string; product: string }> };
 
+export const revalidate = 300;
+
 export function generateStaticParams() {
-  return products.map((product) => ({ category: product.category, product: product.slug }));
+  return getCatalogProductPaths();
 }
 
 async function resolveProduct(category: string, slug: string) {
-  const fixture = getProduct(category, slug);
-  if (fixture) return fixture;
   const payloadProduct = await getProductBySlug(slug);
   return payloadProduct?.category === category ? payloadProduct : null;
 }
@@ -36,5 +34,5 @@ export default async function ProductPage({ params }: Props) {
   const { category, product: slug } = await params;
   const product = await resolveProduct(category, slug);
   if (!product) notFound();
-  return <ProductView product={product} />;
+  return <ProductView product={product} relatedProducts={await getRelatedProducts(product)} />;
 }
