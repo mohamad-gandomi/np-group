@@ -12,15 +12,23 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 7 is complete; Phase 8 is ready but has not begun.
+- **Active phase:** Phase 8 is complete; Phase 9 is ready but has not begun.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
-- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Supabase remains for current customer/account/order flows.
-- **Next implementation task:** Begin Phase 8.1 by replacing the browser-only cart boundary with authenticated, configuration-aware Payload cart persistence while preserving the existing UI and Supabase flows until their replacements pass verification.
-- **Later phases:** Phase 8+ remain not started. Payload architecture is locked and Phase 7 storefront catalog migration is complete.
+- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, signed-in carts, new orders, and order lifecycle. Supabase remains for customer authentication, profile, addresses, and legacy order history until Phase 9.
+- **Next implementation task:** Begin Phase 9.1 by designing and implementing secure Iranian phone OTP authentication for Payload while preserving the current login UX and keeping the working Supabase path until the replacement passes verification.
+- **Later phases:** Phase 9+ remain not started. Payload architecture is locked and Phases 0–5, 7, and 8 are complete; Phase 6 remains deferred by owner decision.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-11
+- [x] Completed Phase 8: authenticated carts and all new checkout orders now persist in Payload while the existing Persian storefront UI remains intact.
+- [x] Replaced full browser-stored product objects with a versioned, configuration-aware guest cart containing only stable IDs and quantities; guest selections are revalidated server-side and merged into the signed-in cart.
+- [x] Added an opaque, indexed storefront-customer key so current authenticated users can own isolated Payload carts and orders without prematurely replacing the Phase 9 authentication system.
+- [x] Replaced Supabase order writes with transactional Payload order creation sourced only from the authenticated server-owned cart; duplicate submission is guarded by a unique source-cart relationship.
+- [x] Added Nilper order numbers, contact and fulfillment snapshots, and the statuses pending review, confirmed, in production, ready, shipped, delivered, and cancelled to Payload Admin.
+- [x] Kept legacy Supabase orders readable in the account alongside new Payload orders; Supabase authentication, profile, and addresses remain intentionally active until Phase 9.
+- [x] Added and applied committed cart/order migrations, regenerated Payload types, updated older verification fixtures, and added a repeatable Phase 8 isolation/persistence/status test.
+- [x] Verified TypeScript, lint, production build, Phase 8, manual catalog, journal, and showcase suites; Phase 3–5 regression suites also pass against the evolved schema.
 - [x] Completed Phase 7: all public shop categories, product listings, facets, search, filtering, sorting, pagination, product details, related products, homepage selections, header navigation, static product paths and sitemap entries now read reviewed records through the server-only Payload repository/mapper boundary.
 - [x] Moved category, brand, room/use, material, color/configuration, availability, price and newest sorting logic to Payload Local API queries; filters with no useful real data are hidden.
 - [x] Added a durable storefront taxonomy adapter for mapping source category slugs to stable public routes without exposing generated Payload document types to UI components.
@@ -49,10 +57,10 @@ Before implementation, read these files completely in order:
 - [x] Normalized same-app Payload media to `/api/media/file/...` paths so `next/image` never captures the local Payload server hostname; added a regression assertion.
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
-- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references and the legacy Supabase order endpoint until later migration; Supabase customer/order flows remain active; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 7 completed; Phase 8 is ready and not started.
-- **Latest relevant implementation commit:** `0a64eb6` (`refactor(catalog): switch storefront from fixtures to Payload`).
-- **Next implementation task:** Start Phase 8.1 with authenticated Payload cart persistence and keep the existing browser/cart UI stable.
+- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; Supabase authentication/profile/address and legacy-order reads remain until Phase 9; `AGENTS.md` and its generated Next.js block remain untouched.
+- **Current active phase:** Phase 8 completed; Phase 9 is ready and not started.
+- **Latest relevant implementation commit:** `146e46b` (`refactor(commerce): migrate storefront carts and orders to Payload`).
+- **Next implementation task:** Start Phase 9.1 with secure Payload phone OTP authentication without removing the verified existing auth path prematurely.
 
 ## Working rules for Codex
 
@@ -594,7 +602,7 @@ Completion record:
 - [x] Real-data facets preserve category, brand, room/use, material, color/configuration, availability and price behavior only when useful values exist.
 - [x] Product routes are generated from Payload records, remain server-rendered/SEO-safe and revalidate on a five-minute cache policy.
 - [x] Demo showcase fixture cards are retained only as labeled, non-interactive references; they no longer create broken shop product URLs.
-- [x] The legacy Supabase order endpoint retains its fixture lookup until Phase 8 replaces that commerce boundary; no catalog surface depends on it.
+- [x] The former Supabase order endpoint no longer uses fixture lookup; Phase 8 replaced that commerce boundary with server-owned Payload cart/order creation.
 - [x] Browser/HTTP verification and all applicable regression and Payload integrity suites pass.
 
 Commit checkpoint:
@@ -607,6 +615,8 @@ refactor(catalog): switch storefront from fixtures to Payload
 
 # Phase 8 — Commerce flow migration
 
+**Status: [x] Completed**
+
 ## 8.1 Migrate cart persistence
 
 Move from browser-only product objects in localStorage toward Payload Ecommerce cart persistence.
@@ -615,11 +625,27 @@ Preserve the current cart UI.
 
 Avoid storing full mutable product objects as the long-term canonical cart representation.
 
+Completion record:
+
+- [x] Guest storage is versioned and contains only product/variant IDs, quantity, and normalized configuration IDs.
+- [x] Guest references are revalidated through the server before display or checkout use.
+- [x] Authenticated carts persist in Payload and remain isolated by an opaque one-way storefront-customer key.
+- [x] Signing in merges the guest cart into the authenticated cart without trusting client prices or product snapshots.
+- [x] Existing cart presentation and configuration-aware line identity remain intact.
+
 ## 8.2 Migrate checkout/order creation
 
 Replace the current custom `/api/orders` Supabase persistence with Payload commerce flow once the Payload path is complete.
 
 Preserve existing Persian checkout UX unless a required data field must be added.
+
+Completion record:
+
+- [x] `/api/orders` accepts contact/fulfillment input only and creates orders from the authenticated Payload cart.
+- [x] Product, variant, configuration, title, code, and price snapshots are validated and owned by the server.
+- [x] Order creation and cart completion use one Payload/PostgreSQL transaction.
+- [x] A unique source-cart relationship prevents duplicate orders from repeated submissions.
+- [x] New Payload orders and legacy Supabase history render together in the existing account UI during the transition.
 
 ## 8.3 Order statuses
 
@@ -634,6 +660,18 @@ Map Nilper's useful lifecycle, likely including the current states:
 - cancelled
 
 Do not assume Payload defaults match Nilper; extend the order model/admin safely.
+
+Completion record:
+
+- [x] Payload orders support pending review, confirmed, in production, ready, shipped, delivered, and cancelled.
+- [x] Orders are visible in Payload Admin with order number, customer contact, delivery/payment selections, trusted item snapshots, and status.
+- [x] Existing rows are migrated safely and the status transition path is covered by the Phase 8 verification.
+
+Commit checkpoint:
+
+```text
+refactor(commerce): migrate storefront carts and orders to Payload
+```
 
 ---
 
@@ -766,6 +804,6 @@ The three source workbooks are not a required session input while Phase 6 is def
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and Phase 7 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer. Continue with the earliest unfinished Phase 8 task without removing Supabase until its replacement is working and verified.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5, 7, and 8 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer. Continue with the earliest unfinished Phase 9 task without removing Supabase until its replacement is working and verified.
 
 Keep each session focused on the current phase and update this file before ending.

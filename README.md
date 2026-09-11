@@ -38,7 +38,7 @@ PAYLOAD_DB_USER=nilper_payload
 PAYLOAD_DB_PASSWORD=YOUR_PASSWORD
 ```
 
-Retain the Supabase variables when using the existing customer authentication, account, address, and order-request flows.
+Retain the Supabase variables while using the existing customer authentication, profile, address, and legacy order-history flows. New carts and orders are persisted in Payload.
 
 Relevant non-Payload variables are documented in `.env.example`, including:
 
@@ -47,7 +47,7 @@ Relevant non-Payload variables are documented in `.env.example`, including:
 - `AUTH_DEV_SECRET` for local demo sessions
 - `KAVENEGAR_API_KEY`, `KAVENEGAR_OTP_TEMPLATE`, and `SEND_SMS_HOOK_SECRET` for the Supabase SMS hook
 
-Apply `supabase/migrations/20260829000000_account_dashboard.sql` when provisioning the existing Supabase account/order schema. Without Supabase configuration, local development supports demo login with OTP `123456`; that fallback is disabled in production.
+Apply `supabase/migrations/20260829000000_account_dashboard.sql` only when provisioning the existing Supabase account schema or preserving legacy order history. Without Supabase configuration, local development supports demo login with OTP `123456`; that fallback is disabled in production.
 
 ## Development
 
@@ -80,6 +80,7 @@ npm run payload:seed
 npm run payload:verify:phase3
 npm run payload:verify:phase4
 npm run payload:verify:phase5
+npm run payload:verify:phase8
 npm run payload:verify:manual-catalog
 ```
 
@@ -109,9 +110,10 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 
 - Payload contains Delan plus eight manually curated products with supplied photography. The public shop, category/product pages, filters, search, homepage selections, navigation and sitemap now read those reviewed records through the server repository/mapper boundary.
 - No curated product has an authoritative source price, so the current catalog renders inquiry-only. Entering an approved server price activates the existing server-validated configuration cart path without changing the UI model.
-- Static fixture products remain only as clearly labeled, non-interactive references on demo brand/project pages and inside the legacy Supabase order-request endpoint until its Phase 8 replacement; they do not create public catalog routes.
-- Payload carts, orders, and transactions persist configuration and trusted price/title/code snapshots. The existing browser cart uses the trusted quote response, but full Payload cart persistence and checkout migration remain Phase 8 work.
-- Supabase remains active for the existing customer-facing authentication, profile, address, and order-request behavior.
+- Static fixture products remain only as clearly labeled, non-interactive references on demo brand/project pages; they do not create public catalog routes or participate in checkout.
+- Guest carts store only compact product, variant, quantity, and configuration IDs in the browser and are revalidated by the server. Signed-in carts persist in Payload, and sign-in merges any guest selections into the authenticated cart.
+- Checkout creates Payload orders from the authenticated server-owned cart inside a database transaction. Payload preserves trusted product, variant, configuration, price, contact, and status snapshots, and exposes Nilper's order lifecycle in Admin.
+- Supabase remains active for customer authentication, profile, addresses, and legacy order history until Phase 9 replaces those responsibilities. New orders are written only to Payload.
 - `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
 - Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.
 - Temporary editorial images are under `public/placeholders`, and the hero video is under `public/videos/hero.mp4`.

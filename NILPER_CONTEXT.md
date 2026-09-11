@@ -86,7 +86,7 @@ Payload CMS              3.88.0
 Payload Ecommerce        3.88.0
 Payload Postgres adapter 3.88.0
 PostgreSQL               local/dev via Docker Compose
-Supabase                 still present for existing customer auth/account/order flow
+Supabase                 still present for customer auth/profile/addresses and legacy order history
 ```
 
 Relevant commands currently exist:
@@ -106,6 +106,7 @@ npm run payload:seed
 npm run payload:verify:phase3
 npm run payload:verify:phase4
 npm run payload:verify:phase5
+npm run payload:verify:phase8
 
 npm run lint
 npm run build
@@ -643,10 +644,7 @@ reviewed Payload catalog records
 
 Payload now drives public category/product listings, database-backed filters/search/sort/pagination, product details, related products, homepage selections, desktop/mobile navigation and sitemap entries. Product routes are generated from reviewed Payload records and catalog reads use a five-minute Next.js revalidation policy.
 
-`src/features/catalog/catalog-data.ts` is intentionally retained for two non-catalog-migration boundaries only:
-
-- explicitly labeled, non-interactive demo product references on the static brand/project showcase pages;
-- the legacy Supabase order-request endpoint, which Phase 8 will replace.
+`src/features/catalog/catalog-data.ts` is intentionally retained only for explicitly labeled, non-interactive demo product references on the static brand/project showcase pages.
 
 Fixture records no longer create public product-detail routes or appear in the shop, navigation, homepage product selection, or sitemap.
 
@@ -672,7 +670,23 @@ Do not redesign ProductCard/ProductView merely because the data source changes.
 
 ---
 
-## 13. Supabase boundary
+## 13. Commerce persistence and Supabase boundary
+
+Phase 8 established the current commerce flow:
+
+```text
+guest browser cart (stable IDs only)
+    -> server validation / hydration
+    -> authenticated Payload cart
+    -> transactional Payload order + completed source cart
+    -> Payload Admin lifecycle management
+```
+
+Guest local storage contains only stable product/variant IDs, quantity, and configuration group/option IDs. It is never authoritative for product metadata or prices. Signing in merges those references into the user's Payload cart after server validation.
+
+Current storefront sessions are linked to Payload carts and orders through an indexed, one-way hashed customer key derived server-side. This is a transition bridge, not the final customer model; Phase 9 must replace it with Payload-native customer authentication without breaking ownership continuity.
+
+Checkout accepts contact, delivery, and payment selections only. The server creates the order from the authenticated Payload cart, revalidates the trusted commerce item snapshots, and marks that cart purchased in the same PostgreSQL transaction. A unique source-cart relationship makes repeated checkout submissions safe. Orders expose Nilper's lifecycle in Payload Admin: pending review, confirmed, in production, ready, shipped, delivered, and cancelled.
 
 Supabase is still present and working.
 
@@ -681,8 +695,9 @@ Current responsibilities include existing public/customer flows such as:
 - phone authentication.
 - profiles/account data.
 - addresses.
-- order request persistence.
-- order items/status history.
+- legacy order-history reads during the transition.
+
+Supabase no longer receives new order requests. The account order view combines legacy Supabase history with new Payload orders until Phase 9 completes the customer/account migration.
 
 Do not remove Supabase until Payload replacements are complete and verified.
 
@@ -764,12 +779,23 @@ At the current reviewed state:
 - A localized routing-level 404 is enabled for the app's multiple root layouts.
 - TypeScript, lint, build, browser/HTTP checks, journal/showcase suites, Payload Phase 3–5 and manual-catalog verification pass.
 
+### Phase 8 completion
+
+- Guest carts persist only compact, versioned ID references in browser storage and are revalidated on the server.
+- Authenticated carts persist in Payload, merge guest selections on sign-in, preserve configuration-aware identity, and remain isolated per customer.
+- New checkout orders are created only from authenticated server-owned Payload carts; client product data and prices are ignored.
+- Order creation and cart completion are atomic, and a unique source-cart relationship prevents duplicate submission.
+- Payload Admin exposes Nilper order numbers, contact/fulfillment snapshots, trusted commerce snapshots, and the complete Nilper status lifecycle.
+- Account order history combines new Payload orders with legacy Supabase records during the Phase 9 transition.
+- Committed cart/order migrations, generated types, Phase 8 integration verification, TypeScript, lint, build, manual catalog, journal, and showcase checks pass.
+
 ### Remaining boundary after the gate
 
 - The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
 - Eight additional manually curated products and their real images are live through the Payload-backed storefront catalog.
-- Demo catalog fixtures remain only for non-interactive brand/project references and the legacy Supabase order request boundary.
-- Browser cart persistence and Supabase checkout remain in place until Phase 8.
+- Demo catalog fixtures remain only for non-interactive brand/project references.
+- Payload owns authenticated cart persistence and all new checkout orders; guest browser storage is ID-only and non-authoritative.
+- Supabase remains only for customer authentication, profiles, addresses, and legacy order-history reads until Phase 9.
 - Full customer/account migration remains Phase 9 work.
 
 ---
