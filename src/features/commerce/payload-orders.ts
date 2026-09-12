@@ -80,6 +80,7 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
       | "contactName"
       | "contactPhone"
       | "currency"
+      | "customer"
       | "deliveryMethod"
       | "items"
       | "orderNumber"
@@ -96,6 +97,7 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
       orderNumber: `NP-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`,
       sourceCart: cart.id,
       storefrontCustomerKey: getStorefrontCustomerKey(user),
+      customer: user.payloadCustomerId,
       contactName: contact.name,
       contactPhone: contact.phone,
       deliveryMethod: contact.delivery,

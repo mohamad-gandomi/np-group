@@ -5,10 +5,15 @@ const isEditorialUser = (user: unknown) => {
   return user.role === "admin" || user.role === "editor";
 };
 
+const isCustomerUser = (user: unknown) => {
+  if (!user || typeof user !== "object" || !("collection" in user)) return false;
+  return user.collection === "customers";
+};
+
 export const isAdmin: Access = ({ req }) => isEditorialUser(req.user);
 export const adminOnlyFieldAccess: FieldAccess = ({ req }) => isEditorialUser(req.user);
 export const isAuthenticated: Access = ({ req }) => Boolean(req.user);
-export const isCustomer: FieldAccess = ({ req }) => Boolean(req.user) && !isEditorialUser(req.user);
+export const isCustomer: FieldAccess = ({ req }) => isCustomerUser(req.user);
 
 export const adminOrPublishedStatus: Access = ({ req }) => {
   if (isEditorialUser(req.user)) return true;

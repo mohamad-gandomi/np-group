@@ -65,6 +65,15 @@ try {
   });
   remember("users", user.id);
   const req = await createLocalReq({ user }, payload);
+  const customer = await payload.create({
+    collection: "customers",
+    data: {
+      phone: `+989${shortID.replace(/[^0-9]/g, "").padEnd(9, "0").slice(0, 9)}`,
+      storefrontIdentity: `phase4-${runID}`,
+      active: true,
+    },
+  });
+  remember("customers", customer.id);
 
   const brand = await payload.create({
     collection: "brands",
@@ -227,7 +236,7 @@ try {
 
   const cart = await payload.create({
     collection: "carts",
-    data: { customer: user.id, currency: "TMN", subtotal: 1, items: [] },
+    data: { customer: customer.id, currency: "TMN", subtotal: 1, items: [] },
   });
   remember("carts", cart.id);
   assert.equal(cart.subtotal, 0, "An empty cart subtotal must be server-owned.");
@@ -412,6 +421,7 @@ try {
     "variantTypes",
     "categories",
     "brands",
+    "customers",
     "users",
   ]) {
     for (const id of [...(created[collection] ?? [])].reverse()) {

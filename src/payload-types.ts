@@ -70,10 +70,14 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    customers: CustomerAuthOperations;
   };
   blocks: {};
   collections: {
     users: User;
+    customers: Customer;
+    'customer-otp-challenges': CustomerOtpChallenge;
+    'customer-sessions': CustomerSession;
     media: Media;
     brands: Brand;
     categories: Category;
@@ -106,6 +110,9 @@ export interface Config {
   };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    customers: CustomersSelect<false> | CustomersSelect<true>;
+    'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
+    'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
@@ -135,7 +142,7 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: User | Customer;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -147,7 +154,7 @@ export interface Config {
     collections: {
       addresses: Address;
       carts: Cart;
-      customers?: User;
+      customers: Customer;
       orders: Order;
       products: Product;
       transactions: Transaction;
@@ -158,6 +165,24 @@ export interface Config {
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface CustomerAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -203,6 +228,53 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers".
+ */
+export interface Customer {
+  id: number;
+  fullName?: string | null;
+  phone: string;
+  storefrontIdentity: string;
+  legacySupabaseUserId?: string | null;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  collection: 'customers';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-otp-challenges".
+ */
+export interface CustomerOtpChallenge {
+  id: number;
+  phoneKey: string;
+  requestIpKey: string;
+  codeHash: string;
+  codeSalt: string;
+  expiresAt: string;
+  attempts: number;
+  deliveryState: 'pending' | 'delivered' | 'failed';
+  providerMessageId?: string | null;
+  consumedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-sessions".
+ */
+export interface CustomerSession {
+  id: number;
+  customer: number | Customer;
+  tokenHash: string;
+  challengeKey: string;
+  expiresAt: string;
+  revokedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -322,7 +394,7 @@ export interface ConfigurationOption {
  */
 export interface Address {
   id: number;
-  customer?: (number | null) | User;
+  customer?: (number | null) | Customer;
   title?: string | null;
   firstName?: string | null;
   lastName?: string | null;
@@ -591,7 +663,7 @@ export interface Cart {
       }[]
     | null;
   secret?: string | null;
-  customer?: (number | null) | User;
+  customer?: (number | null) | Customer;
   purchasedAt?: string | null;
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
@@ -645,7 +717,7 @@ export interface Order {
     country?: string | null;
     phone?: string | null;
   };
-  customer?: (number | null) | User;
+  customer?: (number | null) | Customer;
   customerEmail?: string | null;
   transactions?: (number | Transaction)[] | null;
   status?: OrderStatus;
@@ -707,7 +779,7 @@ export interface Transaction {
     phone?: string | null;
   };
   status: 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'expired' | 'refunded';
-  customer?: (number | null) | User;
+  customer?: (number | null) | Customer;
   customerEmail?: string | null;
   order?: (number | null) | Order;
   cart?: (number | null) | Cart;
@@ -743,6 +815,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'customer-otp-challenges';
+        value: number | CustomerOtpChallenge;
+      } | null)
+    | ({
+        relationTo: 'customer-sessions';
+        value: number | CustomerSession;
       } | null)
     | ({
         relationTo: 'media';
@@ -801,10 +885,15 @@ export interface PayloadLockedDocument {
         value: number | Transaction;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'customers';
+        value: number | Customer;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -814,10 +903,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: number;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'customers';
+        value: number | Customer;
+      };
   key?: string | null;
   value?:
     | {
@@ -867,6 +961,49 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers_select".
+ */
+export interface CustomersSelect<T extends boolean = true> {
+  fullName?: T;
+  phone?: T;
+  storefrontIdentity?: T;
+  legacySupabaseUserId?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-otp-challenges_select".
+ */
+export interface CustomerOtpChallengesSelect<T extends boolean = true> {
+  phoneKey?: T;
+  requestIpKey?: T;
+  codeHash?: T;
+  codeSalt?: T;
+  expiresAt?: T;
+  attempts?: T;
+  deliveryState?: T;
+  providerMessageId?: T;
+  consumedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-sessions_select".
+ */
+export interface CustomerSessionsSelect<T extends boolean = true> {
+  customer?: T;
+  tokenHash?: T;
+  challengeKey?: T;
+  expiresAt?: T;
+  revokedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

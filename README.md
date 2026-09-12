@@ -38,16 +38,16 @@ PAYLOAD_DB_USER=nilper_payload
 PAYLOAD_DB_PASSWORD=YOUR_PASSWORD
 ```
 
-Retain the Supabase variables while using the existing customer authentication, profile, address, and legacy order-history flows. New carts and orders are persisted in Payload.
+Retain the Supabase variables during Phase 9 for profile, address, and legacy order-history compatibility. New customer OTP sessions, carts, and orders are persisted in Payload.
 
 Relevant non-Payload variables are documented in `.env.example`, including:
 
 - `NEXT_PUBLIC_SITE_URL` for metadata and sitemap URLs
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and server-only `SUPABASE_SECRET_KEY`
-- `AUTH_DEV_SECRET` for local demo sessions
-- `KAVENEGAR_API_KEY`, `KAVENEGAR_OTP_TEMPLATE`, and `SEND_SMS_HOOK_SECRET` for the Supabase SMS hook
+- `KAVENEGAR_API_KEY` and `KAVENEGAR_OTP_TEMPLATE` for direct OTP delivery through Kavenegar Verify Lookup. The template must be approved in Kavenegar and contain `%token`.
+- `AUTH_DEV_SECRET` and `SEND_SMS_HOOK_SECRET` are retained temporarily for the legacy Supabase authentication path during migration.
 
-Apply `supabase/migrations/20260829000000_account_dashboard.sql` only when provisioning the existing Supabase account schema or preserving legacy order history. Without Supabase configuration, local development supports demo login with OTP `123456`; that fallback is disabled in production.
+Apply `supabase/migrations/20260829000000_account_dashboard.sql` only when provisioning the existing Supabase account schema or preserving legacy account data. Without Kavenegar configuration, local development uses Payload's visible demo OTP `123456`; that fallback is disabled in production. Production phone login requires both Kavenegar variables.
 
 ## Development
 
@@ -81,6 +81,7 @@ npm run payload:verify:phase3
 npm run payload:verify:phase4
 npm run payload:verify:phase5
 npm run payload:verify:phase8
+npm run payload:verify:phase9
 npm run payload:verify:manual-catalog
 ```
 
@@ -113,7 +114,8 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 - Static fixture products remain only as clearly labeled, non-interactive references on demo brand/project pages; they do not create public catalog routes or participate in checkout.
 - Guest carts store only compact product, variant, quantity, and configuration IDs in the browser and are revalidated by the server. Signed-in carts persist in Payload, and sign-in merges any guest selections into the authenticated cart.
 - Checkout creates Payload orders from the authenticated server-owned cart inside a database transaction. Payload preserves trusted product, variant, configuration, price, contact, and status snapshots, and exposes Nilper's order lifecycle in Admin.
-- Supabase remains active for customer authentication, profile, addresses, and legacy order history until Phase 9 replaces those responsibilities. New orders are written only to Payload.
+- Phone OTP authentication now uses Payload customer, challenge, and revocable session records, with Kavenegar Verify Lookup as the production delivery provider. Existing Supabase identities are preserved when first linked so carts and order history remain continuous.
+- Supabase remains available as a production login fallback until Kavenegar is configured, and remains the source for profile, addresses, and legacy order history until the remaining Phase 9 work migrates those responsibilities.
 - `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
 - Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.
 - Temporary editorial images are under `public/placeholders`, and the hero video is under `public/videos/hero.mp4`.

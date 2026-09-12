@@ -2,10 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { DEV_SESSION_COOKIE } from "@/features/auth/dev-session";
+import { CUSTOMER_SESSION_COOKIE } from "@/features/auth/customer-session-config";
 import { getSupabaseConfig, isDevelopmentAuth, isSupabaseConfigured } from "@/features/auth/auth-config";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const mayHavePayloadCustomer = Boolean(request.cookies.get(CUSTOMER_SESSION_COOKIE));
   let authenticated = isDevelopmentAuth && Boolean(request.cookies.get(DEV_SESSION_COOKIE));
 
   if (isSupabaseConfigured) {
@@ -24,14 +26,10 @@ export async function updateSession(request: NextRequest) {
     authenticated = Boolean(data?.claims?.sub);
   }
 
-  if (request.nextUrl.pathname.startsWith("/account") && !authenticated) {
+  if (request.nextUrl.pathname.startsWith("/account") && !authenticated && !mayHavePayloadCustomer) {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(login);
-  }
-
-  if (request.nextUrl.pathname === "/login" && authenticated) {
-    return NextResponse.redirect(new URL("/account", request.url));
   }
 
   return response;

@@ -3,6 +3,7 @@ export const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISH
 export const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+export const isSupabaseAdminConfigured = Boolean(SUPABASE_URL && SUPABASE_SECRET_KEY);
 export const isDevelopmentAuth = process.env.NODE_ENV !== "production" && !isSupabaseConfigured;
 
 export function getSupabaseConfig() {

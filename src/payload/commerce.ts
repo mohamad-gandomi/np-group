@@ -244,7 +244,7 @@ export const ecommerce = ecommercePlugin({
       },
     }),
   },
-  customers: { slug: "users" },
+  customers: { slug: "customers" },
   currencies: {
     ...NILPER_COMMERCE_CURRENCIES,
   },

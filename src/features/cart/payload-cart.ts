@@ -247,12 +247,13 @@ export async function getStorefrontCart(user: AuthUser): Promise<CartResponse> {
 export async function replaceStorefrontCart(user: AuthUser, references: CartLineReference[]): Promise<CartResponse> {
   const payload = await getPayload({ config });
   const activeCart = await findActiveStorefrontCart(payload, user);
-  const data: Pick<Cart, "currency" | "items" | "storefrontCustomerKey"> = {
+  const data: Pick<Cart, "currency" | "items" | "storefrontCustomerKey"> & Pick<Cart, "customer"> = {
     // Snapshot fields are required in generated document types, but the cart hook
     // derives them from these untrusted references before validation completes.
     items: payloadItems(references) as unknown as Cart["items"],
     currency: NILPER_COMMERCE_CURRENCY.code,
     storefrontCustomerKey: getStorefrontCustomerKey(user),
+    customer: user.payloadCustomerId,
   };
   const cart = activeCart
     ? await payload.update({ collection: "carts", id: activeCart.id, data, depth: 2, overrideAccess: true })

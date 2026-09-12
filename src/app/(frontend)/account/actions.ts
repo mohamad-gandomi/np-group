@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isDevelopmentAuth, isSupabaseConfigured } from "@/features/auth/auth-config";
+import { clearCustomerSession } from "@/features/auth/customer-session-next";
 import { clearDevSession, setDevSession } from "@/features/auth/dev-session";
 import { normalizeIranianPhone } from "@/features/auth/phone";
 import { requireUser } from "@/features/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export async function logoutAction() {
+  await clearCustomerSession();
   if (isSupabaseConfigured) {
     const supabase = await createClient();
     await supabase.auth.signOut();

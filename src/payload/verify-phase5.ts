@@ -10,7 +10,7 @@ import { mapPayloadProduct } from "../features/catalog/payload-catalog-mapper";
 
 const payload = await getPayload({ config });
 const runID = randomUUID();
-const created: { carts: number[]; orders: number[]; users: number[] } = { carts: [], orders: [], users: [] };
+const created: { carts: number[]; customers: number[]; orders: number[]; users: number[] } = { carts: [], customers: [], orders: [], users: [] };
 const testPrice = 12_345_678;
 
 let product: Product | undefined;
@@ -37,6 +37,15 @@ try {
   }).then((user) => created.users.push(user.id));
   const user = await payload.findByID({ collection: "users", id: created.users[0]! });
   const req = await createLocalReq({ user }, payload);
+  const customer = await payload.create({
+    collection: "customers",
+    data: {
+      phone: `+989${runID.replace(/[^0-9]/g, "").padEnd(9, "0").slice(0, 9)}`,
+      storefrontIdentity: `phase5-${runID}`,
+      active: true,
+    },
+  });
+  created.customers.push(customer.id);
 
   const products = await payload.find({
     collection: "products",
@@ -104,7 +113,7 @@ try {
     ? { groupKey: selection.groupKey, option: alternateOptions[1]!.id }
     : selection);
 
-  const cart = await payload.create({ collection: "carts", data: { customer: user.id, currency: "TMN", items: [] } });
+  const cart = await payload.create({ collection: "carts", data: { customer: customer.id, currency: "TMN", items: [] } });
   created.carts.push(cart.id);
   await addItem({ payload, cartsSlug: "carts", cartID: cart.id, req, cartItemMatcher: nilperCartItemMatcher, item: { product: product.id, variant: variant.id, configuration } });
   const combined = await addItem({ payload, cartsSlug: "carts", cartID: cart.id, req, cartItemMatcher: nilperCartItemMatcher, item: { product: product.id, variant: variant.id, configuration: [...configuration].reverse() }, quantity: 2 });
@@ -156,6 +165,7 @@ try {
   if (variant && originalVariantCode) await payload.update({ collection: "variants", id: variant.id, data: { nilperCode: originalVariantCode, priceInTMNEnabled: originalVariantPriceEnabled, priceInTMN: originalVariantPrice } }).catch(() => undefined);
   if (group && originalGroupTitle) await payload.update({ collection: "configuration-groups", id: group.id, data: { title: originalGroupTitle } }).catch(() => undefined);
   if (option && originalOptionTitle) await payload.update({ collection: "configuration-options", id: option.id, data: { title: originalOptionTitle } }).catch(() => undefined);
+  for (const id of created.customers.reverse()) await payload.delete({ collection: "customers", id, overrideAccess: true }).catch(() => undefined);
   for (const id of created.users.reverse()) await payload.delete({ collection: "users", id }).catch(() => undefined);
   await payload.destroy();
 }

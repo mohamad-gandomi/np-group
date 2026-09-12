@@ -4,12 +4,23 @@ import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 
 import { isDevelopmentAuth, isSupabaseConfigured } from "./auth-config";
+import { getPayloadCustomer } from "./customer-session-next";
 import { getDevSession } from "./dev-session";
 import { createClient } from "@/lib/supabase/server";
 
-export type AuthUser = { id: string; phone: string; name?: string };
+export type AuthUser = { id: string; phone: string; name?: string; payloadCustomerId?: number };
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  const customer = await getPayloadCustomer();
+  if (customer) {
+    return {
+      id: customer.storefrontIdentity,
+      phone: customer.phone,
+      name: customer.fullName ?? undefined,
+      payloadCustomerId: customer.id,
+    };
+  }
+
   if (isSupabaseConfigured) {
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();

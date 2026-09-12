@@ -1,6 +1,8 @@
 import path from "node:path";
 import type { Access, CollectionConfig, Field } from "payload";
 
+import { customerSessionStrategy } from "../features/auth/customer-session";
+
 const rtlText = (name: string, label: string, required = false): Field => ({
   name,
   type: "text",
@@ -90,6 +92,106 @@ export const Users: CollectionConfig = {
       ],
     },
     { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
+  ],
+};
+
+const editorialOrCustomerSelf: Access = ({ req }) => {
+  if (hasEditorialRole(req.user)) return true;
+  if (req.user?.collection !== "customers" || !req.user.id) return false;
+  return { id: { equals: req.user.id } };
+};
+
+export const Customers: CollectionConfig = {
+  slug: "customers",
+  auth: {
+    disableLocalStrategy: true,
+    strategies: [customerSessionStrategy],
+  },
+  access: {
+    admin: ({ req }) => hasEditorialRole(req.user),
+    create: editorialOnly,
+    delete: () => false,
+    read: editorialOrCustomerSelf,
+    update: editorialOrCustomerSelf,
+  },
+  labels: { singular: "مشتری", plural: "مشتریان" },
+  admin: {
+    group: "فروشگاه",
+    useAsTitle: "fullName",
+    defaultColumns: ["fullName", "phone", "active", "updatedAt"],
+  },
+  fields: [
+    rtlText("fullName", "نام و نام خانوادگی"),
+    {
+      name: "phone",
+      type: "text",
+      label: "شماره همراه تأییدشده",
+      required: true,
+      unique: true,
+      index: true,
+      admin: { readOnly: true },
+    },
+    {
+      name: "storefrontIdentity",
+      type: "text",
+      required: true,
+      unique: true,
+      index: true,
+      admin: { hidden: true, readOnly: true },
+      access: { create: () => false, read: () => false, update: () => false },
+    },
+    {
+      name: "legacySupabaseUserId",
+      type: "text",
+      unique: true,
+      index: true,
+      admin: { hidden: true, readOnly: true },
+      access: { create: () => false, read: () => false, update: () => false },
+    },
+    { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
+  ],
+};
+
+const privateAuthCollectionAccess: CollectionConfig["access"] = {
+  admin: () => false,
+  create: adminOnly,
+  delete: adminOnly,
+  read: adminOnly,
+  update: adminOnly,
+};
+
+export const CustomerOtpChallenges: CollectionConfig = {
+  slug: "customer-otp-challenges",
+  access: privateAuthCollectionAccess,
+  admin: { hidden: true },
+  fields: [
+    { name: "phoneKey", type: "text", required: true, index: true },
+    { name: "requestIpKey", type: "text", required: true, index: true },
+    { name: "codeHash", type: "text", required: true, admin: { hidden: true } },
+    { name: "codeSalt", type: "text", required: true, admin: { hidden: true } },
+    { name: "expiresAt", type: "date", required: true, index: true },
+    { name: "attempts", type: "number", required: true, defaultValue: 0, min: 0, max: 5 },
+    {
+      name: "deliveryState",
+      type: "select",
+      required: true,
+      options: ["pending", "delivered", "failed"],
+    },
+    { name: "providerMessageId", type: "text" },
+    { name: "consumedAt", type: "date", index: true },
+  ],
+};
+
+export const CustomerSessions: CollectionConfig = {
+  slug: "customer-sessions",
+  access: privateAuthCollectionAccess,
+  admin: { hidden: true },
+  fields: [
+    { name: "customer", type: "relationship", relationTo: "customers", required: true, index: true },
+    { name: "tokenHash", type: "text", required: true, unique: true, index: true, admin: { hidden: true } },
+    { name: "challengeKey", type: "text", required: true, unique: true, index: true, admin: { hidden: true } },
+    { name: "expiresAt", type: "date", required: true, index: true },
+    { name: "revokedAt", type: "date", index: true },
   ],
 };
 
@@ -205,6 +307,9 @@ export const ConfigurationOptions: CollectionConfig = {
 
 export const collections: CollectionConfig[] = [
   Users,
+  Customers,
+  CustomerOtpChallenges,
+  CustomerSessions,
   Media,
   Brands,
   Categories,

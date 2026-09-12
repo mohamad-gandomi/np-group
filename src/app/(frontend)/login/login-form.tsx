@@ -29,7 +29,7 @@ export function LoginForm({ next }: { next: string }) {
     if (!result.ok || !result.phone) return setError(result.error ?? "خطایی رخ داد.");
     setPhone(result.phone);
     setDevelopmentCode(result.developmentCode);
-    setSeconds(60);
+    setSeconds(result.retryAfter ?? 60);
     setPhase("code");
   });
 
