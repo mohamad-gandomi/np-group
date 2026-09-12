@@ -12,15 +12,24 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 8 is complete; Phase 9 is ready but has not begun.
+- **Active phase:** Phase 9 is in progress; Phase 9.1 is complete and Phase 9.2 is next.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
-- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, signed-in carts, new orders, and order lifecycle. Supabase remains for customer authentication, profile, addresses, and legacy order history until Phase 9.
-- **Next implementation task:** Begin Phase 9.1 by designing and implementing secure Iranian phone OTP authentication for Payload while preserving the current login UX and keeping the working Supabase path until the replacement passes verification.
-- **Later phases:** Phase 9+ remain not started. Payload architecture is locked and Phases 0–5, 7, and 8 are complete; Phase 6 remains deferred by owner decision.
+- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, signed-in carts, new orders, and order lifecycle. Supabase remains temporarily for profile, addresses, legacy order history, and a production login fallback until the remaining Phase 9 migration is verified.
+- **Next implementation task:** Continue with Phase 9.2 by migrating profile, address, and account queries to Payload while preserving the existing account UX and identity/history continuity.
+- **Later phases:** Phase 9.2 and 9.3 remain unfinished. Payload architecture is locked and Phases 0–5, 7, 8, and 9.1 are complete; Phase 6 remains deferred by owner decision.
 
 ## Latest Session Note
 
-- **Date:** 2026-09-11
+- **Date:** 2026-09-12
+- [x] Completed Phase 9.1 with a separate Payload `customers` auth collection, private OTP challenge records, and revocable customer session records; existing editorial `users` remain isolated from storefront customers.
+- [x] Integrated Kavenegar Verify Lookup directly for production OTP delivery using an approved `%token` template, while keeping OTP generation, hashing, expiry, attempt enforcement, and validation inside Payload/PostgreSQL.
+- [x] Added five-minute one-time OTPs, 60-second resend cooldowns, per-phone and per-IP rate limits, five-attempt lockout, keyed hashes for phones/IPs/codes/session tokens, secure HTTP-only cookies, seven-day sessions, and server-side logout revocation.
+- [x] Preserved commerce ownership continuity by carrying forward the legacy Supabase user ID when available and linking new Payload customers directly to carts and orders without changing the existing storefront identity key.
+- [x] Kept the working Supabase path as a production fallback until Kavenegar is configured; profile, addresses, and legacy order-history reads remain intentionally deferred to Phase 9.2.
+- [x] Added and applied `20260912_104215_nilper_customer_auth`, regenerated Payload types, and added a repeatable Phase 9 auth verification suite covering limits, invalid attempts, one-time use, customer creation, authentication, and revocation.
+- [x] Verified the live Persian login flow with local OTP `123456`, account-history continuity, logout, protected-route redirect, meaningful page content, no framework error overlay, and no browser console errors.
+- [x] Fixed a stale legacy Supabase-cookie redirect loop by leaving authenticated login-page redirection to the server page's verified user lookup.
+- [x] Passed TypeScript, lint, production build, Phase 8 and Phase 9 Payload suites, and journal/showcase regressions; Phase 3–5 checks also passed against the new customer relations during implementation.
 - [x] Completed Phase 8: authenticated carts and all new checkout orders now persist in Payload while the existing Persian storefront UI remains intact.
 - [x] Replaced full browser-stored product objects with a versioned, configuration-aware guest cart containing only stable IDs and quantities; guest selections are revalidated server-side and merged into the signed-in cart.
 - [x] Added an opaque, indexed storefront-customer key so current authenticated users can own isolated Payload carts and orders without prematurely replacing the Phase 9 authentication system.
@@ -57,10 +66,10 @@ Before implementation, read these files completely in order:
 - [x] Normalized same-app Payload media to `/api/media/file/...` paths so `next/image` never captures the local Payload server hostname; added a regression assertion.
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
-- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; Supabase authentication/profile/address and legacy-order reads remain until Phase 9; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 8 completed; Phase 9 is ready and not started.
-- **Latest relevant implementation commit:** `146e46b` (`refactor(commerce): migrate storefront carts and orders to Payload`).
-- **Next implementation task:** Start Phase 9.1 with secure Payload phone OTP authentication without removing the verified existing auth path prematurely.
+- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; Supabase profile/address and legacy-order reads plus the production auth fallback remain until Phase 9.2/9.3; `AGENTS.md` and its generated Next.js block remain untouched.
+- **Current active phase:** Phase 9.1 completed; Phase 9.2 is next.
+- **Latest relevant implementation commit:** `4c6f672` (`feat(auth): add Payload phone OTP with Kavenegar`).
+- **Next implementation task:** Migrate profiles, addresses, and remaining account queries to Payload in Phase 9.2, then verify continuity before removing any Supabase code in Phase 9.3.
 
 ## Working rules for Codex
 
@@ -679,7 +688,7 @@ refactor(commerce): migrate storefront carts and orders to Payload
 
 Do this after product/cart/order architecture is stable.
 
-## 9.1 Phone OTP with Payload
+## 9.1 Phone OTP with Payload — complete (2026-09-12)
 
 Implement a Payload custom auth strategy or supported auth flow for phone OTP.
 
@@ -687,13 +696,21 @@ Reuse Kavenegar-compatible SMS behavior as appropriate.
 
 Security requirements:
 
-- short OTP TTL
-- one-time use
-- rate limiting
-- attempt limit
-- hashed/secure server-side OTP state
-- no OTP secrets in client bundle
-- normalize Iranian phone numbers consistently
+- [x] short OTP TTL
+- [x] one-time use
+- [x] rate limiting
+- [x] attempt limit
+- [x] hashed/secure server-side OTP state
+- [x] no OTP secrets in client bundle
+- [x] normalize Iranian phone numbers consistently
+
+Completion record:
+
+- [x] Payload custom customer auth strategy uses opaque, hashed, revocable session tokens.
+- [x] Kavenegar Verify Lookup is the production delivery provider; Payload/PostgreSQL remains authoritative for OTP state.
+- [x] Existing storefront identity is preserved when a legacy Supabase profile is linked.
+- [x] Local development remains testable with visible OTP `123456`; the fallback is disabled in production.
+- [x] Supabase is retained only for the responsibilities that must remain available through Phase 9.2/9.3.
 
 ## 9.2 Migrate profiles/addresses/account queries
 

@@ -47,7 +47,7 @@ Relevant non-Payload variables are documented in `.env.example`, including:
 - `KAVENEGAR_API_KEY` and `KAVENEGAR_OTP_TEMPLATE` for direct OTP delivery through Kavenegar Verify Lookup. The template must be approved in Kavenegar and contain `%token`.
 - `AUTH_DEV_SECRET` and `SEND_SMS_HOOK_SECRET` are retained temporarily for the legacy Supabase authentication path during migration.
 
-Apply `supabase/migrations/20260829000000_account_dashboard.sql` only when provisioning the existing Supabase account schema or preserving legacy account data. Without Kavenegar configuration, local development uses Payload's visible demo OTP `123456`; that fallback is disabled in production. Production phone login requires both Kavenegar variables.
+Apply `supabase/migrations/20260829000000_account_dashboard.sql` only when provisioning the existing Supabase account schema or preserving legacy account data. Without Kavenegar configuration, local development uses Payload's visible demo OTP `123456`; that fallback is disabled in production. Direct Payload phone login in production requires both Kavenegar variables; the legacy Supabase path remains available during the migration.
 
 ## Development
 
