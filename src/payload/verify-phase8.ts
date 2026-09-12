@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { randomInt } from "node:crypto";
 
 import { getPayload } from "payload";
 
@@ -16,10 +16,10 @@ import { createStorefrontOrder, getPayloadAccountOrders } from "../features/comm
 import type { ConfigurationGroup, ConfigurationOption, Product, Variant } from "../payload-types";
 
 const payload = await getPayload({ config });
-const runID = randomUUID();
 const testPrice = 23_456_789;
-const user: AuthUser = { id: `phase8-${runID}`, phone: "09120000000" };
-const otherUser: AuthUser = { id: `phase8-other-${runID}`, phone: "09120000001" };
+const customerIDs = new Set<number>();
+let user: AuthUser;
+let otherUser: AuthUser;
 
 let product: Product | undefined;
 let variant: Variant | undefined;
@@ -29,6 +29,16 @@ const createdCartIDs = new Set<number>();
 const createdOrderIDs = new Set<number>();
 
 try {
+  const phoneBase = randomInt(1_000_000, 8_999_998);
+  const [customer, otherCustomer] = await Promise.all([
+    payload.create({ collection: "customers", data: { phone: `+98910${phoneBase}`, active: true }, overrideAccess: true }),
+    payload.create({ collection: "customers", data: { phone: `+98910${phoneBase + 1}`, active: true }, overrideAccess: true }),
+  ]);
+  customerIDs.add(customer.id);
+  customerIDs.add(otherCustomer.id);
+  user = { id: customer.id, phone: customer.phone };
+  otherUser = { id: otherCustomer.id, phone: otherCustomer.phone };
+
   const products = await payload.find({
     collection: "products",
     depth: 2,
@@ -89,8 +99,7 @@ try {
   assert.equal(created.items[0]?.quantity, 1);
 
   const rawCart = await payload.findByID({ collection: "carts", id: created.cartId, depth: 0, overrideAccess: true });
-  assert.equal(rawCart.customer, null);
-  assert.match(rawCart.storefrontCustomerKey ?? "", /^[a-f0-9]{64}$/);
+  assert.equal(rawCart.customer, customer.id);
 
   const merged = await mergeStorefrontCart(user, [{ ...references[0]!, quantity: 2 }]);
   assert.equal(merged.cartId, created.cartId);
@@ -131,6 +140,7 @@ try {
   assert.equal(submittedOrder.contactPhone, user.phone);
   assert.equal(submittedOrder.amount, testPrice);
   assert.equal(typeof submittedOrder.sourceCart, "number");
+  assert.equal(submittedOrder.customer, customer.id);
 
   const afterCheckout = await getStorefrontCart(user);
   assert.equal(afterCheckout.items.length, 0, "Purchased carts must no longer be returned as active carts.");
@@ -160,6 +170,9 @@ try {
   }
   for (const id of createdCartIDs) {
     await payload.delete({ collection: "carts", id, overrideAccess: true }).catch(() => undefined);
+  }
+  for (const id of customerIDs) {
+    await payload.delete({ collection: "customers", id, overrideAccess: true }).catch(() => undefined);
   }
   if (variant) {
     await payload.update({

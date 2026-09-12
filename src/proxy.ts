@@ -1,12 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { updateSession } from "@/lib/supabase/proxy";
+import { CUSTOMER_SESSION_COOKIE } from "@/features/auth/customer-session-config";
 
 export async function proxy(request: NextRequest) {
-  // Public editorial and showcase pages need no auth network calls/cookies.
   const path = request.nextUrl.pathname;
-  if (["/blog", "/projects", "/brands"].some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return NextResponse.next();
-  return updateSession(request);
+  if (path.startsWith("/account") && !request.cookies.has(CUSTOMER_SESSION_COOKIE)) {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", path);
+    return NextResponse.redirect(login);
+  }
+  return NextResponse.next();
 }
 
 export const config = {

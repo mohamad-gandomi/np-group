@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { commitTransaction, createLocalReq, initTransaction, killTransaction } from "payload";
 import type { Customer, CustomerOtpChallenge } from "@/payload-types";
 import type { Payload } from "payload";
@@ -17,7 +17,6 @@ export const DEVELOPMENT_OTP = "123456";
 
 type DeliveryResult = { messageId: string; developmentCode?: string };
 type DeliverOtp = (phone: string, code: string) => Promise<DeliveryResult>;
-type LegacyCustomer = { id: string; name?: string } | null;
 
 export class CustomerAuthError extends Error {
   constructor(message: string, readonly retryAfter?: number) {
@@ -43,10 +42,6 @@ function hashesMatch(left: string, right: string) {
   const leftBuffer = Buffer.from(left, "hex");
   const rightBuffer = Buffer.from(right, "hex");
   return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
-}
-
-function defaultStorefrontIdentity(phone: string) {
-  return createHash("sha256").update(phone).digest("hex").slice(0, 24);
 }
 
 async function defaultDelivery(phone: string, code: string): Promise<DeliveryResult> {
@@ -144,7 +139,6 @@ export async function requestCustomerOtp(
 async function findOrCreateCustomer(
   payload: Payload,
   phone: string,
-  resolveLegacyCustomer?: (phone: string) => Promise<LegacyCustomer>,
   req?: Awaited<ReturnType<typeof createLocalReq>>,
 ): Promise<Customer> {
   const existing = await payload.find({
@@ -157,14 +151,10 @@ async function findOrCreateCustomer(
   });
   if (existing.docs[0]) return existing.docs[0];
 
-  const legacy = resolveLegacyCustomer ? await resolveLegacyCustomer(phone) : null;
   return payload.create({
     collection: "customers",
     data: {
       phone,
-      fullName: legacy?.name,
-      storefrontIdentity: legacy?.id ?? defaultStorefrontIdentity(phone),
-      legacySupabaseUserId: legacy?.id,
       active: true,
     },
     depth: 0,
@@ -191,7 +181,6 @@ export async function verifyCustomerOtp(
   input: {
     phone: string;
     code: string;
-    resolveLegacyCustomer?: (phone: string) => Promise<LegacyCustomer>;
   },
 ) {
   const phone = normalizeIranianPhone(input.phone);
@@ -232,7 +221,7 @@ export async function verifyCustomerOtp(
     if (!hashesMatch(fresh.codeHash, codeHash(phone, fresh.codeSalt, code))) {
       throw new CustomerAuthError("کد واردشده صحیح نیست یا منقضی شده است.");
     }
-    const customer = await findOrCreateCustomer(payload, phone, input.resolveLegacyCustomer, req);
+    const customer = await findOrCreateCustomer(payload, phone, req);
     if (customer.active === false) throw new CustomerAuthError("این حساب غیرفعال است. با پشتیبانی تماس بگیرید.");
     const token = await createCustomerSession(payload, customer.id, String(fresh.id), req);
     await payload.update({

@@ -5,10 +5,7 @@ import { commitTransaction, createLocalReq, getPayload, initTransaction, killTra
 import config from "../../../payload.config";
 import type { AuthUser } from "@/features/auth/session";
 import { mapPayloadProduct } from "@/features/catalog/payload-catalog-mapper";
-import {
-  findActiveStorefrontCart,
-  getStorefrontCustomerKey,
-} from "@/features/cart/payload-cart";
+import { findActiveStorefrontCart } from "@/features/cart/payload-cart";
 import type { AccountOrder, OrderStatus } from "@/features/commerce/order-types";
 import type { Order, Product as PayloadProduct } from "@/payload-types";
 import { NILPER_COMMERCE_CURRENCY } from "@/payload/money";
@@ -88,7 +85,6 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
       | "shippingAddress"
       | "sourceCart"
       | "status"
-      | "storefrontCustomerKey"
     > = {
       items: cart.items,
       amount: cart.subtotal ?? 0,
@@ -96,8 +92,7 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
       status: "pending_review",
       orderNumber: `NP-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`,
       sourceCart: cart.id,
-      storefrontCustomerKey: getStorefrontCustomerKey(user),
-      customer: user.payloadCustomerId,
+      customer: user.id,
       contactName: contact.name,
       contactPhone: contact.phone,
       deliveryMethod: contact.delivery,
@@ -148,7 +143,7 @@ export async function getPayloadAccountOrders(user: AuthUser): Promise<AccountOr
     overrideAccess: true,
     pagination: false,
     sort: "-createdAt",
-    where: { storefrontCustomerKey: { equals: getStorefrontCustomerKey(user) } },
+    where: { customer: { equals: user.id } },
   });
 
   return result.docs.map((order) => ({
@@ -185,9 +180,9 @@ export async function getPayloadAccountOrders(user: AuthUser): Promise<AccountOr
 
 export async function deleteStorefrontOrderForVerification(user: AuthUser, orderID: number) {
   const payload = await getPayload({ config });
-  const key = getStorefrontCustomerKey(user);
   const order = await payload.findByID({ collection: "orders", id: orderID, depth: 0, overrideAccess: true });
-  if (order.storefrontCustomerKey === key) {
+  const customerID = typeof order.customer === "object" ? order.customer?.id : order.customer;
+  if (customerID === user.id) {
     await payload.delete({ collection: "orders", id: orderID, overrideAccess: true });
   }
 }

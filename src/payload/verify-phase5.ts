@@ -41,7 +41,6 @@ try {
     collection: "customers",
     data: {
       phone: `+989${runID.replace(/[^0-9]/g, "").padEnd(9, "0").slice(0, 9)}`,
-      storefrontIdentity: `phase5-${runID}`,
       active: true,
     },
   });

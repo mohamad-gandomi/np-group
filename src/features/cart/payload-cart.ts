@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import { createLocalReq, getPayload } from "payload";
 import type { Payload, PayloadRequest } from "payload";
 
@@ -110,12 +108,6 @@ export function mergeCartLineReferences(
   return [...merged.values()];
 }
 
-export function getStorefrontCustomerKey(user: AuthUser) {
-  const secret = process.env.PAYLOAD_SECRET;
-  if (!secret) throw new Error("PAYLOAD_SECRET is required for storefront carts.");
-  return createHash("sha256").update(`nilper-storefront-cart:${user.id}:${secret}`).digest("hex");
-}
-
 export async function findActiveStorefrontCart(
   payload: Payload,
   user: AuthUser,
@@ -131,7 +123,7 @@ export async function findActiveStorefrontCart(
     sort: "-updatedAt",
     where: {
       and: [
-        { storefrontCustomerKey: { equals: getStorefrontCustomerKey(user) } },
+        { customer: { equals: user.id } },
         { purchasedAt: { exists: false } },
       ],
     },
@@ -247,13 +239,12 @@ export async function getStorefrontCart(user: AuthUser): Promise<CartResponse> {
 export async function replaceStorefrontCart(user: AuthUser, references: CartLineReference[]): Promise<CartResponse> {
   const payload = await getPayload({ config });
   const activeCart = await findActiveStorefrontCart(payload, user);
-  const data: Pick<Cart, "currency" | "items" | "storefrontCustomerKey"> & Pick<Cart, "customer"> = {
+  const data: Pick<Cart, "currency" | "items" | "customer"> = {
     // Snapshot fields are required in generated document types, but the cart hook
     // derives them from these untrusted references before validation completes.
     items: payloadItems(references) as unknown as Cart["items"],
     currency: NILPER_COMMERCE_CURRENCY.code,
-    storefrontCustomerKey: getStorefrontCustomerKey(user),
-    customer: user.payloadCustomerId,
+    customer: user.id,
   };
   const cart = activeCart
     ? await payload.update({ collection: "carts", id: activeCart.id, data, depth: 2, overrideAccess: true })

@@ -131,23 +131,6 @@ export const Customers: CollectionConfig = {
       index: true,
       admin: { readOnly: true },
     },
-    {
-      name: "storefrontIdentity",
-      type: "text",
-      required: true,
-      unique: true,
-      index: true,
-      admin: { hidden: true, readOnly: true },
-      access: { create: () => false, read: () => false, update: () => false },
-    },
-    {
-      name: "legacySupabaseUserId",
-      type: "text",
-      unique: true,
-      index: true,
-      admin: { hidden: true, readOnly: true },
-      access: { create: () => false, read: () => false, update: () => false },
-    },
     { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
   ],
 };

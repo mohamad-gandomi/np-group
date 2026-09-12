@@ -237,8 +237,6 @@ export interface Customer {
   id: number;
   fullName?: string | null;
   phone: string;
-  storefrontIdentity: string;
-  legacySupabaseUserId?: string | null;
   active?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -404,48 +402,9 @@ export interface Address {
   city?: string | null;
   state?: string | null;
   postalCode?: string | null;
-  country:
-    | 'US'
-    | 'GB'
-    | 'CA'
-    | 'AU'
-    | 'AT'
-    | 'BE'
-    | 'BR'
-    | 'BG'
-    | 'CY'
-    | 'CZ'
-    | 'DK'
-    | 'EE'
-    | 'FI'
-    | 'FR'
-    | 'DE'
-    | 'GR'
-    | 'HK'
-    | 'HU'
-    | 'IN'
-    | 'IE'
-    | 'IT'
-    | 'JP'
-    | 'LV'
-    | 'LT'
-    | 'LU'
-    | 'MY'
-    | 'MT'
-    | 'MX'
-    | 'NL'
-    | 'NZ'
-    | 'NO'
-    | 'PL'
-    | 'PT'
-    | 'RO'
-    | 'SG'
-    | 'SK'
-    | 'SI'
-    | 'ES'
-    | 'SE'
-    | 'CH';
+  country: 'IR';
   phone?: string | null;
+  isDefault?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -668,7 +627,6 @@ export interface Cart {
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
   currency?: 'TMN' | null;
-  storefrontCustomerKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -729,7 +687,6 @@ export interface Order {
   contactPhone: string;
   deliveryMethod: 'advisor';
   paymentMethod: 'gateway' | 'invoice';
-  storefrontCustomerKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -969,8 +926,6 @@ export interface UsersSelect<T extends boolean = true> {
 export interface CustomersSelect<T extends boolean = true> {
   fullName?: T;
   phone?: T;
-  storefrontIdentity?: T;
-  legacySupabaseUserId?: T;
   active?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1128,6 +1083,7 @@ export interface AddressesSelect<T extends boolean = true> {
   postalCode?: T;
   country?: T;
   phone?: T;
+  isDefault?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1296,7 +1252,6 @@ export interface CartsSelect<T extends boolean = true> {
   status?: T;
   subtotal?: T;
   currency?: T;
-  storefrontCustomerKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1355,7 +1310,6 @@ export interface OrdersSelect<T extends boolean = true> {
   contactPhone?: T;
   deliveryMethod?: T;
   paymentMethod?: T;
-  storefrontCustomerKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }

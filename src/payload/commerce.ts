@@ -206,9 +206,20 @@ export const ecommerce = ecommercePlugin({
     isDocumentOwner,
   },
   addresses: {
+    supportedCountries: [{ label: "ایران", value: "IR" }],
     addressesCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
-      admin: { ...defaultCollection.admin, hidden: true },
+      labels: { singular: "آدرس", plural: "آدرس‌ها" },
+      admin: {
+        ...defaultCollection.admin,
+        hidden: false,
+        group: "فروشگاه",
+        defaultColumns: ["title", "firstName", "phone", "city", "isDefault", "updatedAt"],
+      },
+      fields: [
+        ...defaultCollection.fields,
+        { name: "isDefault", type: "checkbox", label: "آدرس پیش‌فرض", defaultValue: false },
+      ],
     }),
   },
   carts: {
@@ -219,17 +230,6 @@ export const ecommerce = ecommercePlugin({
       admin: { ...defaultCollection.admin, hidden: true },
       fields: [
         ...defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
-        {
-          name: "storefrontCustomerKey",
-          type: "text",
-          index: true,
-          admin: { hidden: true, readOnly: true },
-          access: {
-            create: () => false,
-            read: () => false,
-            update: () => false,
-          },
-        },
       ],
       hooks: {
         ...defaultCollection.hooks,
@@ -303,13 +303,6 @@ export const ecommerce = ecommercePlugin({
             { label: "درگاه پرداخت آنلاین", value: "gateway" },
             { label: "فاکتور و پرداخت مرحله‌ای", value: "invoice" },
           ],
-        },
-        {
-          name: "storefrontCustomerKey",
-          type: "text",
-          index: true,
-          admin: { hidden: true, readOnly: true },
-          access: { create: () => false, read: () => false, update: () => false },
         },
       ],
       hooks: {
