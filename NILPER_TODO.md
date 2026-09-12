@@ -12,20 +12,24 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 9 is in progress; Phase 9.1 is complete and Phase 9.2 is next.
+- **Active phase:** Phase 9 is complete; Phase 10 is next.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
-- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, signed-in carts, new orders, and order lifecycle. Supabase remains temporarily for profile, addresses, legacy order history, and a production login fallback until the remaining Phase 9 migration is verified.
-- **Next implementation task:** Continue with Phase 9.2 by migrating profile, address, and account queries to Payload while preserving the existing account UX and identity/history continuity.
-- **Later phases:** Phase 9.2 and 9.3 remain unfinished. Payload architecture is locked and Phases 0–5, 7, 8, and 9.1 are complete; Phase 6 remains deferred by owner decision.
+- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, orders, and order lifecycle. Kavenegar Verify Lookup provides production OTP delivery. Supabase has been removed.
+- **Next implementation task:** Begin Phase 10 by selecting and implementing the Iranian payment adapter without changing the completed Payload commerce ownership model.
+- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–9 are complete; Phase 6 remains deferred by owner decision.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-12
+- [x] Completed Phase 9.2: account profile updates, address creation/listing, and order queries now use Payload/PostgreSQL while preserving the existing Persian account UX.
+- [x] Completed Phase 9.3: removed Supabase packages, clients, proxy/session fallbacks, Edge Function, SQL migration, environment variables, and README instructions after verifying the Payload replacements.
+- [x] Simplified ownership for this fresh site: customers now link directly to profiles, addresses, carts, and orders by Payload customer relationship; obsolete legacy identity and storefront-key bridge fields were removed.
+- [x] Added Iran as the supported address country, exposed addresses in Payload Admin with Persian labels and default-address state, and applied `20260912_111822_nilper_payload_account_cutover`.
+- [x] Passed TypeScript, clean lint, production build, Phase 4/5/8/9 Payload suites, migration status, journal/showcase regressions, and a live browser flow covering OTP login, profile update, first/default address, overview count, logout, protected-route redirect, and browser error checks.
 - [x] Completed Phase 9.1 with a separate Payload `customers` auth collection, private OTP challenge records, and revocable customer session records; existing editorial `users` remain isolated from storefront customers.
 - [x] Integrated Kavenegar Verify Lookup directly for production OTP delivery using an approved `%token` template, while keeping OTP generation, hashing, expiry, attempt enforcement, and validation inside Payload/PostgreSQL.
 - [x] Added five-minute one-time OTPs, 60-second resend cooldowns, per-phone and per-IP rate limits, five-attempt lockout, keyed hashes for phones/IPs/codes/session tokens, secure HTTP-only cookies, seven-day sessions, and server-side logout revocation.
-- [x] Preserved commerce ownership continuity by carrying forward the legacy Supabase user ID when available and linking new Payload customers directly to carts and orders without changing the existing storefront identity key.
-- [x] Kept the working Supabase path as a production fallback until Kavenegar is configured; profile, addresses, and legacy order-history reads remain intentionally deferred to Phase 9.2.
+- [x] Initially introduced a transition identity bridge in Phase 9.1; the owner later confirmed this is a fresh site, so Phase 9.3 removed the bridge and direct Payload customer relationships are now canonical.
 - [x] Added and applied `20260912_104215_nilper_customer_auth`, regenerated Payload types, and added a repeatable Phase 9 auth verification suite covering limits, invalid attempts, one-time use, customer creation, authentication, and revocation.
 - [x] Verified the live Persian login flow with local OTP `123456`, account-history continuity, logout, protected-route redirect, meaningful page content, no framework error overlay, and no browser console errors.
 - [x] Fixed a stale legacy Supabase-cookie redirect loop by leaving authenticated login-page redirection to the server page's verified user lookup.
@@ -35,7 +39,7 @@ Before implementation, read these files completely in order:
 - [x] Added an opaque, indexed storefront-customer key so current authenticated users can own isolated Payload carts and orders without prematurely replacing the Phase 9 authentication system.
 - [x] Replaced Supabase order writes with transactional Payload order creation sourced only from the authenticated server-owned cart; duplicate submission is guarded by a unique source-cart relationship.
 - [x] Added Nilper order numbers, contact and fulfillment snapshots, and the statuses pending review, confirmed, in production, ready, shipped, delivered, and cancelled to Payload Admin.
-- [x] Kept legacy Supabase orders readable in the account alongside new Payload orders; Supabase authentication, profile, and addresses remain intentionally active until Phase 9.
+- [x] At the Phase 8 checkpoint, kept legacy Supabase orders readable alongside new Payload orders; completed Phase 9 later replaced this transition layer and removed Supabase.
 - [x] Added and applied committed cart/order migrations, regenerated Payload types, updated older verification fixtures, and added a repeatable Phase 8 isolation/persistence/status test.
 - [x] Verified TypeScript, lint, production build, Phase 8, manual catalog, journal, and showcase suites; Phase 3–5 regression suites also pass against the evolved schema.
 - [x] Completed Phase 7: all public shop categories, product listings, facets, search, filtering, sorting, pagination, product details, related products, homepage selections, header navigation, static product paths and sitemap entries now read reviewed records through the server-only Payload repository/mapper boundary.
@@ -66,15 +70,15 @@ Before implementation, read these files completely in order:
 - [x] Normalized same-app Payload media to `/api/media/file/...` paths so `next/image` never captures the local Payload server hostname; added a regression assertion.
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
-- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; Supabase profile/address and legacy-order reads plus the production auth fallback remain until Phase 9.2/9.3; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 9.1 completed; Phase 9.2 is next.
-- **Latest relevant implementation commit:** `4c6f672` (`feat(auth): add Payload phone OTP with Kavenegar`).
-- **Next implementation task:** Migrate profiles, addresses, and remaining account queries to Payload in Phase 9.2, then verify continuity before removing any Supabase code in Phase 9.3.
+- **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; foundational Payload migration history remains required for clean database setup; `AGENTS.md` and its generated Next.js block remain untouched.
+- **Current active phase:** Phase 9 completed; Phase 10 is next.
+- **Latest relevant implementation commit:** `9e26d0c` (`refactor(auth): migrate customer account from Supabase to Payload`).
+- **Next implementation task:** Begin Phase 10 by selecting and implementing the Iranian payment adapter.
 
 ## Working rules for Codex
 
 - Do not redesign or replace the existing public frontend.
-- Do not delete Supabase integration until its replacement is working and verified.
+- Do not reintroduce Supabase or a second customer/account datastore without an explicit architecture decision.
 - Do not build or run an Excel product importer unless the owner explicitly reopens the deferred Phase 6 work.
 - Do not treat every fabric/wood/color choice as a Variant.
 - Do not silently correct source Excel codes or names.
@@ -654,7 +658,7 @@ Completion record:
 - [x] Product, variant, configuration, title, code, and price snapshots are validated and owned by the server.
 - [x] Order creation and cart completion use one Payload/PostgreSQL transaction.
 - [x] A unique source-cart relationship prevents duplicate orders from repeated submissions.
-- [x] New Payload orders and legacy Supabase history render together in the existing account UI during the transition.
+- [x] At the Phase 8 checkpoint, new Payload orders and legacy Supabase history rendered together during the transition; Phase 9 later removed the legacy source.
 
 ## 8.3 Order statuses
 
@@ -708,26 +712,39 @@ Completion record:
 
 - [x] Payload custom customer auth strategy uses opaque, hashed, revocable session tokens.
 - [x] Kavenegar Verify Lookup is the production delivery provider; Payload/PostgreSQL remains authoritative for OTP state.
-- [x] Existing storefront identity is preserved when a legacy Supabase profile is linked.
+- [x] Phase 9.1 initially preserved linked legacy identities; the fresh-site decision in Phase 9.3 later removed this temporary bridge.
 - [x] Local development remains testable with visible OTP `123456`; the fallback is disabled in production.
-- [x] Supabase is retained only for the responsibilities that must remain available through Phase 9.2/9.3.
+- [x] Supabase was retained until its Payload replacements passed verification, then removed in Phase 9.3.
 
-## 9.2 Migrate profiles/addresses/account queries
+## 9.2 Migrate profiles/addresses/account queries — complete (2026-09-12)
 
 Replace Supabase account data layer with Payload.
 
 Preserve existing account page UX.
 
-## 9.3 Remove Supabase only after verification
+Completion record:
+
+- [x] Profile updates persist on the authenticated Payload customer.
+- [x] Address creation and account address queries use Payload Ecommerce addresses linked directly to the customer.
+- [x] Account order queries use Payload orders only; empty accounts render honestly without demo records.
+- [x] The existing account overview, profile, addresses, order list, and order-detail UI contract is preserved.
+
+## 9.3 Remove Supabase only after verification — complete (2026-09-12)
 
 When Payload handles all required responsibilities:
 
-- remove `@supabase/*` packages
-- remove Supabase clients/helpers
-- remove Supabase env variables
-- remove old migration/function files if no longer used
-- remove old order API implementation
-- update README
+- [x] remove `@supabase/*` packages
+- [x] remove Supabase clients/helpers
+- [x] remove Supabase env variables
+- [x] remove old migration/function files if no longer used
+- [x] confirm the active order API already uses Payload and contains no Supabase implementation
+- [x] update README
+
+Completion record:
+
+- [x] The fresh-site decision removed the need to retain or migrate legacy Supabase customer and order data.
+- [x] Direct Payload customer relationships replaced temporary identity/storefront-key bridge fields.
+- [x] The Phase 9 suite covers OTP security, sessions, profiles, addresses, account queries, and revocation; affected Phase 4, 5, and 8 commerce suites pass against the cutover schema.
 
 Commit checkpoint:
 
@@ -821,6 +838,6 @@ The three source workbooks are not a required session input while Phase 6 is def
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5, 7, and 8 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer. Continue with the earliest unfinished Phase 9 task without removing Supabase until its replacement is working and verified.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–9 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer or reintroduce Supabase. Continue with Phase 10, the Iranian payment adapter.
 
 Keep each session focused on the current phase and update this file before ending.

@@ -65,7 +65,7 @@ feat(commerce): add configuration-aware cart items
 feat(commerce): complete Delan Payload vertical slice
 ```
 
-Phases 0–5, 7, and 8 are merged into `main`; Phase 6 is deferred by owner decision. Phase 9.1 is complete on branch `codex/payload-phase-9` at implementation commit `4c6f672` and awaits merge.
+Phases 0–5, 7, and 8 are merged into `main`; Phase 6 is deferred by owner decision. Phase 9 is complete on branch `codex/payload-phase-9` at implementation commit `9e26d0c` and awaits merge.
 
 The old WordPress/WooCommerce experiment, its Docker setup, plugin and WordPress planning documents have been removed from the repository.
 
@@ -86,7 +86,8 @@ Payload CMS              3.88.0
 Payload Ecommerce        3.88.0
 Payload Postgres adapter 3.88.0
 PostgreSQL               local/dev via Docker Compose
-Supabase                 still present for profile/addresses, legacy order history, and auth fallback
+Customer/account data    Payload CMS + PostgreSQL
+Production phone SMS     Kavenegar Verify Lookup
 ```
 
 Relevant commands currently exist:
@@ -107,6 +108,7 @@ npm run payload:verify:phase3
 npm run payload:verify:phase4
 npm run payload:verify:phase5
 npm run payload:verify:phase8
+npm run payload:verify:phase9
 
 npm run lint
 npm run build
@@ -238,7 +240,7 @@ editor
 
 Storefront customers use a separate Payload `customers` auth collection and never share the Admin/editor `users` collection. Phone OTP challenges and revocable sessions are private Payload collections; Kavenegar Verify Lookup delivers production SMS while Payload/PostgreSQL owns OTP state.
 
-Phase 9.1 preserves the existing storefront identity when linking a legacy Supabase profile. Profile and address persistence remain Phase 9.2 work.
+Payload customers are the canonical storefront identities. Profiles, addresses, carts, and orders link directly to the authenticated customer record; no legacy identity bridge or secondary account datastore remains.
 
 #### Media
 
@@ -670,7 +672,7 @@ Do not redesign ProductCard/ProductView merely because the data source changes.
 
 ---
 
-## 13. Commerce persistence and Supabase boundary
+## 13. Commerce and customer persistence boundary
 
 Phase 8 established the current commerce flow:
 
@@ -684,22 +686,15 @@ guest browser cart (stable IDs only)
 
 Guest local storage contains only stable product/variant IDs, quantity, and configuration group/option IDs. It is never authoritative for product metadata or prices. Signing in merges those references into the user's Payload cart after server validation.
 
-Storefront sessions now authenticate a Payload customer through an opaque random cookie whose keyed hash is stored in PostgreSQL. Customers link directly to new carts and orders, while the existing indexed one-way storefront identity key remains stable so pre-migration ownership is not broken.
+Storefront sessions authenticate a Payload customer through an opaque random cookie whose keyed hash is stored in PostgreSQL. Customers link directly to profiles, addresses, carts, and orders through Payload relationships.
 
 Checkout accepts contact, delivery, and payment selections only. The server creates the order from the authenticated Payload cart, revalidates the trusted commerce item snapshots, and marks that cart purchased in the same PostgreSQL transaction. A unique source-cart relationship makes repeated checkout submissions safe. Orders expose Nilper's lifecycle in Payload Admin: pending review, confirmed, in production, ready, shipped, delivered, and cancelled.
 
-Supabase is still present and working.
+Payload/PostgreSQL is the single source of truth for customer authentication state, profiles, addresses, carts, and orders. Account queries contain no demo fallback and read only records owned by the authenticated Payload customer.
 
-Current responsibilities include existing public/customer flows such as:
+Kavenegar Verify Lookup is a delivery provider only: OTP generation, keyed hashing, expiry, one-time use, attempt/rate enforcement, customer creation, and revocable sessions remain inside Payload/PostgreSQL. Local development may expose OTP `123456`; production fails closed unless Kavenegar is configured.
 
-- profiles/account data.
-- addresses.
-- legacy order-history reads during the transition.
-- production phone-login fallback when direct Kavenegar delivery is not configured.
-
-Supabase no longer receives new order requests. The account order view combines legacy Supabase history with new Payload orders until Phase 9.2 completes the account-query migration.
-
-Do not remove Supabase until Payload replacements are complete and verified.
+Supabase packages, helpers, environment variables, proxy/session fallbacks, function code, and obsolete SQL migration were removed after the Payload replacement passed verification. The owner confirmed this is a fresh site, so no legacy customer/order migration or compatibility bridge is required.
 
 Target migration order:
 
@@ -710,7 +705,7 @@ Target migration order:
 5. commerce flow migration.
 6. phone OTP migration.
 7. profile/address/account-query migration.
-8. only then remove Supabase.
+8. remove Supabase after verification — complete.
 
 The final architecture should not keep permanent duplicate sources of truth for the same customer/order data.
 
@@ -786,16 +781,19 @@ At the current reviewed state:
 - New checkout orders are created only from authenticated server-owned Payload carts; client product data and prices are ignored.
 - Order creation and cart completion are atomic, and a unique source-cart relationship prevents duplicate submission.
 - Payload Admin exposes Nilper order numbers, contact/fulfillment snapshots, trusted commerce snapshots, and the complete Nilper status lifecycle.
-- Account order history combines new Payload orders with legacy Supabase records during the Phase 9 transition.
+- Account order history reads Payload orders owned directly by the authenticated customer.
 - Committed cart/order migrations, generated types, Phase 8 integration verification, TypeScript, lint, build, manual catalog, journal, and showcase checks pass.
 
-### Phase 9.1 completion
+### Phase 9 completion
 
 - Payload has a dedicated customer auth collection, private OTP challenges, and revocable customer sessions; Admin/editor users remain separate.
 - Iranian phone numbers are normalized consistently, OTPs expire after five minutes and are one-time, resend and request rates are limited, invalid attempts lock after five tries, and only keyed hashes are stored for OTP-sensitive identifiers and tokens.
 - Production SMS delivery uses Kavenegar Verify Lookup with an approved `%token` template; no provider credential or OTP state is exposed to the client.
-- Existing Supabase customer IDs are preserved as storefront identities when linked, maintaining cart/order ownership continuity.
-- The customer-auth migration and browser flow pass dedicated verification, while Supabase remains available for the still-unmigrated Phase 9.2 account responsibilities.
+- Customer profiles, addresses, carts, and orders link directly to the authenticated Payload customer.
+- Account profile updates, address creation/listing, order queries, session revocation, and protected account access use Payload/PostgreSQL while preserving the Persian account UX.
+- Iran is the supported commerce address country; addresses are manageable in Payload Admin and record default-address state.
+- The owner confirmed this is a fresh site, so obsolete legacy identity/storefront-key fields and all Supabase code/configuration were removed instead of migrated.
+- The committed account-cutover migration, generated types, Phase 9 integration verification, affected Phase 4/5/8 suites, TypeScript, lint, and production build pass.
 
 ### Remaining boundary after the gate
 
@@ -803,8 +801,8 @@ At the current reviewed state:
 - Eight additional manually curated products and their real images are live through the Payload-backed storefront catalog.
 - Demo catalog fixtures remain only for non-interactive brand/project references.
 - Payload owns authenticated cart persistence and all new checkout orders; guest browser storage is ID-only and non-authoritative.
-- Supabase remains for profiles, addresses, legacy order-history reads, and a production auth fallback until direct Kavenegar configuration and Phase 9.2 are verified.
-- Profile/address/account-query migration remains Phase 9.2; Supabase removal remains gated by Phase 9.3.
+- Payload/PostgreSQL is the only customer/account/commerce datastore; Kavenegar remains an OTP delivery provider, not an identity store.
+- Phase 10, the Iranian payment adapter, is the next implementation phase.
 
 ---
 
