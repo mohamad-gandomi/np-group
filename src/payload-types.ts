@@ -79,6 +79,7 @@ export interface Config {
     'customer-otp-challenges': CustomerOtpChallenge;
     'customer-sessions': CustomerSession;
     media: Media;
+    posts: Post;
     brands: Brand;
     categories: Category;
     'product-series': ProductSery;
@@ -114,6 +115,7 @@ export interface Config {
     'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
     'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'product-series': ProductSeriesSelect<false> | ProductSeriesSelect<true>;
@@ -303,6 +305,88 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * عنوان صفحه از فیلد «عنوان» می‌آید؛ داخل متن از تیتر ۲ تا ۴ استفاده کنید. فهرست مطلب و زمان مطالعه خودکار ساخته می‌شوند.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * مثال: choosing-sofa-dimensions — بعد از انتشار تغییر ندهید.
+   */
+  slug: string;
+  category: 'planning' | 'materials' | 'lighting' | 'living';
+  description: string;
+  /**
+   * پاسخ مستقیم و مستقل به پرسش اصلی مطلب؛ در صفحه نیز دیده می‌شود.
+   */
+  summary: string;
+  heroImage: number | Media;
+  heroCaption?: string | null;
+  /**
+   * برای بخش‌های اصلی H2 بگذارید؛ فهرست خودکار از H2ها ساخته می‌شود. H3 و H4 برای زیربخش‌ها هستند.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  takeaway: string;
+  callToAction: {
+    label: string;
+    /**
+     * مثال: /shop یا /contact
+     */
+    href: string;
+  };
+  relatedPosts?: (number | Post)[] | null;
+  authorName: string;
+  authorUrl?: string | null;
+  authorBio?: string | null;
+  seo?: {
+    /**
+     * اگر خالی باشد، عنوان اصلی استفاده می‌شود.
+     */
+    title?: string | null;
+    /**
+     * اگر خالی باشد، خلاصه کارت استفاده می‌شود.
+     */
+    description?: string | null;
+    socialImage?: (number | null) | Media;
+    /**
+     * برای تمرکز تحریریه است؛ به‌عنوان meta keywords منتشر نمی‌شود.
+     */
+    primaryTopic?: string | null;
+    /**
+     * فقط برای مطالبی که نباید در نتایج جست‌وجو دیده شوند.
+     */
+    noIndex?: boolean | null;
+  };
+  /**
+   * در اولین انتشار، اگر خالی باشد خودکار ثبت می‌شود.
+   */
+  publishedAt?: string | null;
+  featured?: boolean | null;
+  sortOrder?: number | null;
+  wordCount?: number | null;
+  readingTimeMinutes?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -863,6 +947,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
         relationTo: 'brands';
         value: number | Brand;
       } | null)
@@ -1065,6 +1153,48 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  description?: T;
+  summary?: T;
+  heroImage?: T;
+  heroCaption?: T;
+  content?: T;
+  takeaway?: T;
+  callToAction?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  relatedPosts?: T;
+  authorName?: T;
+  authorUrl?: T;
+  authorBio?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        socialImage?: T;
+        primaryTopic?: T;
+        noIndex?: T;
+      };
+  publishedAt?: T;
+  featured?: T;
+  sortOrder?: T;
+  wordCount?: T;
+  readingTimeMinutes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

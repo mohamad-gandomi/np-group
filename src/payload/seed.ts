@@ -3,7 +3,9 @@ import path from "node:path";
 import { getPayload } from "payload";
 
 import config from "../../payload.config";
-import type { Product } from "../payload-types";
+import type { Post, Product } from "../payload-types";
+import { journalSeedPosts } from "../features/journal/seed-posts";
+import type { ArticleSection, LegacyJournalPost } from "../features/journal/types";
 import { manualCatalogProducts } from "./manual-catalog";
 import { buildNilperSourceKey } from "./source-identity";
 
@@ -28,7 +30,7 @@ const richText = (text: string): Product["descriptionFa"] => ({
 const payload = await getPayload({ config });
 type Identified = { id: number };
 
-async function ensureMedia(filename: string, source: string, alt: string): Promise<Identified> {
+async function ensureMedia(filename: string, source: string, alt: string, captionFa = "تصویر محصول از بسته رسانه‌ای تأییدشده نیلپر."): Promise<Identified> {
   const existing = await payload.find({ collection: "media", where: { filename: { equals: filename } }, limit: 1 });
   if (existing.docs[0]) return existing.docs[0] as Identified;
   const data = await fs.readFile(path.resolve(process.cwd(), source));
@@ -36,9 +38,59 @@ async function ensureMedia(filename: string, source: string, alt: string): Promi
   const mimetype = extension === ".webp" ? "image/webp" : extension === ".png" ? "image/png" : "image/jpeg";
   return await payload.create({
     collection: "media",
-    data: { alt, captionFa: "تصویر محصول از بسته رسانه‌ای تأییدشده نیلپر." },
+    data: { alt, captionFa },
     file: { data, mimetype, name: filename, size: data.length },
   }) as Identified;
+}
+
+const textNode = (text: string) => ({ type: "text", text, detail: 0, format: 0, mode: "normal", style: "", version: 1 });
+const paragraphNode = (text: string) => ({
+  type: "paragraph", direction: "rtl", format: "", indent: 0, textFormat: 0, textStyle: "", version: 1,
+  children: [textNode(text)],
+});
+const headingNode = (text: string) => ({
+  type: "heading", tag: "h2", direction: "rtl", format: "", indent: 0, version: 1,
+  children: [textNode(text)],
+});
+
+function sectionNodes(section: ArticleSection) {
+  const nodes: Record<string, unknown>[] = [headingNode(section.title), ...section.paragraphs.map(paragraphNode)];
+  if (section.bullets?.length) {
+    nodes.push({
+      type: "list", listType: "bullet", start: 1, tag: "ul", direction: "rtl", format: "", indent: 0, version: 1,
+      children: section.bullets.map((bullet, index) => ({
+        type: "listitem", value: index + 1, direction: "rtl", format: "", indent: 0, version: 1,
+        children: [textNode(bullet)],
+      })),
+    });
+  }
+  if (section.table) {
+    const rows = [section.table.headings, ...section.table.rows];
+    nodes.push(paragraphNode(section.table.caption));
+    nodes.push({
+      type: "table", direction: "rtl", format: "", indent: 0, version: 1,
+      children: rows.map((row, rowIndex) => ({
+        type: "tablerow", direction: "rtl", format: "", indent: 0, version: 1,
+        children: row.map((cell) => ({
+          type: "tablecell", backgroundColor: null, colSpan: 1, headerState: rowIndex === 0 ? 1 : 0, rowSpan: 1,
+          direction: "rtl", format: "", indent: 0, version: 1, children: [paragraphNode(cell)],
+        })),
+      })),
+    });
+  }
+  if (section.note) {
+    nodes.push({ type: "quote", direction: "rtl", format: "", indent: 0, version: 1, children: [textNode(section.note)] });
+  }
+  return nodes;
+}
+
+function journalRichText(post: LegacyJournalPost): Post["content"] {
+  return {
+    root: {
+      type: "root", direction: "rtl", format: "", indent: 0, version: 1,
+      children: [paragraphNode(post.introduction), ...post.sections.flatMap(sectionNodes)],
+    },
+  } as Post["content"];
 }
 
 async function ensureBySlug(collection: "brands" | "categories" | "product-series" | "products", slug: string, data: Record<string, unknown>): Promise<Identified> {
@@ -423,5 +475,61 @@ for (const sourceProduct of manualCatalogProducts) {
   }
 }
 
-payload.logger.info(`Nilper Payload catalog seed is ready: ${manualCatalogProducts.length + 2} curated products.`);
+const journalMedia = new Map<string, Identified>();
+for (const post of journalSeedPosts) {
+  const source = `public${post.image}`;
+  const filename = `journal-${path.basename(post.image)}`;
+  journalMedia.set(post.slug, await ensureMedia(filename, source, post.imageAlt, post.imageCaption));
+}
+
+const journalPostIDs = new Map<string, number>();
+const createdJournalSlugs = new Set<string>();
+for (const [index, post] of journalSeedPosts.entries()) {
+  const existing = await payload.find({ collection: "posts", where: { slug: { equals: post.slug } }, limit: 1 });
+  if (existing.docs[0]) {
+    journalPostIDs.set(post.slug, existing.docs[0].id as number);
+    continue;
+  }
+  const heroImage = journalMedia.get(post.slug);
+  if (!heroImage) throw new Error(`Missing journal media for ${post.slug}.`);
+  const created = await payload.create({
+    collection: "posts",
+    draft: false,
+    data: {
+      title: post.title,
+      slug: post.slug,
+      category: post.category,
+      description: post.description,
+      summary: post.summary,
+      heroImage: heroImage.id,
+      heroCaption: post.imageCaption,
+      content: journalRichText(post),
+      takeaway: post.takeaway,
+      callToAction: post.collection,
+      authorName: "تحریریه ان‌پی",
+      authorUrl: "/about",
+      authorBio: "یادداشت‌های گروه ان‌پی درباره انتخاب مبلمان، شناخت متریال و ساختن فضاهایی برای زندگی روزمره.",
+      seo: { noIndex: false, primaryTopic: post.title },
+      publishedAt: post.publishedAt,
+      featured: index === 0,
+      sortOrder: journalSeedPosts.length - index,
+      _status: "published",
+    },
+  });
+  journalPostIDs.set(post.slug, created.id as number);
+  createdJournalSlugs.add(post.slug);
+}
+
+for (const post of journalSeedPosts) {
+  if (!createdJournalSlugs.has(post.slug)) continue;
+  const id = journalPostIDs.get(post.slug);
+  if (!id) continue;
+  await payload.update({
+    collection: "posts",
+    id,
+    data: { relatedPosts: post.relatedSlugs.map((slug) => journalPostIDs.get(slug)).filter((value): value is number => Boolean(value)) },
+  });
+}
+
+payload.logger.info(`Nilper Payload seed is ready: ${manualCatalogProducts.length + 2} curated products and ${journalPostIDs.size} journal posts.`);
 await payload.destroy();

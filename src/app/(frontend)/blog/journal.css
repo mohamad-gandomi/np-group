@@ -100,14 +100,23 @@
 .journal-mobile-contents { display: none; }
 .journal-quick-answer { border-inline-start: 3px solid var(--journal-red); background: #eeebe3; padding: 24px 28px; }
 .journal-quick-answer > p:last-child { margin-top: 10px; font-size: 16px; line-height: 2.15; }
-.journal-introduction { font-size: 19px; line-height: 2.2; margin-block: 32px 38px; }
-.journal-prose-section { margin-bottom: 44px; scroll-margin-top: 165px; }
-.journal-section-number { font-size: 11px; color: var(--journal-red); margin-bottom: 8px; }
-.journal-prose h2 { font-size: clamp(22px, 2.2vw, 28px); font-weight: 550; line-height: 1.8; letter-spacing: -.025em; margin-bottom: 18px; }
-.journal-prose-section > p:not(.journal-section-number) { font-size: 17px; line-height: 2.2; color: #47453f; margin-bottom: 20px; }
-.journal-prose ul { list-style: none; margin-block: 22px; padding: 22px 26px; border-block: 1px solid var(--journal-line); }
+.journal-prose { margin-block: 32px 38px; }
+.journal-prose :is(h2, h3, h4) { scroll-margin-top: 165px; letter-spacing: -.025em; }
+.journal-prose h2 { font-size: clamp(22px, 2.2vw, 28px); font-weight: 550; line-height: 1.8; margin: 44px 0 18px; }
+.journal-prose h3 { font-size: 21px; font-weight: 550; line-height: 1.9; margin: 32px 0 14px; }
+.journal-prose h4 { font-size: 18px; font-weight: 600; line-height: 2; margin: 26px 0 12px; }
+.journal-prose p { font-size: 17px; line-height: 2.2; color: #47453f; margin-bottom: 20px; }
+.journal-prose > div > p:first-child { font-size: 19px; color: var(--journal-ink); }
+.journal-prose :is(ul, ol) { margin-block: 22px; padding: 22px 42px 22px 26px; border-block: 1px solid var(--journal-line); }
 .journal-prose li { position: relative; padding-inline-start: 21px; font-size: 16px; line-height: 2.1; margin-block: 9px; color: #47453f; }
 .journal-prose li::before { content: ""; position: absolute; inset-inline-start: 0; top: 14px; width: 5px; height: 5px; background: var(--journal-red); }
+.journal-prose blockquote { border-block: 1px solid var(--journal-line); padding: 25px 20px; margin-block: 30px; font-size: 22px; font-weight: 450; line-height: 1.9; color: var(--journal-ink); }
+.journal-prose a { color: var(--journal-red); text-decoration: underline; text-underline-offset: 4px; }
+.journal-prose hr { border: 0; border-top: 1px solid var(--journal-line); margin-block: 38px; }
+.journal-inline-media { margin-block: 34px; }
+.journal-inline-media img { width: 100%; height: auto; }
+.journal-inline-media figcaption { color: var(--journal-muted); font-size: 11px; line-height: 1.9; margin-top: 10px; }
+.journal-prose .lexical-table-container { overflow-x: auto; margin-block: 30px; border: 1px solid var(--journal-line); }
 .journal-pull-note { display: flex; gap: 16px; border-block: 1px solid var(--journal-line); padding-block: 25px; margin-block: 30px; }
 .journal-pull-note > span { font-size: 46px; line-height: 1; color: var(--journal-red); }
 .journal-pull-note p { font-size: 23px; font-weight: 450; line-height: 1.9; }
@@ -199,7 +208,7 @@
   .journal-quick-answer { padding: 20px; }
   .journal-quick-answer > p:last-child { font-size: 15px; }
   .journal-introduction { font-size: 18px; line-height: 2.15; }
-  .journal-prose-section > p:not(.journal-section-number) { font-size: 16px; line-height: 2.15; }
+  .journal-prose p { font-size: 16px; line-height: 2.15; }
   .journal-prose ul { padding: 16px 10px; }
   .journal-prose li { font-size: 15px; }
   .journal-table-scroll::after { content: "برای دیدن همه ستون‌ها، جدول را به طرفین بکشید."; display: block; position: sticky; inset-inline-start: 0; padding: 10px 14px; width: 100%; font-size: 11px; line-height: 1.8; background: #eeebe3; color: var(--journal-muted); }

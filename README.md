@@ -86,6 +86,7 @@ npm run payload:verify:phase8
 npm run payload:verify:phase9
 npm run payload:verify:phase10
 npm run payload:verify:phase11
+npm run payload:verify:phase12
 npm run payload:verify:manual-catalog
 ```
 
@@ -120,6 +121,7 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 - Invoice checkout creates a pending Payload order from the authenticated server-owned cart. Online checkout uses a provider-neutral Payload payment adapter with Zarinpal as the first gateway; it creates the order only after server-side amount verification, stores the authority/reference IDs, and handles repeated callbacks idempotently.
 - Products and variants default to manual freight. Fully parcel-eligible carts use server-recalculated Tapin quotes and add that amount to the Zarinpal total; freight and mixed carts charge products only and receive a manual freight quote after checkout. A Tapin shipment is registered only after successful Zarinpal verification, with duplicate prevention and stored shipment/tracking state.
 - Payload owns customer phone OTP challenges, revocable sessions, profiles, addresses, carts, and orders. Kavenegar Verify Lookup is the production OTP delivery provider.
+- Journal posts are created and edited under «مطالب مجله» in Payload Admin. Publish status controls public visibility; reading time, word count and the H2 table of contents are automatic. Run `npm run payload:seed` once on a clean database to install the four original posts and their media.
 - Customer carts, orders, profiles, and addresses are linked directly to the authenticated Payload customer record; no secondary account datastore or legacy identity bridge is used.
 - `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata, sitemap URLs, and payment callbacks are correct.
 - Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.

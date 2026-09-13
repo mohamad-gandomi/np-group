@@ -2,6 +2,7 @@ import path from "node:path";
 import type { Access, CollectionConfig, Field } from "payload";
 
 import { customerSessionStrategy } from "../features/auth/customer-session";
+import { Posts } from "./posts";
 
 const rtlText = (name: string, label: string, required = false): Field => ({
   name,
@@ -294,6 +295,7 @@ export const collections: CollectionConfig[] = [
   CustomerOtpChallenges,
   CustomerSessions,
   Media,
+  Posts,
   Brands,
   Categories,
   ProductSeries,

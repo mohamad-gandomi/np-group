@@ -2,13 +2,14 @@ import type { MetadataRoute } from "next";
 
 import { siteConfig } from "@/config/site";
 import { getCatalogCategories, getCatalogProducts } from "@/features/catalog/payload-catalog-repository";
-import { journalPosts } from "@/features/journal/posts";
+import { getJournalPosts } from "@/features/journal/payload-journal-repository";
 import { absoluteJournalUrl } from "@/features/journal/seo";
 import { brands, projects } from "@/features/showcase/data";
 import { absoluteShowcaseUrl } from "@/features/showcase/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [categories, products] = await Promise.all([getCatalogCategories(), getCatalogProducts()]);
+  const [categories, products, journalPosts] = await Promise.all([getCatalogCategories(), getCatalogProducts(), getJournalPosts()]);
+  const indexableJournalPosts = journalPosts.filter((post) => !post.seo.noIndex);
   const routes = [
     { path: "", priority: 1, changeFrequency: "weekly" as const },
     { path: "/shop", priority: 0.9, changeFrequency: "daily" as const },
@@ -19,8 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   return [
     ...routes.map((route) => ({ url: `${siteConfig.url}${route.path}`, changeFrequency: route.changeFrequency, priority: route.priority })),
-    { url: absoluteJournalUrl("/blog"), lastModified: journalPosts.reduce((latest, post) => post.updatedAt > latest ? post.updatedAt : latest, journalPosts[0].updatedAt), changeFrequency: "weekly", priority: 0.8 },
-    ...journalPosts.map((post) => ({ url: absoluteJournalUrl(`/blog/${post.slug}`), lastModified: post.updatedAt, changeFrequency: "monthly" as const, priority: 0.7, images: [absoluteJournalUrl(post.image)] })),
+    { url: absoluteJournalUrl("/blog"), lastModified: journalPosts.reduce<string | undefined>((latest, post) => !latest || post.updatedAt > latest ? post.updatedAt : latest, undefined), changeFrequency: "weekly", priority: 0.8 },
+    ...indexableJournalPosts.map((post) => ({ url: absoluteJournalUrl(`/blog/${post.slug}`), lastModified: post.updatedAt, changeFrequency: "monthly" as const, priority: 0.7, images: [absoluteJournalUrl(post.seo.socialImage || post.image)] })),
     ...[{ kind: "projects", records: projects }, { kind: "brands", records: brands }].flatMap(({ kind, records }) => {
       const published = records.filter((record) => record.publication.status === "published");
       if (!published.length) return [];

@@ -34,6 +34,7 @@ const collection = structuredData(indexHtml).find((item) => item["@type"] === "C
 assert.ok(collection, "index contains collection metadata");
 const paths = collection.mainEntity.itemListElement.map((item) => new URL(item.url).pathname);
 const sitemap = await readBuild("server/app/sitemap.xml.body");
+const robots = await readBuild("server/app/robots.txt.body");
 const descriptions = new Set();
 
 test("index is static, indexable, and links to every article without JavaScript", () => {
@@ -65,6 +66,8 @@ for (const path of paths) {
     assert.ok(!descriptions.has(article.description), "description is unique");
     descriptions.add(article.description);
     assert.ok(Date.parse(article.dateModified) >= Date.parse(article.datePublished));
+    assert.ok(article.wordCount > 0, "schema exposes the derived word count");
+    assert.match(article.timeRequired, /^PT\d+M$/, "schema exposes the derived reading time");
     assert.ok(html.includes(`dateTime="${article.datePublished}"`) || html.includes(`datetime="${article.datePublished}"`));
     const visible = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "");
     assert.ok(visible.includes(article.headline));
@@ -80,6 +83,14 @@ for (const path of paths) {
     assert.ok(entry.includes(article.image[0]), "sitemap includes the article image");
   });
 }
+
+test("rich article structure and AI search crawler access are shipped", async () => {
+  const firstArticle = await readBuild(`server/app${paths[0]}.html`);
+  assert.match(firstArticle, /<table\b/, "migrated rich text keeps semantic tables");
+  assert.match(firstArticle, /<h2\b[^>]*id=/, "H2 headings receive stable table-of-contents anchors");
+  assert.match(robots, /User-Agent: OAI-SearchBot[\s\S]*Allow: \//);
+  assert.match(robots, /User-Agent: ChatGPT-User[\s\S]*Allow: \//);
+});
 
 if (process.env.JOURNAL_TEST_URL) {
   const origin = process.env.JOURNAL_TEST_URL;

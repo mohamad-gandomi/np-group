@@ -1,21 +1,7 @@
-import "server-only";
+import type { LegacyJournalPost } from "./types";
 
-import type { JournalPost } from "./types";
-
-export const journalCategories = [
-  { id: "planning", label: "راهنمای انتخاب" },
-  { id: "materials", label: "بافت و متریال" },
-  { id: "lighting", label: "نور و فضا" },
-  { id: "living", label: "هنر زندگی" },
-] as const;
-
-export const journalAuthor = {
-  name: "تحریریه ان‌پی",
-  description: "یادداشت‌های گروه ان‌پی درباره انتخاب مبلمان، شناخت متریال و ساختن فضاهایی برای زندگی روزمره. پیشنهادهای هر مطلب، نقطه شروع انتخاب‌اند؛ شرایط خانه و مشخصات هر محصول را جداگانه بررسی کنید.",
-  url: "/about",
-};
-
-export const journalPosts: JournalPost[] = [
+/** Seed-only snapshot of the four original articles. Runtime pages read Payload. */
+export const journalSeedPosts: LegacyJournalPost[] = [
   {
     slug: "choosing-sofa-dimensions",
     category: "planning",
@@ -126,17 +112,3 @@ export const journalPosts: JournalPost[] = [
     collection: { label: "انتخاب برای نشیمن", href: "/shop?room=%D9%86%D8%B4%DB%8C%D9%85%D9%86" },
   },
 ];
-
-export function getJournalPost(slug: string) {
-  return journalPosts.find((post) => post.slug === slug);
-}
-
-export function categoryLabel(category: JournalPost["category"]) {
-  return journalCategories.find((item) => item.id === category)!.label;
-}
-
-export function readingMinutes(post: JournalPost) {
-  const text = [post.summary, post.introduction, post.takeaway,
-    ...post.sections.flatMap((section) => [section.title, ...section.paragraphs, ...(section.bullets ?? []), section.note ?? "", ...(section.table?.rows.flat() ?? [])])].join(" ");
-  return Math.max(1, Math.ceil(text.split(/\s+/u).length / 180));
-}

@@ -12,15 +12,23 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 11 is complete; Phase 12 has not started.
+- **Active phase:** Phase 12 blog/post migration is complete in the working tree.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
-- **Next implementation task:** Activate and certify the live Tapin connection after the owner supplies panel credentials and confirms the API amount unit. Do not start Phase 12 as part of Phase 11.
-- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–11 are complete; Phase 6 remains deferred by owner decision and Phase 12 is optional/not started.
+- **Next implementation task:** The owner can begin authoring/editing journal posts in Payload Admin. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
+- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete; Phase 6 remains deferred by owner decision. Projects, brand editorial pages, and homepage sections remain file-backed until the owner explicitly asks to migrate them.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-13
+- [x] Completed the owner-approved Phase 12 scope: the journal is now backed by the Payload `posts` collection while preserving all four existing public slugs and the current Persian visual design.
+- [x] Added a focused Persian editorial workflow with drafts/autosave/version history, H2–H4 headings, paragraphs, lists, links, blockquotes, inline media and tables, plus featured ordering, related posts, CTA, author and SEO controls.
+- [x] Reading time and word count are calculated from Lexical rich text on save; the desktop/mobile table of contents and stable anchor IDs are generated from visible H2 headings with no duplicate editor fields.
+- [x] Metadata, canonical URLs, robots control, social images, `BlogPosting`/breadcrumb/collection JSON-LD, homepage cards, project cross-links and the image sitemap now read published Payload data. `OAI-SearchBot` and `ChatGPT-User` are explicitly allowed while Google and other crawlers remain covered by the existing wildcard rule.
+- [x] Migrated the four static article bodies and their hero media through the idempotent seed. `src/features/journal/seed-posts.ts` remains seed-only as the preservation source; no runtime route imports it.
+- [x] Added and applied idempotent migration `20260913_094955_phase12_dynamic_journal`, regenerated Payload types/import map, and added `payload:verify:phase12` for published content, media population, derived reading data, H2 TOC and public draft isolation; migration status confirms all ten migrations are applied.
+- [x] Passed TypeScript, clean lint, production build, Phase 12 Payload verification, all five journal HTML/SEO tests and all twelve showcase regressions.
+- **Phase 12 working tree:** Complete on `codex/payload-phase-12`; not committed in this session because no Git checkpoint was requested.
 - [x] Completed Phase 11 with explicit `parcel` and `freight` modes on products and variants; every existing record defaults safely to `freight`.
 - [x] Replaced the undocumented HeroPost candidate with a provider-neutral shipping boundary and Tapin, using only the official public location, quote, order-registration, and status-report endpoints.
 - [x] Added server-owned parcel weight and Tapin box metadata plus immutable item shipping snapshots so checkout, payment, and later shipment retries do not trust browser prices or mutable catalog data.
@@ -91,10 +99,10 @@ Before implementation, read these files completely in order:
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
 - **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; foundational Payload migration history remains required for clean database setup; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 11 completed; Phase 12 not started.
-- **Latest relevant implementation commit:** `9e26d0c` (`refactor(auth): migrate customer account from Supabase to Payload`).
-- **Phase 10/11 working tree:** Complete on `codex/payload-phase-10`; not committed in this session because no Git checkpoint was requested.
-- **Next implementation task:** Configure and certify Tapin live credentials/amount unit when supplied; otherwise await explicit direction before Phase 12.
+- **Current active phase:** Phase 12 blog/post migration completed in the working tree.
+- **Latest relevant implementation commit:** `898578c` (`feat(commerce): add Zarinpal payments and Tapin shipping`).
+- **Phase 12 working tree:** Complete on `codex/payload-phase-12`; not committed in this session because no Git checkpoint was requested.
+- **Next implementation task:** Author and review posts through Payload Admin; migrate other optional editorial areas only on explicit owner direction. Configure/certify live Tapin separately when its production settings are available.
 
 ## Working rules for Codex
 
@@ -814,18 +822,30 @@ Do not start Phase 12 without a separate owner instruction.
 
 ---
 
-# Phase 12 — Optional content migration
+# Phase 12 — Optional content migration — blog/posts complete (2026-09-13)
 
 Only after commerce launch work is stable.
 
-Possible later Payload collections:
+Owner-approved scope completed:
 
-- blog/posts
-- projects
-- brands (if not already migrated for catalog)
-- homepage/editorial sections
+- [x] Added Payload `posts` with draft, autosave and version support and public access restricted to published documents.
+- [x] Added a simple Lexical writing surface with H2–H4, paragraphs, lists, links, blockquotes, images and tables.
+- [x] Added hero media/caption, category, quick answer, closing takeaway, CTA, author, related-post, featured/order and focused SEO fields.
+- [x] Calculate reading time and word count automatically from the body.
+- [x] Build the table of contents and collision-safe anchors automatically from H2 headings.
+- [x] Preserve the four existing article URLs and migrate their complete Persian content/media through an idempotent seed.
+- [x] Drive blog index, detail, homepage journal cards, project article cross-links and sitemap from published Payload records through a server-only cached repository.
+- [x] Keep one visible H1, crawlable server-rendered prose, canonical/robots/social metadata and `BlogPosting`, breadcrumb and collection structured data.
+- [x] Add explicit OpenAI search crawler access without adding speculative AI-only markup or promising rankings.
+- [x] Apply migration, regenerate types/import map, and pass Payload, TypeScript, lint, production build, journal and showcase verification.
 
-Current file-backed content can remain until editing it through Admin has real value.
+Possible later editorial collections, only on explicit owner request:
+
+- [ ] projects
+- [ ] brand editorial pages (catalog brands already live in Payload)
+- [ ] homepage/editorial sections
+
+The blog runtime no longer reads static article data. The original snapshot remains only as a seed source so clean databases can receive the four established articles without copying content into a second roadmap.
 
 ---
 
@@ -863,6 +883,6 @@ The three source workbooks are not a required session input while Phase 6 is def
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–11 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer or reintroduce Supabase. Phase 12 is optional and must not start without explicit owner direction. Live Tapin activation still requires the documented production account settings and confirmed API amount unit.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–12 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer or reintroduce Supabase. Journal posts are managed through Payload; migrate other optional editorial areas only on explicit owner direction. Live Tapin activation still requires the documented production account settings and confirmed API amount unit.
 
 Keep each session focused on the current phase and update this file before ending.

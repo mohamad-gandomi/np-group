@@ -23,6 +23,7 @@
     "payload:verify:phase9": "payload run src/payload/verify-phase9.ts",
     "payload:verify:phase10": "payload run src/payload/verify-phase10.ts",
     "payload:verify:phase11": "payload run src/payload/verify-phase11.ts",
+    "payload:verify:phase12": "payload run src/payload/verify-phase12.ts",
     "payload:verify:manual-catalog": "payload run src/payload/verify-manual-catalog.ts",
     "payload:db:start": "docker compose --env-file .env.local -f payload.compose.yaml up -d",
     "payload:db:stop": "docker compose --env-file .env.local -f payload.compose.yaml down",

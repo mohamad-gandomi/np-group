@@ -17,7 +17,8 @@ import { SectionHeading } from "@/components/section-heading";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getCatalogFacets, getCatalogProducts } from "@/features/catalog/payload-catalog-repository";
-import { categoryLabel, journalPosts } from "@/features/journal/posts";
+import { categoryLabel } from "@/features/journal/config";
+import { getJournalPosts } from "@/features/journal/payload-journal-repository";
 import { formatJournalDate } from "@/features/journal/format";
 import { brandRegistry, brandPath } from "@/features/showcase/brand-registry";
 import { storeSchema } from "@/lib/store-schema";
@@ -36,7 +37,7 @@ const services = [
 ];
 
 export default async function Home() {
-  const [facets, products] = await Promise.all([getCatalogFacets(), getCatalogProducts()]);
+  const [facets, products, journalPosts] = await Promise.all([getCatalogFacets(), getCatalogProducts(), getJournalPosts()]);
   const categories = facets.categories;
   const organizationSchema = {
     "@context": "https://schema.org",

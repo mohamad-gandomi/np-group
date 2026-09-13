@@ -7,6 +7,7 @@ import * as migration_20260912_104215_nilper_customer_auth from './20260912_1042
 import * as migration_20260912_111822_nilper_payload_account_cutover from './20260912_111822_nilper_payload_account_cutover';
 import * as migration_20260912_174237 from './20260912_174237';
 import * as migration_20260913_085957_nilper_tapin_shipping from './20260913_085957_nilper_tapin_shipping';
+import * as migration_20260913_094955_phase12_dynamic_journal from './20260913_094955_phase12_dynamic_journal';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20260913_085957_nilper_tapin_shipping.up,
     down: migration_20260913_085957_nilper_tapin_shipping.down,
-    name: '20260913_085957_nilper_tapin_shipping'
+    name: '20260913_085957_nilper_tapin_shipping',
+  },
+  {
+    up: migration_20260913_094955_phase12_dynamic_journal.up,
+    down: migration_20260913_094955_phase12_dynamic_journal.down,
+    name: '20260913_094955_phase12_dynamic_journal'
   },
 ];

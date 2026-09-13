@@ -8,7 +8,7 @@ import { brandPath } from "@/features/showcase/brand-registry";
 import { Breadcrumbs, EditorialImage, ProjectCard, ProjectConsultation, ShowcaseSchema } from "@/features/showcase/components";
 import { directoryRecords, getProject, projectProducts, projects, sectorLabels } from "@/features/showcase/data";
 import { showcaseMetadata } from "@/features/showcase/seo";
-import { journalPosts } from "@/features/journal/posts";
+import { getJournalPost } from "@/features/journal/payload-journal-repository";
 
 type Props = { params: Promise<{ slug: string }> };
 // All content is known at build time; unknown URLs use the static Persian 404.
@@ -24,7 +24,7 @@ export default async function ProjectPage({ params }: Props) {
   if (!project) notFound();
   const collection = projectProducts(project);
   const brandNames = [...new Set(collection.map((product) => product.brand))];
-  const article = journalPosts.find((post) => post.slug === project.articleSlug);
+  const article = await getJournalPost(project.articleSlug);
   const related = directoryRecords(projects).filter((item) => item.slug !== project.slug).slice(0, 2);
   return <main className="showcase" id="showcase-main" tabIndex={-1}>
     <ShowcaseSchema kind="projects" record={project} />

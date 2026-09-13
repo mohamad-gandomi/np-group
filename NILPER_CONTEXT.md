@@ -822,6 +822,16 @@ At the current reviewed state:
 - Migration `20260913_085957_nilper_tapin_shipping`, generated types, TypeScript, lint, production build, Phase 10 regression, the Phase 11 fake-provider suite, manual-catalog verification, and all 17 journal/showcase tests pass; migration status confirms all nine migrations are applied.
 - Live Tapin activation remains fail-closed until the owner supplies the panel authorization/shop/employee/kiosk/origin settings and Tapin confirms whether API monetary fields use Rial or Toman. The implementation does not guess credentials, conversion, or endpoints.
 
+### Phase 12 journal completion
+
+- Public journal posts are owned by the Payload `posts` collection; runtime blog, homepage journal cards, project article links, metadata and sitemap no longer import the static article array.
+- Posts use Payload Lexical rich text with an intentionally small editorial surface: H2–H4, paragraphs, lists, links, blockquotes, inline media and tables. Drafts, autosave and version history are enabled, and unauthenticated readers can access only published posts.
+- Reading time and word count are derived from the rich-text body at save time. The visible table of contents and anchor IDs are derived from H2 headings at render time; editors do not maintain duplicate navigation fields.
+- Each post owns its stable slug, category, description, quick answer, hero media/caption, body, takeaway, CTA, related posts, author identity, featured ordering and optional SEO title/description/social image/topic/no-index controls.
+- Public output preserves one H1 and server-rendered prose, and emits self-canonical metadata, crawler controls, sitemap image/date data and `BlogPosting`, breadcrumb and collection JSON-LD. OpenAI search/user crawlers are explicitly allowed; ranking or chatbot recommendation is never represented as guaranteed.
+- The four original Persian articles and hero images are installed idempotently by the Payload seed. `src/features/journal/seed-posts.ts` is seed-only migration material and must not be used by runtime routes.
+- Migration `20260913_094955_phase12_dynamic_journal`, generated types/import map, Phase 12 verification, TypeScript, clean lint, production build, journal SEO/HTML tests and showcase regressions pass.
+
 ### Remaining boundary after the gate
 
 - The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
@@ -829,7 +839,7 @@ At the current reviewed state:
 - Demo catalog fixtures remain only for non-interactive brand/project references.
 - Payload owns authenticated cart persistence and all new checkout orders; guest browser storage is ID-only and non-authoritative.
 - Payload/PostgreSQL is the only customer/account/commerce datastore; Kavenegar remains an OTP delivery provider, not an identity store.
-- Phase 12 optional content migration has not started. Live Tapin certification is the only outstanding Phase 11 operational dependency.
+- Phase 12 blog/post migration is complete. Projects, brand editorial pages and homepage editorial sections stay file-backed until separately authorized; live Tapin certification remains an external operational dependency.
 
 ---
 
