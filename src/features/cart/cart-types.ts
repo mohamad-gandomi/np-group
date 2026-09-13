@@ -34,6 +34,7 @@ export type CartItem = CartSelection & {
   key: string;
   product: CartProduct;
   quantity: number;
+  shippingMode: "parcel" | "freight";
 };
 
 export type CartLineReference = {
@@ -48,5 +49,6 @@ export type CartResponse = {
   cartId?: number;
   items: CartItem[];
   subtotal: number;
+  shippingMode: "parcel" | "freight";
 };
 

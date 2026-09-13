@@ -5,6 +5,8 @@ import * as migration_20260911_102308_nilper_storefront_cart_persistence from '.
 import * as migration_20260911_103938_nilper_payload_orders from './20260911_103938_nilper_payload_orders';
 import * as migration_20260912_104215_nilper_customer_auth from './20260912_104215_nilper_customer_auth';
 import * as migration_20260912_111822_nilper_payload_account_cutover from './20260912_111822_nilper_payload_account_cutover';
+import * as migration_20260912_174237 from './20260912_174237';
+import * as migration_20260913_085957_nilper_tapin_shipping from './20260913_085957_nilper_tapin_shipping';
 
 export const migrations = [
   {
@@ -40,6 +42,16 @@ export const migrations = [
   {
     up: migration_20260912_111822_nilper_payload_account_cutover.up,
     down: migration_20260912_111822_nilper_payload_account_cutover.down,
-    name: '20260912_111822_nilper_payload_account_cutover'
+    name: '20260912_111822_nilper_payload_account_cutover',
+  },
+  {
+    up: migration_20260912_174237.up,
+    down: migration_20260912_174237.down,
+    name: '20260912_174237',
+  },
+  {
+    up: migration_20260913_085957_nilper_tapin_shipping.up,
+    down: migration_20260913_085957_nilper_tapin_shipping.down,
+    name: '20260913_085957_nilper_tapin_shipping'
   },
 ];

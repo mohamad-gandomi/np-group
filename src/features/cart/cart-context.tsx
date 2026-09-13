@@ -20,9 +20,11 @@ import type {
 export type { CartConfigurationSelection, CartItem, CartSelection } from "@/features/cart/cart-types";
 
 type CartContextValue = {
+  cartId?: number;
   items: CartItem[];
   count: number;
   subtotal: number;
+  shippingMode: "parcel" | "freight";
   persistenceError: string;
   addItem: (product: Product, selection: string | CartSelection, quantity?: number) => void;
   updateQuantity: (key: string, quantity: number) => void;
@@ -124,7 +126,9 @@ async function cartRequest(method: "GET" | "POST" | "PUT", items?: CartLineRefer
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [cartId, setCartId] = useState<number>();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [shippingMode, setShippingMode] = useState<"parcel" | "freight">("freight");
   const [persistenceError, setPersistenceError] = useState("");
   const itemsRef = useRef<CartItem[]>([]);
   const modeRef = useRef<CartMode>("loading");
@@ -135,6 +139,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     itemsRef.current = nextItems;
     setItems(nextItems);
   }, []);
+
+  const applyCart = useCallback((result: CartResponse) => {
+    setCartId(result.cartId);
+    setShippingMode(result.shippingMode);
+    applyItems(result.items);
+  }, [applyItems]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -149,13 +159,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           if (!merged.response.ok) throw new Error(merged.result.error || "ادغام سبد خرید انجام نشد.");
           if (controller.signal.aborted) return;
           modeRef.current = "authenticated";
-          applyItems(merged.result.items);
+          applyCart(merged.result);
           clearGuestReferences();
           return;
         }
 
         if (response.status !== 401) throw new Error(result.error || "بازیابی سبد خرید انجام نشد.");
         modeRef.current = "guest";
+        setCartId(undefined);
         if (!localReferences.length) {
           applyItems([]);
           return;
@@ -169,7 +180,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         });
         const resolved = await resolvedResponse.json() as CartResponse & { error?: string };
         if (!resolvedResponse.ok) throw new Error(resolved.error || "بازیابی سبد خرید انجام نشد.");
-        applyItems(resolved.items);
+        applyCart(resolved);
         saveGuestReferences(resolved.items);
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -179,7 +190,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
     void initialize();
     return () => controller.abort();
-  }, [applyItems]);
+  }, [applyCart, applyItems]);
 
   const persist = useCallback((nextItems: CartItem[]) => {
     if (modeRef.current !== "authenticated") {
@@ -198,12 +209,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const { response, result } = await cartRequest("PUT", references);
         if (response.status === 401) {
           modeRef.current = "guest";
+          setCartId(undefined);
           saveGuestReferences(itemsRef.current);
           throw new Error("نشست شما پایان یافته است؛ سبد روی این دستگاه نگهداری شد.");
         }
         if (!response.ok) throw new Error(result.error || "ذخیره سبد خرید انجام نشد.");
         if (revision === latestRevisionRef.current) {
-          applyItems(result.items);
+          applyCart(result);
           setPersistenceError("");
         }
       })
@@ -212,7 +224,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           setPersistenceError(error instanceof Error ? error.message : "ذخیره سبد خرید انجام نشد.");
         }
       });
-  }, [applyItems]);
+  }, [applyCart]);
 
   const commit = useCallback((update: (current: CartItem[]) => CartItem[]) => {
     const nextItems = update(itemsRef.current);
@@ -222,9 +234,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [applyItems, persist]);
 
   const value = useMemo<CartContextValue>(() => ({
+    cartId,
     items,
     count: items.reduce((sum, item) => sum + item.quantity, 0),
     subtotal: items.reduce((sum, item) => sum + (item.product.price ?? 0) * item.quantity, 0),
+    shippingMode,
     persistenceError,
     addItem(product, selection, quantity = 1) {
       const normalized = typeof selection === "string" ? { color: selection } : selection;
@@ -240,7 +254,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             ? { ...item, quantity: Math.min(MAX_ITEM_QUANTITY, item.quantity + quantity) }
             : item);
         }
-        return [...current, { key, product: cartProduct(product), ...normalized, quantity: Math.min(MAX_ITEM_QUANTITY, quantity) }];
+        const variantShippingMode = product.variants?.find((variant) => variant.id === normalized.variantId)?.shippingMode;
+        return [...current, {
+          key,
+          product: cartProduct(product),
+          ...normalized,
+          quantity: Math.min(MAX_ITEM_QUANTITY, quantity),
+          shippingMode: variantShippingMode ?? product.shippingMode ?? "freight",
+        }];
       });
     },
     updateQuantity(key, quantity) {
@@ -249,8 +270,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         : current.map((item) => item.key === key ? { ...item, quantity: Math.min(MAX_ITEM_QUANTITY, quantity) } : item));
     },
     removeItem(key) { commit((current) => current.filter((item) => item.key !== key)); },
-    clear() { commit(() => []); },
-  }), [commit, items, persistenceError]);
+    clear() { setShippingMode("freight"); commit(() => []); },
+  }), [cartId, commit, items, persistenceError, shippingMode]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

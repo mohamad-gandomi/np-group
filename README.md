@@ -42,8 +42,14 @@ Relevant non-Payload variables are documented in `.env.example`, including:
 
 - `NEXT_PUBLIC_SITE_URL` for metadata and sitemap URLs
 - `KAVENEGAR_API_KEY` and `KAVENEGAR_OTP_TEMPLATE` for direct OTP delivery through Kavenegar Verify Lookup. The template must be approved in Kavenegar and contain `%token`.
+- `ZARINPAL_MERCHANT_ID` and `ZARINPAL_SANDBOX` for server-side Zarinpal requests and verification. Keep sandbox enabled for local testing and never expose the merchant ID through a `NEXT_PUBLIC_*` variable.
+- `TAPIN_*` variables for server-side parcel quotes, registration, and tracking. Obtain the exact authorization value, shop/employee/kiosk IDs, origin codes, packaging weight, registration mode, and confirmed amount unit from the Tapin integration panel/support; none may use a `NEXT_PUBLIC_*` prefix.
 
 Without Kavenegar configuration, local development uses the visible demo OTP `123456`; that fallback is disabled in production. Production phone login requires both Kavenegar variables.
+
+Zarinpal callbacks are generated from `NEXT_PUBLIC_SITE_URL`. Production payments therefore require its final public HTTPS origin and `ZARINPAL_SANDBOX=false`.
+
+Tapin parcel mode remains fail-closed until all required account values are configured and `TAPIN_AMOUNT_UNIT` is explicitly confirmed as `rial` or `toman`. The public checkout obtains official province/city codes and quotes through the server; the browser never supplies a trusted shipping price. See the [official Tapin API reference](https://api.tapin.ir/api/v2/public/doc/).
 
 ## Development
 
@@ -78,6 +84,8 @@ npm run payload:verify:phase4
 npm run payload:verify:phase5
 npm run payload:verify:phase8
 npm run payload:verify:phase9
+npm run payload:verify:phase10
+npm run payload:verify:phase11
 npm run payload:verify:manual-catalog
 ```
 
@@ -109,10 +117,11 @@ SHOWCASE_TEST_URL=http://127.0.0.1:3100 npm run test:showcase
 - No curated product has an authoritative source price, so the current catalog renders inquiry-only. Entering an approved server price activates the existing server-validated configuration cart path without changing the UI model.
 - Static fixture products remain only as clearly labeled, non-interactive references on demo brand/project pages; they do not create public catalog routes or participate in checkout.
 - Guest carts store only compact product, variant, quantity, and configuration IDs in the browser and are revalidated by the server. Signed-in carts persist in Payload, and sign-in merges any guest selections into the authenticated cart.
-- Checkout creates Payload orders from the authenticated server-owned cart inside a database transaction. Payload preserves trusted product, variant, configuration, price, contact, and status snapshots, and exposes Nilper's order lifecycle in Admin.
+- Invoice checkout creates a pending Payload order from the authenticated server-owned cart. Online checkout uses a provider-neutral Payload payment adapter with Zarinpal as the first gateway; it creates the order only after server-side amount verification, stores the authority/reference IDs, and handles repeated callbacks idempotently.
+- Products and variants default to manual freight. Fully parcel-eligible carts use server-recalculated Tapin quotes and add that amount to the Zarinpal total; freight and mixed carts charge products only and receive a manual freight quote after checkout. A Tapin shipment is registered only after successful Zarinpal verification, with duplicate prevention and stored shipment/tracking state.
 - Payload owns customer phone OTP challenges, revocable sessions, profiles, addresses, carts, and orders. Kavenegar Verify Lookup is the production OTP delivery provider.
 - Customer carts, orders, profiles, and addresses are linked directly to the authenticated Payload customer record; no secondary account datastore or legacy identity bridge is used.
-- `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata and sitemap URLs are correct.
+- `NEXT_PUBLIC_SITE_URL` must be set to the final HTTPS origin before production deployment so metadata, sitemap URLs, and payment callbacks are correct.
 - Shared contact details are maintained in `src/config/site.ts`; the current email address has not been independently verified.
 - Temporary editorial images are under `public/placeholders`, and the hero video is under `public/videos/hero.mp4`.
 

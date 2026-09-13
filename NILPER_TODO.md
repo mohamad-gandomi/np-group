@@ -12,15 +12,35 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 9 is complete; Phase 10 is next.
+- **Active phase:** Phase 11 is complete; Phase 12 has not started.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
-- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, orders, and order lifecycle. Kavenegar Verify Lookup provides production OTP delivery. Supabase has been removed.
-- **Next implementation task:** Begin Phase 10 by selecting and implementing the Iranian payment adapter without changing the completed Payload commerce ownership model.
-- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–9 are complete; Phase 6 remains deferred by owner decision.
+- **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
+- **Next implementation task:** Activate and certify the live Tapin connection after the owner supplies panel credentials and confirms the API amount unit. Do not start Phase 12 as part of Phase 11.
+- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–11 are complete; Phase 6 remains deferred by owner decision and Phase 12 is optional/not started.
 
 ## Latest Session Note
 
+- **Date:** 2026-09-13
+- [x] Completed Phase 11 with explicit `parcel` and `freight` modes on products and variants; every existing record defaults safely to `freight`.
+- [x] Replaced the undocumented HeroPost candidate with a provider-neutral shipping boundary and Tapin, using only the official public location, quote, order-registration, and status-report endpoints.
+- [x] Added server-owned parcel weight and Tapin box metadata plus immutable item shipping snapshots so checkout, payment, and later shipment retries do not trust browser prices or mutable catalog data.
+- [x] Added official Tapin province/city selection and parcel-service selection to the Persian checkout. Parcel quotes are recalculated on the server; freight and any mixed cart use manual freight coordination with shipping amount zero at checkout.
+- [x] Zarinpal now receives product subtotal plus server-quoted Tapin shipping only for all-parcel carts. Freight and mixed carts charge products only.
+- [x] Persisted shipping mode, amount, provider, service, destination codes, total weight, box, quote time, shipment ID, tracking code, raw provider status, internal status, failure message, and shipment timestamp on orders; payment transactions keep the quote snapshot.
+- [x] Tapin shipment registration runs only after authoritative Zarinpal verification. The order number is sent as Tapin `manual_id`, a local in-flight guard prevents concurrent duplicates, stored shipment IDs make callbacks idempotent, and Tapin duplicate codes remain the provider-side safety boundary.
+- [x] Added authenticated customer-owned tracking refresh and mapped Tapin's documented statuses to Nilper shipment states.
+- [x] Added and applied migration `20260913_085957_nilper_tapin_shipping`, regenerated Payload types, and added `payload:verify:phase11` coverage for parcel, freight, mixed carts, payment totals, API failure, post-payment creation, tracking, and duplicate prevention.
+- [!] Live Tapin certification is blocked only on external configuration: exact `Authorization` header value, shop/employee/kiosk IDs, origin codes, packaging weight, registration mode, and official confirmation whether monetary API fields are Rial or Toman. Missing values fail closed; no endpoint, amount conversion, credential, or shipment is invented.
+- [x] Passed TypeScript, clean lint, production build, Phase 10 regression, Phase 11 integration verification, manual-catalog verification, and all 17 journal/showcase tests. Migration status confirms all nine migrations are applied.
+
 - **Date:** 2026-09-12
+- [x] Completed Phase 10 with Zarinpal as the approved first Iranian gateway behind a Payload Ecommerce `PaymentAdapter`; the provider boundary is isolated so additional Iranian adapters can be added later.
+- [x] Added server-side request, redirect, callback, verification and order-confirmation flow. Online checkout creates a pending transaction first and creates a confirmed order only after Zarinpal returns an authoritative verification code.
+- [x] Kept canonical prices and transaction totals as integer Toman and used the centralized money helper for the single Rial conversion at the provider boundary; callback query values are never trusted for the amount.
+- [x] Persisted Zarinpal authority, reference ID, response code, masked card details, fee metadata, callback/verification timestamps and failure state in visible Payload transaction records.
+- [x] Made callback handling idempotent through transaction/order state checks and unique source-cart/payment-transaction relationships; cancellations and mismatched stored amounts do not create orders.
+- [x] Added the Persian checkout gateway choice and customer-owned result page, server-only environment configuration, migration `20260912_174237`, generated types, README operations, and repeatable `payload:verify:phase10` coverage with a fake gateway client.
+- [x] Passed TypeScript, clean lint, production build, Payload Phase 8/9/10 suites, and journal/showcase regressions.
 - [x] Completed Phase 9.2: account profile updates, address creation/listing, and order queries now use Payload/PostgreSQL while preserving the existing Persian account UX.
 - [x] Completed Phase 9.3: removed Supabase packages, clients, proxy/session fallbacks, Edge Function, SQL migration, environment variables, and README instructions after verifying the Payload replacements.
 - [x] Simplified ownership for this fresh site: customers now link directly to profiles, addresses, carts, and orders by Payload customer relationship; obsolete legacy identity and storefront-key bridge fields were removed.
@@ -71,9 +91,10 @@ Before implementation, read these files completely in order:
 - [x] Verified the live `/shop` and `/shop/furniture/delan-sofa` responses, TypeScript, lint, production build, Phase 3–5 suites, journal tests and showcase tests.
 - **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
 - **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; foundational Payload migration history remains required for clean database setup; `AGENTS.md` and its generated Next.js block remain untouched.
-- **Current active phase:** Phase 9 completed; Phase 10 is next.
+- **Current active phase:** Phase 11 completed; Phase 12 not started.
 - **Latest relevant implementation commit:** `9e26d0c` (`refactor(auth): migrate customer account from Supabase to Payload`).
-- **Next implementation task:** Begin Phase 10 by selecting and implementing the Iranian payment adapter.
+- **Phase 10/11 working tree:** Complete on `codex/payload-phase-10`; not committed in this session because no Git checkpoint was requested.
+- **Next implementation task:** Configure and certify Tapin live credentials/amount unit when supplied; otherwise await explicit direction before Phase 12.
 
 ## Working rules for Codex
 
@@ -754,38 +775,42 @@ refactor(auth): migrate customer account from Supabase to Payload
 
 ---
 
-# Phase 10 — Iranian payment adapter
+# Phase 10 — Iranian payment adapter — complete (2026-09-12)
 
 Not part of the first architecture validation.
 
 When ready:
 
-- choose the approved Iranian gateway/provider
-- implement Payload Ecommerce `PaymentAdapter`
-- implement server-side initiate/verify/confirm flow
-- verify returned amount server-side
-- handle duplicate callbacks idempotently
-- record provider transaction/reference IDs
-- confirm order only after authoritative payment verification
+- [x] Chose Zarinpal as the approved first Iranian gateway/provider, while keeping an adapter boundary for future providers.
+- [x] Implemented a Payload Ecommerce `PaymentAdapter`.
+- [x] Implemented server-side initiate/verify/confirm flow using the current official Zarinpal REST contract.
+- [x] Verify the stored transaction amount server-side and convert Toman to Rial only through `toPaymentGatewayAmount`.
+- [x] Handle duplicate callbacks idempotently, including Zarinpal's already-verified response.
+- [x] Record provider authority and transaction/reference IDs with operational response metadata.
+- [x] Confirm an order only after authoritative payment verification; cancelled, failed, malformed, and amount-mismatched returns create no order.
 
-Do not expose secrets to the client.
+The merchant ID remains server-only. `NEXT_PUBLIC_SITE_URL` supplies the callback origin, and production requires HTTPS with sandbox explicitly disabled.
 
 ---
 
-# Phase 11 — Shipping / delivery
+# Phase 11 — Shipping / delivery — complete (2026-09-13)
 
-Payload Ecommerce does not currently provide native shipping calculations.
+- [x] Products and operational variants have `shippingMode: parcel | freight`; the default and migration backfill are `freight`.
+- [x] Parcel products require trusted weight and Tapin box metadata before they can enter a valid cart.
+- [x] An all-parcel cart uses Tapin's documented public province/city and price APIs with selectable custom/priority postal service.
+- [x] Freight carts are quoted manually after checkout and Zarinpal charges products only.
+- [x] Any mixed parcel/freight cart is treated entirely as freight for now.
+- [x] Shipping prices from the browser are ignored. Quote and payment initiation both recalculate from the authenticated server-owned cart and trusted item snapshots.
+- [x] Parcel shipping is added to the Zarinpal amount; freight remains zero at the payment boundary.
+- [x] Tapin shipment registration occurs only after successful Zarinpal verification and uses the Nilper order number as the stable provider `manual_id`.
+- [x] Duplicate callbacks cannot create a second local shipment; concurrent attempts share one in-flight operation and the provider receives the same deterministic manual ID.
+- [x] Orders persist shipping method, amount, provider, service, destination codes, weight, box, quote time, shipment ID, tracking code, provider/internal statuses, failure state, and creation timestamp.
+- [x] Customer-owned tracking refresh uses Tapin's documented status-report endpoint.
+- [x] Provider failures preserve the successful payment/order and persist an actionable shipment failure instead of claiming shipment success.
+- [x] Migration, generated types, TypeScript, lint, production build, Phase 10 regression, Phase 11 parcel/freight/mixed/payment/failure/duplicate/tracking verification, manual catalog, and all 17 journal/showcase tests pass; all nine migrations are applied.
+- [!] Live calls require Tapin panel credentials and explicit confirmation of the API amount unit. The adapter and deterministic fakes are complete; missing production configuration fails closed.
 
-Model Nilper's real business process instead of inventing generic shipping rules.
-
-Likely modes may include:
-
-- coordination by advisor for large furniture/made-to-order products
-- calculated or fixed shipping for smaller direct-purchase products
-- city/province-dependent handling
-- pickup if Nilper requires it
-
-Clarify actual business rules before implementing a complex engine.
+Do not start Phase 12 without a separate owner instruction.
 
 ---
 
@@ -838,6 +863,6 @@ The three source workbooks are not a required session input while Phase 6 is def
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–9 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer or reintroduce Supabase. Continue with Phase 10, the Iranian payment adapter.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–11 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer or reintroduce Supabase. Phase 12 is optional and must not start without explicit owner direction. Live Tapin activation still requires the documented production account settings and confirmed API amount unit.
 
 Keep each session focused on the current phase and update this file before ending.

@@ -96,6 +96,7 @@ const mapVariants = (variants: readonly Variant[]): ProductVariant[] => variants
     code: variant.nilperCode,
     label: optionLabels.join(" · ") || variant.title || variant.nilperCode,
     price: variant.priceInTMNEnabled === true && typeof variant.priceInTMN === "number" ? variant.priceInTMN : null,
+    shippingMode: variant.shippingMode === "parcel" ? "parcel" : "freight",
     measurements: mapMeasurements(variant.measurements),
     ...(variant.manufacturingNotesFa ? { manufacturingNotes: variant.manufacturingNotesFa } : {}),
   };
@@ -141,6 +142,7 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     material,
     colors: groups.find((group) => group.inputType === "swatch")?.options.map((option) => option.label) ?? [],
     price,
+    shippingMode: product.shippingMode === "parcel" ? "parcel" : "freight",
     image: mainImage,
     gallery,
     width,

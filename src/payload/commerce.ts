@@ -18,8 +18,70 @@ import {
 } from "./cart-configuration";
 import { measurementsField, sourceFields, technicalSpecsField } from "./domain-fields";
 import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
+import { zarinpalAdapter } from "@/features/payments/zarinpal/adapter";
 
 const fieldNamed = (field: Field, name: string) => "name" in field && field.name === name;
+
+const shippingModeField = (): Field => ({
+  name: "shippingMode",
+  type: "select",
+  label: "شیوه ارسال",
+  defaultValue: "freight",
+  options: [
+    { label: "مرسوله پستی (تاپین)", value: "parcel" },
+    { label: "باربری / هماهنگی دستی", value: "freight" },
+  ],
+});
+
+const parcelFields = (): Field[] => [
+  {
+    name: "parcelWeightInGrams",
+    type: "number",
+    label: "وزن کالا برای ارسال پستی (گرم)",
+    min: 1,
+    admin: {
+      condition: (_, siblingData) => siblingData?.shippingMode === "parcel",
+      description: "وزن واقعی خود کالا؛ وزن بسته‌بندی عمومی از تنظیمات محرمانه تاپین افزوده می‌شود.",
+    },
+  },
+  {
+    name: "tapinBoxID",
+    type: "number",
+    label: "شناسه بسته پستی تاپین",
+    min: 1,
+    admin: { condition: (_, siblingData) => siblingData?.shippingMode === "parcel" },
+  },
+];
+
+const shippingSnapshotFields = (includeShipment = false): Field[] => [
+  shippingModeField(),
+  { name: "shippingAmountInTMN", type: "number", label: "هزینه ارسال (تومان)", min: 0, defaultValue: 0 },
+  { name: "shippingProvider", type: "select", label: "ارائه‌دهنده ارسال", defaultValue: "manual", options: [{ label: "تاپین", value: "tapin" }, { label: "هماهنگی دستی", value: "manual" }] },
+  { name: "shippingServiceID", type: "text", label: "شناسه سرویس ارسال" },
+  { name: "shippingServiceLabel", type: "text", label: "نام سرویس ارسال" },
+  { name: "shippingProvinceCode", type: "number", label: "کد استان مقصد" },
+  { name: "shippingCityCode", type: "number", label: "کد شهر مقصد" },
+  { name: "shippingWeightInGrams", type: "number", label: "وزن کل مرسوله (گرم)", min: 1 },
+  { name: "shippingBoxID", type: "number", label: "شناسه بسته پستی تاپین", min: 1 },
+  { name: "shippingQuotedAt", type: "date", label: "زمان استعلام ارسال" },
+  ...(includeShipment ? [
+    { name: "shippingStatus", type: "select", label: "وضعیت ارسال", defaultValue: "manual_coordination", options: [
+      { label: "نیازمند هماهنگی دستی", value: "manual_coordination" },
+      { label: "قیمت‌گذاری شده", value: "quoted" },
+      { label: "در انتظار ساخت مرسوله", value: "shipment_pending" },
+      { label: "در حال ساخت مرسوله", value: "creating" },
+      { label: "مرسوله ساخته شد", value: "created" },
+      { label: "در مسیر", value: "in_transit" },
+      { label: "تحویل شد", value: "delivered" },
+      { label: "خطا", value: "failed" },
+    ] },
+    { name: "shippingShipmentID", type: "text", label: "شناسه مرسوله", unique: true, index: true },
+    { name: "shippingTrackingCode", type: "text", label: "کد رهگیری", index: true },
+    { name: "shippingProviderStatus", type: "text", label: "وضعیت خام ارائه‌دهنده" },
+    { name: "shippingFailureMessage", type: "textarea", label: "خطای ارسال" },
+    { name: "shipmentCreatedAt", type: "date", label: "زمان ساخت مرسوله" },
+  ] satisfies Field[] : []),
+];
 
 const NILPER_ORDER_STATUSES = [
   { label: "در حال بررسی", value: "pending_review" },
@@ -65,7 +127,7 @@ const withCommerceValidation = (field: Field): Field => {
     return { ...field, fields: field.fields.map(withCommerceValidation) };
   }
 
-  if (field.type === "number" && ["priceInTMN", "unitPriceInTMN", "amount", "subtotal"].some((name) => fieldNamed(field, name))) {
+  if (field.type === "number" && ["priceInTMN", "unitPriceInTMN", "amount", "subtotal", "shippingAmountInTMN"].some((name) => fieldNamed(field, name))) {
     return { ...field, validate: validateTomanAmount };
   }
 
@@ -123,6 +185,8 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
                 { label: "ناموجود", value: "unavailable" },
               ],
             },
+            shippingModeField(),
+            ...parcelFields(),
             ...priceFields,
           ],
         },
@@ -189,6 +253,8 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
     { name: "nilperCode", type: "text", label: "کد ثبت نیلپر / SKU", required: true, unique: true },
     take("title")!,
     take("options")!,
+    shippingModeField(),
+    ...parcelFields(),
     ...priceFields,
     measurementsField("فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه."),
     { name: "manufacturingNotesFa", type: "textarea", label: "یادداشت ساخت / سفارش" },
@@ -285,6 +351,15 @@ export const ecommerce = ecommercePlugin({
           admin: { position: "sidebar", readOnly: true },
           access: { create: () => false, update: () => false },
         },
+        {
+          name: "paymentTransaction",
+          type: "relationship",
+          relationTo: "transactions",
+          label: "تراکنش پرداخت",
+          unique: true,
+          admin: { position: "sidebar", readOnly: true },
+          access: { create: () => false, update: () => false },
+        },
         { name: "contactName", type: "text", label: "نام مشتری", required: true, admin: { rtl: true } },
         { name: "contactPhone", type: "text", label: "شماره موبایل", required: true, admin: { position: "sidebar" } },
         {
@@ -294,13 +369,14 @@ export const ecommerce = ecommercePlugin({
           required: true,
           options: [{ label: "هماهنگی تحویل و نصب توسط NPGroup", value: "advisor" }],
         },
+        ...shippingSnapshotFields(true),
         {
           name: "paymentMethod",
           type: "select",
           label: "روش پرداخت درخواستی",
           required: true,
           options: [
-            { label: "درگاه پرداخت آنلاین", value: "gateway" },
+            { label: "زرین‌پال", value: "zarinpal" },
             { label: "فاکتور و پرداخت مرحله‌ای", value: "invoice" },
           ],
         },
@@ -317,6 +393,9 @@ export const ecommerce = ecommercePlugin({
         ],
       },
     }),
+  },
+  payments: {
+    paymentMethods: [zarinpalAdapter()],
   },
   products: {
     productsCollectionOverride: ({ defaultCollection }) => ({
@@ -357,8 +436,17 @@ export const ecommerce = ecommercePlugin({
   transactions: {
     transactionsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
-      admin: { ...defaultCollection.admin, hidden: true },
-      fields: defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+      labels: { singular: "تراکنش", plural: "تراکنش‌ها" },
+      admin: {
+        ...defaultCollection.admin,
+        hidden: false,
+        group: "فروشگاه",
+        defaultColumns: ["id", "paymentMethod", "status", "amount", "customer", "createdAt"],
+      },
+      fields: [
+        ...defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+        ...shippingSnapshotFields(),
+      ],
       hooks: {
         ...defaultCollection.hooks,
         beforeOperation: [

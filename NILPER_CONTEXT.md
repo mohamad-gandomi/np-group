@@ -65,7 +65,7 @@ feat(commerce): add configuration-aware cart items
 feat(commerce): complete Delan Payload vertical slice
 ```
 
-Phases 0–5, 7, and 8 are merged into `main`; Phase 6 is deferred by owner decision. Phase 9 is complete on branch `codex/payload-phase-9` at implementation commit `9e26d0c` and awaits merge.
+Phases 0–5, 7, and 8 are merged into `main`; Phase 6 is deferred by owner decision. Phase 9 is complete at implementation commit `9e26d0c` and awaits merge. Phases 10 and 11 are complete in the working tree on `codex/payload-phase-10` and await their Git checkpoint.
 
 The old WordPress/WooCommerce experiment, its Docker setup, plugin and WordPress planning documents have been removed from the repository.
 
@@ -88,6 +88,8 @@ Payload Postgres adapter 3.88.0
 PostgreSQL               local/dev via Docker Compose
 Customer/account data    Payload CMS + PostgreSQL
 Production phone SMS     Kavenegar Verify Lookup
+Online payment           Zarinpal server-side adapter
+Parcel shipping          Tapin server-side adapter
 ```
 
 Relevant commands currently exist:
@@ -109,6 +111,8 @@ npm run payload:verify:phase4
 npm run payload:verify:phase5
 npm run payload:verify:phase8
 npm run payload:verify:phase9
+npm run payload:verify:phase10
+npm run payload:verify:phase11
 
 npm run lint
 npm run build
@@ -133,6 +137,8 @@ Existing Next.js application
   +-- Payload Local API / server-side access
   |
   +-- Payload Admin / Payload API routes
+  |
+  +-- server-side Zarinpal payment adapter
   |
   v
 Payload CMS + Payload Ecommerce
@@ -384,17 +390,16 @@ Payload Ecommerce currently has foundations for:
 - Addresses.
 - Orders.
 - Transactions.
+- Payments through provider adapters (Zarinpal first).
 
 Current preview choices:
 
 - carts are hidden from Admin.
-- addresses are hidden from Admin.
-- orders are hidden from Admin.
-- transactions are hidden from Admin.
+- addresses, orders, and transactions are visible in Admin with Nilper-oriented labels and columns.
 - guest carts are disabled.
 - inventory is intentionally disabled until an authoritative stock-quantity source exists.
 - Stripe is not implemented.
-- Iranian payment is not implemented.
+- Zarinpal is the first Iranian payment provider; future gateways must be added as separate adapters without changing the canonical Toman model.
 
 Configuration-aware commerce behavior is implemented in `src/payload/cart-configuration.ts`:
 
@@ -688,7 +693,7 @@ Guest local storage contains only stable product/variant IDs, quantity, and conf
 
 Storefront sessions authenticate a Payload customer through an opaque random cookie whose keyed hash is stored in PostgreSQL. Customers link directly to profiles, addresses, carts, and orders through Payload relationships.
 
-Checkout accepts contact, delivery, and payment selections only. The server creates the order from the authenticated Payload cart, revalidates the trusted commerce item snapshots, and marks that cart purchased in the same PostgreSQL transaction. A unique source-cart relationship makes repeated checkout submissions safe. Orders expose Nilper's lifecycle in Payload Admin: pending review, confirmed, in production, ready, shipped, delivered, and cancelled.
+Checkout accepts contact, delivery, and payment selections only. Invoice checkout creates a pending-review order from the authenticated Payload cart and marks that cart purchased in the same PostgreSQL transaction. Online checkout creates a pending provider transaction first; a confirmed order is created and the cart is completed only after server-side Zarinpal verification succeeds. Client or callback amounts are never authoritative. Unique source-cart and payment-transaction relationships plus transaction state checks make repeated callbacks safe. Orders expose Nilper's lifecycle in Payload Admin: pending review, confirmed, in production, ready, shipped, delivered, and cancelled.
 
 Payload/PostgreSQL is the single source of truth for customer authentication state, profiles, addresses, carts, and orders. Account queries contain no demo fallback and read only records owned by the authenticated Payload customer.
 
@@ -720,6 +725,7 @@ Always preserve:
 - access controls.
 - no client-trusted price/SKU/inventory.
 - server-only secrets.
+- payment confirmation only after authoritative provider verification of the stored server amount.
 - historical order snapshots.
 - committed Postgres migrations.
 - no credentials in source metadata/import files.
@@ -795,6 +801,27 @@ At the current reviewed state:
 - The owner confirmed this is a fresh site, so obsolete legacy identity/storefront-key fields and all Supabase code/configuration were removed instead of migrated.
 - The committed account-cutover migration, generated types, Phase 9 integration verification, affected Phase 4/5/8 suites, TypeScript, lint, and production build pass.
 
+### Phase 10 completion
+
+- Zarinpal is the approved first Iranian gateway and is isolated behind Payload Ecommerce's `PaymentAdapter`, so later gateways can be added as peers.
+- Payment request and verification calls run only on the server. The merchant ID is read from `ZARINPAL_MERCHANT_ID`; sandbox selection is explicit through `ZARINPAL_SANDBOX`.
+- Canonical cart, transaction, and order amounts remain integer Toman. Zarinpal receives Rial only through the centralized `toPaymentGatewayAmount` boundary.
+- Online checkout persists a pending transaction before redirecting to Zarinpal. The callback matches the stored authority, verifies the stored amount with Zarinpal, records the provider reference, and creates a confirmed order only after an authoritative success/already-verified response.
+- Cancelled, malformed, failed, and amount-mismatched returns do not create orders. Existing successful transaction/order links and unique database relationships make repeated callbacks idempotent.
+- The Persian checkout exposes Zarinpal and invoice paths, while the payment result page reads only customer-owned server state instead of trusting query-string success claims.
+- Migration `20260912_174237`, generated types, the fake-provider Phase 10 integration suite, affected Phase 8/9 suites, TypeScript, clean lint, production build, journal, and showcase checks pass.
+
+### Phase 11 completion
+
+- Products and variants explicitly use `parcel` or `freight`; defaults and migrated existing rows are safely `freight`.
+- Fully parcel carts use the documented Tapin location and quote APIs. Parcel weight, box ID, destination codes, service and quote are server-owned snapshots.
+- Freight and mixed carts receive manual shipping coordination after checkout, with zero shipping charged through Zarinpal. Parcel carts add a fresh server-side Tapin quote to the trusted product subtotal.
+- The checkout never supplies a trusted shipping price. Payment initiation recalculates from the authenticated Payload cart before creating the Zarinpal transaction.
+- Tapin shipment registration is deferred until authoritative Zarinpal verification. Stable order-number `manual_id`, local concurrency control, persisted shipment IDs, and provider duplicate rejection prevent duplicate shipments.
+- Orders persist method, amount, provider, service, destination, weight/box, quote, shipment, tracking, provider/internal status, failure details and creation time; tracking refresh is customer-owned.
+- Migration `20260913_085957_nilper_tapin_shipping`, generated types, TypeScript, lint, production build, Phase 10 regression, the Phase 11 fake-provider suite, manual-catalog verification, and all 17 journal/showcase tests pass; migration status confirms all nine migrations are applied.
+- Live Tapin activation remains fail-closed until the owner supplies the panel authorization/shop/employee/kiosk/origin settings and Tapin confirms whether API monetary fields use Rial or Toman. The implementation does not guess credentials, conversion, or endpoints.
+
 ### Remaining boundary after the gate
 
 - The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
@@ -802,7 +829,7 @@ At the current reviewed state:
 - Demo catalog fixtures remain only for non-interactive brand/project references.
 - Payload owns authenticated cart persistence and all new checkout orders; guest browser storage is ID-only and non-authoritative.
 - Payload/PostgreSQL is the only customer/account/commerce datastore; Kavenegar remains an OTP delivery provider, not an identity store.
-- Phase 10, the Iranian payment adapter, is the next implementation phase.
+- Phase 12 optional content migration has not started. Live Tapin certification is the only outstanding Phase 11 operational dependency.
 
 ---
 

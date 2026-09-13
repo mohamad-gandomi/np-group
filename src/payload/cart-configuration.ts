@@ -34,6 +34,15 @@ const itemField = (name: string) => (field: Field) => "name" in field && field.n
 const snapshotFieldAdmin = { readOnly: true } as const;
 
 const explicitItemsContextKey = (kind: CommerceDocumentKind) => `nilper:${kind}:explicit-items`;
+const trustedItemsContextKey = (kind: CommerceDocumentKind) => `nilper:${kind}:trusted-items`;
+
+export const setNilperTrustedCommerceItems = (
+  req: PayloadRequest,
+  kind: CommerceDocumentKind,
+  trusted: boolean,
+) => {
+  req.context[trustedItemsContextKey(kind)] = trusted;
+};
 
 const nilperItemFields: Field[] = [
   {
@@ -108,6 +117,31 @@ const nilperItemFields: Field[] = [
     required: true,
     min: 0,
     validate: validateTomanAmount,
+    admin: snapshotFieldAdmin,
+  },
+  {
+    name: "shippingModeSnapshot",
+    type: "select",
+    label: "شیوه ارسال هنگام ثبت",
+    defaultValue: "freight",
+    options: [
+      { label: "مرسوله پستی", value: "parcel" },
+      { label: "باربری / هماهنگی دستی", value: "freight" },
+    ],
+    admin: snapshotFieldAdmin,
+  },
+  {
+    name: "parcelWeightInGramsSnapshot",
+    type: "number",
+    label: "وزن پستی هنگام ثبت (گرم)",
+    min: 1,
+    admin: snapshotFieldAdmin,
+  },
+  {
+    name: "tapinBoxIDSnapshot",
+    type: "number",
+    label: "شناسه بسته تاپین هنگام ثبت",
+    min: 1,
     admin: snapshotFieldAdmin,
   },
 ];
@@ -245,6 +279,9 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     let variantCode: string | undefined;
     let unitPrice = product.priceInTMN;
     let priceEnabled = product.priceInTMNEnabled;
+    let shippingMode = product.shippingMode === "parcel" ? "parcel" : "freight";
+    let parcelWeightInGrams = product.parcelWeightInGrams;
+    let tapinBoxID = product.tapinBoxID;
 
     if (variantID !== undefined) {
       const variant = await findByID(req, "variants", variantID, `${path}.variant`);
@@ -258,6 +295,18 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
       variantCode = requiredString(variant.nilperCode, req, "کد ثبت گونه معتبر نیست.", `${path}.variant`);
       unitPrice = variant.priceInTMN;
       priceEnabled = variant.priceInTMNEnabled;
+      shippingMode = variant.shippingMode === "parcel" ? "parcel" : "freight";
+      parcelWeightInGrams = variant.parcelWeightInGrams;
+      tapinBoxID = variant.tapinBoxID;
+    }
+
+    if (shippingMode === "parcel") {
+      if (typeof parcelWeightInGrams !== "number" || !Number.isSafeInteger(parcelWeightInGrams) || parcelWeightInGrams <= 0) {
+        validationError(req, "وزن معتبر برای ارسال پستی ثبت نشده است.", path);
+      }
+      if (typeof tapinBoxID !== "number" || !Number.isSafeInteger(tapinBoxID) || tapinBoxID <= 0) {
+        validationError(req, "شناسه بسته تاپین برای ارسال پستی ثبت نشده است.", path);
+      }
     }
 
     if (priceEnabled !== true || typeof unitPrice !== "number") {
@@ -374,6 +423,16 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
       productTitleSnapshot: productTitle,
       ...(variantCode ? { variantCodeSnapshot: variantCode } : { variantCodeSnapshot: null }),
       unitPriceInTMN: trustedUnitPrice,
+      shippingModeSnapshot: shippingMode,
+      ...(shippingMode === "parcel"
+        ? {
+            parcelWeightInGramsSnapshot: parcelWeightInGrams,
+            tapinBoxIDSnapshot: tapinBoxID,
+          }
+        : {
+            parcelWeightInGramsSnapshot: null,
+            tapinBoxIDSnapshot: null,
+          }),
     });
   }
 
@@ -390,6 +449,39 @@ export const nilperCommerceItemsHook = (
   if (!isRecord(data)) return data;
 
   const amountField = kind === "cart" ? "subtotal" : "amount";
+  if (req.context[trustedItemsContextKey(kind)] === true) {
+    const trustedItems = Array.isArray(data.items)
+      ? data.items
+      : validationError(req, "ردیف‌های قابل اعتماد خرید باید به صورت فهرست ارسال شوند.");
+    if (kind !== "cart" && trustedItems.length === 0) {
+      validationError(req, "سفارش یا تراکنش باید حداقل یک ردیف داشته باشد.");
+    }
+    let trustedAmount = 0;
+    for (const [index, item] of trustedItems.entries()) {
+      if (
+        !isRecord(item) ||
+        typeof item.quantity !== "number" ||
+        !Number.isSafeInteger(item.quantity) ||
+        item.quantity <= 0 ||
+        typeof item.unitPriceInTMN !== "number"
+      ) {
+        validationError(req, "snapshot ردیف خرید معتبر نیست.", `items.${index}`);
+      }
+      try {
+        const lineAmount = assertTomanAmount(item.unitPriceInTMN, "unitPriceInTMN") * item.quantity;
+        trustedAmount = assertTomanAmount(trustedAmount + lineAmount, "amountInTMN");
+      } catch {
+        validationError(req, "snapshot مبلغ ردیف خرید معتبر نیست.", `items.${index}`);
+      }
+    }
+    const shippingAmount = kind === "cart" ? 0 : data.shippingAmountInTMN ?? 0;
+    try {
+      data[amountField] = assertTomanAmount(trustedAmount + assertTomanAmount(shippingAmount as number, "shippingAmountInTMN"));
+    } catch {
+      validationError(req, "هزینه ارسال باید عدد صحیح و نامنفی تومان باشد.", "shippingAmountInTMN");
+    }
+    return data;
+  }
   const hasExplicitItems = req.context[explicitItemsContextKey(kind)] === true;
   if (!hasExplicitItems) {
     if (kind === "cart") {
@@ -419,6 +511,13 @@ export const nilperCommerceItemsHook = (
 
   const hydrated = await validateNilperCommerceItems(items, req);
   data.items = hydrated.items;
-  data[amountField] = hydrated.amount;
+  const shippingAmount = kind === "cart" ? 0 : data.shippingAmountInTMN ?? 0;
+  try {
+    assertTomanAmount(shippingAmount as number, "shippingAmountInTMN");
+    assertTomanAmount(hydrated.amount + Number(shippingAmount), "amountInTMN");
+  } catch {
+    validationError(req, "هزینه ارسال باید عدد صحیح و نامنفی تومان باشد.", "shippingAmountInTMN");
+  }
+  data[amountField] = hydrated.amount + Number(shippingAmount);
   return data;
 };

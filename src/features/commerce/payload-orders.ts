@@ -9,6 +9,15 @@ import { findActiveStorefrontCart } from "@/features/cart/payload-cart";
 import type { AccountOrder, OrderStatus } from "@/features/commerce/order-types";
 import type { Order, Product as PayloadProduct } from "@/payload-types";
 import { NILPER_COMMERCE_CURRENCY } from "@/payload/money";
+import {
+  cartShippingMode,
+  parseShippingDestination,
+  parseTapinService,
+  quoteCartShipping,
+  shippingPlanData,
+  totalWithShipping,
+} from "@/features/shipping/shipping-plan";
+import type { TapinClient, TapinServiceID } from "@/features/shipping/types";
 
 const MAX_CONTACT_LENGTH = 160;
 const NILPER_ORDER_STATUSES = new Set<OrderStatus>([
@@ -31,7 +40,9 @@ export type CheckoutContact = {
   address: string;
   postal: string;
   delivery: "advisor";
-  payment: "gateway" | "invoice";
+  payment: "invoice";
+  destination?: { provinceCode: number; cityCode: number };
+  serviceID?: TapinServiceID;
 };
 
 const requiredText = (value: unknown, label: string, maxLength = MAX_CONTACT_LENGTH) => {
@@ -47,9 +58,12 @@ export function parseCheckoutContact(value: unknown, user: AuthUser): CheckoutCo
   }
   const contact = value as Record<string, unknown>;
   const delivery = contact.delivery === "advisor" ? "advisor" : null;
-  const payment = contact.payment === "gateway" || contact.payment === "invoice" ? contact.payment : null;
+  const payment = contact.payment === "invoice" ? "invoice" : null;
   if (!delivery || !payment) throw new CheckoutRequestError("روش تحویل یا پرداخت معتبر نیست.");
 
+  const shipping = contact.shipping && typeof contact.shipping === "object" && !Array.isArray(contact.shipping)
+    ? contact.shipping as Record<string, unknown>
+    : undefined;
   return {
     name: requiredText(contact.name, "نام و نام خانوادگی", 80),
     phone: requiredText(contact.phone ?? user.phone, "شماره موبایل", 20),
@@ -59,10 +73,18 @@ export function parseCheckoutContact(value: unknown, user: AuthUser): CheckoutCo
     postal: requiredText(contact.postal, "کد پستی", 20),
     delivery,
     payment,
+    ...(shipping ? {
+      destination: parseShippingDestination(shipping),
+      serviceID: parseTapinService(shipping.serviceID),
+    } : {}),
   };
 }
 
-export async function createStorefrontOrder(user: AuthUser, contact: CheckoutContact) {
+export async function createStorefrontOrder(
+  user: AuthUser,
+  contact: CheckoutContact,
+  options: { tapinClient?: TapinClient } = {},
+) {
   const payload = await getPayload({ config });
   const req = await createLocalReq({}, payload);
   const transactionStarted = await initTransaction(req);
@@ -70,6 +92,15 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
   try {
     const cart = await findActiveStorefrontCart(payload, user, req);
     if (!cart?.items?.length) throw new CheckoutRequestError("سبد خرید خالی است.");
+    const mode = cartShippingMode(cart.items);
+    const plan = await quoteCartShipping({
+      ...(mode === "parcel"
+        ? { destination: contact.destination, serviceID: contact.serviceID }
+        : {}),
+      client: options.tapinClient,
+      items: cart.items,
+      subtotalInToman: cart.subtotal ?? 0,
+    });
 
     const orderData: Pick<
       Order,
@@ -85,9 +116,20 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
       | "shippingAddress"
       | "sourceCart"
       | "status"
+      | "shippingMode"
+      | "shippingAmountInTMN"
+      | "shippingProvider"
+      | "shippingServiceID"
+      | "shippingServiceLabel"
+      | "shippingProvinceCode"
+      | "shippingCityCode"
+      | "shippingWeightInGrams"
+      | "shippingBoxID"
+      | "shippingQuotedAt"
+      | "shippingStatus"
     > = {
       items: cart.items,
-      amount: cart.subtotal ?? 0,
+      amount: totalWithShipping(cart.subtotal ?? 0, plan),
       currency: NILPER_COMMERCE_CURRENCY.code,
       status: "pending_review",
       orderNumber: `NP-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`,
@@ -106,6 +148,8 @@ export async function createStorefrontOrder(user: AuthUser, contact: CheckoutCon
         country: "IR",
         phone: contact.phone,
       },
+      ...shippingPlanData(plan),
+      shippingStatus: plan.mode === "parcel" ? "quoted" : "manual_coordination",
     };
     const order = await payload.create({
       collection: "orders",

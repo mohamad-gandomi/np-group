@@ -423,6 +423,12 @@ export interface Variant {
    */
   title?: string | null;
   options: (number | VariantOption)[];
+  shippingMode?: ('parcel' | 'freight') | null;
+  /**
+   * وزن واقعی خود کالا؛ وزن بسته‌بندی عمومی از تنظیمات محرمانه تاپین افزوده می‌شود.
+   */
+  parcelWeightInGrams?: number | null;
+  tapinBoxID?: number | null;
   priceInTMNEnabled?: boolean | null;
   priceInTMN?: number | null;
   /**
@@ -472,6 +478,12 @@ export interface Product {
   series?: (number | null) | ProductSery;
   salesMode: 'direct' | 'inquiry' | 'made_to_order';
   availabilityMode: 'orderable' | 'in_stock' | 'unavailable';
+  shippingMode?: ('parcel' | 'freight') | null;
+  /**
+   * وزن واقعی خود کالا؛ وزن بسته‌بندی عمومی از تنظیمات محرمانه تاپین افزوده می‌شود.
+   */
+  parcelWeightInGrams?: number | null;
+  tapinBoxID?: number | null;
   priceInTMNEnabled?: boolean | null;
   priceInTMN?: number | null;
   mainImage?: (number | null) | Media;
@@ -618,6 +630,9 @@ export interface Cart {
         productTitleSnapshot: string;
         variantCodeSnapshot?: string | null;
         unitPriceInTMN: number;
+        shippingModeSnapshot?: ('parcel' | 'freight') | null;
+        parcelWeightInGramsSnapshot?: number | null;
+        tapinBoxIDSnapshot?: number | null;
         id?: string | null;
       }[]
     | null;
@@ -659,6 +674,9 @@ export interface Order {
         productTitleSnapshot: string;
         variantCodeSnapshot?: string | null;
         unitPriceInTMN: number;
+        shippingModeSnapshot?: ('parcel' | 'freight') | null;
+        parcelWeightInGramsSnapshot?: number | null;
+        tapinBoxIDSnapshot?: number | null;
         id?: string | null;
       }[]
     | null;
@@ -683,10 +701,38 @@ export interface Order {
   currency?: 'TMN' | null;
   orderNumber: string;
   sourceCart?: (number | null) | Cart;
+  paymentTransaction?: (number | null) | Transaction;
   contactName: string;
   contactPhone: string;
   deliveryMethod: 'advisor';
-  paymentMethod: 'gateway' | 'invoice';
+  shippingMode?: ('parcel' | 'freight') | null;
+  shippingAmountInTMN?: number | null;
+  shippingProvider?: ('tapin' | 'manual') | null;
+  shippingServiceID?: string | null;
+  shippingServiceLabel?: string | null;
+  shippingProvinceCode?: number | null;
+  shippingCityCode?: number | null;
+  shippingWeightInGrams?: number | null;
+  shippingBoxID?: number | null;
+  shippingQuotedAt?: string | null;
+  shippingStatus?:
+    | (
+        | 'manual_coordination'
+        | 'quoted'
+        | 'shipment_pending'
+        | 'creating'
+        | 'created'
+        | 'in_transit'
+        | 'delivered'
+        | 'failed'
+      )
+    | null;
+  shippingShipmentID?: string | null;
+  shippingTrackingCode?: string | null;
+  shippingProviderStatus?: string | null;
+  shippingFailureMessage?: string | null;
+  shipmentCreatedAt?: string | null;
+  paymentMethod: 'zarinpal' | 'invoice';
   updatedAt: string;
   createdAt: string;
 }
@@ -719,9 +765,26 @@ export interface Transaction {
         productTitleSnapshot: string;
         variantCodeSnapshot?: string | null;
         unitPriceInTMN: number;
+        shippingModeSnapshot?: ('parcel' | 'freight') | null;
+        parcelWeightInGramsSnapshot?: number | null;
+        tapinBoxIDSnapshot?: number | null;
         id?: string | null;
       }[]
     | null;
+  paymentMethod?: 'zarinpal' | null;
+  zarinpal?: {
+    authority?: string | null;
+    referenceID?: string | null;
+    requestedAmountInRial?: number | null;
+    providerCode?: number | null;
+    cardPAN?: string | null;
+    cardHash?: string | null;
+    feeInRial?: number | null;
+    feeType?: string | null;
+    callbackReceivedAt?: string | null;
+    verifiedAt?: string | null;
+    failureMessage?: string | null;
+  };
   billingAddress?: {
     title?: string | null;
     firstName?: string | null;
@@ -742,6 +805,16 @@ export interface Transaction {
   cart?: (number | null) | Cart;
   amount?: number | null;
   currency?: 'TMN' | null;
+  shippingMode?: ('parcel' | 'freight') | null;
+  shippingAmountInTMN?: number | null;
+  shippingProvider?: ('tapin' | 'manual') | null;
+  shippingServiceID?: string | null;
+  shippingServiceLabel?: string | null;
+  shippingProvinceCode?: number | null;
+  shippingCityCode?: number | null;
+  shippingWeightInGrams?: number | null;
+  shippingBoxID?: number | null;
+  shippingQuotedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1096,6 +1169,9 @@ export interface VariantsSelect<T extends boolean = true> {
   nilperCode?: T;
   title?: T;
   options?: T;
+  shippingMode?: T;
+  parcelWeightInGrams?: T;
+  tapinBoxID?: T;
   priceInTMNEnabled?: T;
   priceInTMN?: T;
   measurements?:
@@ -1163,6 +1239,9 @@ export interface ProductsSelect<T extends boolean = true> {
   series?: T;
   salesMode?: T;
   availabilityMode?: T;
+  shippingMode?: T;
+  parcelWeightInGrams?: T;
+  tapinBoxID?: T;
   priceInTMNEnabled?: T;
   priceInTMN?: T;
   mainImage?: T;
@@ -1244,6 +1323,9 @@ export interface CartsSelect<T extends boolean = true> {
         productTitleSnapshot?: T;
         variantCodeSnapshot?: T;
         unitPriceInTMN?: T;
+        shippingModeSnapshot?: T;
+        parcelWeightInGramsSnapshot?: T;
+        tapinBoxIDSnapshot?: T;
         id?: T;
       };
   secret?: T;
@@ -1281,6 +1363,9 @@ export interface OrdersSelect<T extends boolean = true> {
         productTitleSnapshot?: T;
         variantCodeSnapshot?: T;
         unitPriceInTMN?: T;
+        shippingModeSnapshot?: T;
+        parcelWeightInGramsSnapshot?: T;
+        tapinBoxIDSnapshot?: T;
         id?: T;
       };
   shippingAddress?:
@@ -1306,9 +1391,26 @@ export interface OrdersSelect<T extends boolean = true> {
   currency?: T;
   orderNumber?: T;
   sourceCart?: T;
+  paymentTransaction?: T;
   contactName?: T;
   contactPhone?: T;
   deliveryMethod?: T;
+  shippingMode?: T;
+  shippingAmountInTMN?: T;
+  shippingProvider?: T;
+  shippingServiceID?: T;
+  shippingServiceLabel?: T;
+  shippingProvinceCode?: T;
+  shippingCityCode?: T;
+  shippingWeightInGrams?: T;
+  shippingBoxID?: T;
+  shippingQuotedAt?: T;
+  shippingStatus?: T;
+  shippingShipmentID?: T;
+  shippingTrackingCode?: T;
+  shippingProviderStatus?: T;
+  shippingFailureMessage?: T;
+  shipmentCreatedAt?: T;
   paymentMethod?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1339,7 +1441,26 @@ export interface TransactionsSelect<T extends boolean = true> {
         productTitleSnapshot?: T;
         variantCodeSnapshot?: T;
         unitPriceInTMN?: T;
+        shippingModeSnapshot?: T;
+        parcelWeightInGramsSnapshot?: T;
+        tapinBoxIDSnapshot?: T;
         id?: T;
+      };
+  paymentMethod?: T;
+  zarinpal?:
+    | T
+    | {
+        authority?: T;
+        referenceID?: T;
+        requestedAmountInRial?: T;
+        providerCode?: T;
+        cardPAN?: T;
+        cardHash?: T;
+        feeInRial?: T;
+        feeType?: T;
+        callbackReceivedAt?: T;
+        verifiedAt?: T;
+        failureMessage?: T;
       };
   billingAddress?:
     | T
@@ -1363,6 +1484,16 @@ export interface TransactionsSelect<T extends boolean = true> {
   cart?: T;
   amount?: T;
   currency?: T;
+  shippingMode?: T;
+  shippingAmountInTMN?: T;
+  shippingProvider?: T;
+  shippingServiceID?: T;
+  shippingServiceLabel?: T;
+  shippingProvinceCode?: T;
+  shippingCityCode?: T;
+  shippingWeightInGrams?: T;
+  shippingBoxID?: T;
+  shippingQuotedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

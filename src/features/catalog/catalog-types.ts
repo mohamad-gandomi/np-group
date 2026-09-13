@@ -38,6 +38,7 @@ export type ProductVariant = {
   price: number | null;
   measurements: readonly ProductMeasurement[];
   manufacturingNotes?: string;
+  shippingMode?: "parcel" | "freight";
 };
 
 export type Product = {
@@ -51,6 +52,7 @@ export type Product = {
   material: readonly string[];
   colors: readonly string[];
   price: number | null;
+  shippingMode?: "parcel" | "freight";
   image: string;
   width: number | null;
   seats?: number;

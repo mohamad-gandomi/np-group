@@ -7,6 +7,7 @@ import { mapPayloadProduct } from "@/features/catalog/payload-catalog-mapper";
 import type { Cart, Product as PayloadProduct, Variant } from "@/payload-types";
 import { validateNilperCommerceItems } from "@/payload/cart-configuration";
 import { NILPER_COMMERCE_CURRENCY } from "@/payload/money";
+import { cartShippingMode } from "@/features/shipping/shipping-plan";
 
 import type { CartItem, CartLineReference, CartResponse } from "./cart-types";
 
@@ -149,6 +150,7 @@ async function cartResponse(
       ...(cart ? { cartId: cart.id } : {}),
       items: [],
       subtotal: 0,
+      shippingMode: "freight",
     };
   }
 
@@ -213,6 +215,7 @@ async function cartResponse(
       } : {}),
       configuration,
       quantity: item.quantity,
+      shippingMode: item.shippingModeSnapshot === "parcel" ? "parcel" : "freight",
     }];
   });
 
@@ -221,6 +224,7 @@ async function cartResponse(
     ...(cart.id ? { cartId: cart.id } : {}),
     items,
     subtotal: cart.subtotal ?? items.reduce((sum, item) => sum + (item.product.price ?? 0) * item.quantity, 0),
+    shippingMode: cartShippingMode(cart.items),
   };
 }
 

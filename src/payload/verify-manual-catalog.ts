@@ -22,7 +22,7 @@ for (const expected of manualCatalogProducts) {
   assert.equal(product.title, expected.title);
   assert.equal(product.catalogCode, expected.catalogCode);
   assert.equal(product._status, "published");
-  assert.equal(product.salesMode, "made_to_order");
+  assert.equal(product.salesMode, "made_to_order", `${expected.slug} sales mode must remain made_to_order.`);
   assert.equal(product.availabilityMode, "orderable");
   assert.equal(product.priceInTMNEnabled, false);
   assert.equal(product.sourceMetadata.file, expected.file);
