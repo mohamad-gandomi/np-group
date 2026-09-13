@@ -28,7 +28,7 @@ Before implementation, read these files completely in order:
 - [x] Migrated the four static article bodies and their hero media through the idempotent seed. `src/features/journal/seed-posts.ts` remains seed-only as the preservation source; no runtime route imports it.
 - [x] Added and applied idempotent migration `20260913_094955_phase12_dynamic_journal`, regenerated Payload types/import map, and added `payload:verify:phase12` for published content, media population, derived reading data, H2 TOC and public draft isolation; migration status confirms all ten migrations are applied.
 - [x] Passed TypeScript, clean lint, production build, Phase 12 Payload verification, all five journal HTML/SEO tests and all twelve showcase regressions.
-- **Phase 12 working tree:** Complete on `codex/payload-phase-12`; not committed in this session because no Git checkpoint was requested.
+- **Phase 12 checkpoint:** Committed on `codex/payload-phase-12` as `6d300e4` (`feat(content): migrate journal posts to Payload`).
 - [x] Completed Phase 11 with explicit `parcel` and `freight` modes on products and variants; every existing record defaults safely to `freight`.
 - [x] Replaced the undocumented HeroPost candidate with a provider-neutral shipping boundary and Tapin, using only the official public location, quote, order-registration, and status-report endpoints.
 - [x] Added server-owned parcel weight and Tapin box metadata plus immutable item shipping snapshots so checkout, payment, and later shipment retries do not trust browser prices or mutable catalog data.
@@ -100,8 +100,8 @@ Before implementation, read these files completely in order:
 - **Phase 7 files added:** `src/features/catalog/catalog-taxonomy.ts`, `src/app/global-not-found.tsx`, and `src/components/not-found-page.tsx`.
 - **Files intentionally retained:** `src/features/catalog/catalog-data.ts` remains only for explicitly labeled demo brand/project references; foundational Payload migration history remains required for clean database setup; `AGENTS.md` and its generated Next.js block remain untouched.
 - **Current active phase:** Phase 12 blog/post migration completed in the working tree.
-- **Latest relevant implementation commit:** `898578c` (`feat(commerce): add Zarinpal payments and Tapin shipping`).
-- **Phase 12 working tree:** Complete on `codex/payload-phase-12`; not committed in this session because no Git checkpoint was requested.
+- **Latest relevant implementation commit:** `6d300e4` (`feat(content): migrate journal posts to Payload`).
+- **Phase 12 checkpoint:** Complete on `codex/payload-phase-12`.
 - **Next implementation task:** Author and review posts through Payload Admin; migrate other optional editorial areas only on explicit owner direction. Configure/certify live Tapin separately when its production settings are available.
 
 ## Working rules for Codex
