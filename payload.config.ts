@@ -19,6 +19,13 @@ export default buildConfig({
   admin: {
     user: "users",
     importMap: { baseDir: projectRoot },
+    components: {
+      views: {
+        dashboard: {
+          Component: "./src/components/payload/admin-dashboard#AdminDashboard",
+        },
+      },
+    },
     meta: {
       titleSuffix: " | مدیریت نیلپر",
     },
