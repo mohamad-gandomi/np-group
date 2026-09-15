@@ -1,5 +1,5 @@
 import { ecommercePlugin } from "@payloadcms/plugin-ecommerce";
-import type { CollectionConfig, Field } from "payload";
+import type { CollectionBeforeValidateHook, CollectionConfig, Field, Where } from "payload";
 import { randomUUID } from "node:crypto";
 
 import {
@@ -21,6 +21,119 @@ import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmou
 import { zarinpalAdapter } from "@/features/payments/zarinpal/adapter";
 
 const fieldNamed = (field: Field, name: string) => "name" in field && field.name === name;
+
+const findField = (fields: Field[], name: string): Field | undefined => {
+  for (const field of fields) {
+    if (fieldNamed(field, name)) return field;
+    if (field.type === "tabs") {
+      for (const tab of field.tabs) {
+        const nested = findField(tab.fields, name);
+        if (nested) return nested;
+      }
+    } else if (field.type === "group" || field.type === "row" || field.type === "collapsible" || field.type === "array") {
+      const nested = findField(field.fields, name);
+      if (nested) return nested;
+    }
+  }
+  return undefined;
+};
+
+const requireField = (fields: Field[], name: string): Field => {
+  const field = findField(fields, name);
+  if (!field) throw new Error(`Payload ecommerce field "${name}" was not found.`);
+  return field;
+};
+
+const withoutSidebarPosition = (field: Field): Field => ({
+  ...field,
+  admin: { ...field.admin, position: undefined },
+} as Field);
+
+const hiddenAdminField = (field: Field): Field => ({
+  ...field,
+  admin: { ...field.admin, hidden: true },
+} as Field);
+
+const relationshipID = (value: unknown): number | undefined => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);
+  if (value && typeof value === "object" && "id" in value) {
+    const id = value.id;
+    if (typeof id === "number") return id;
+    if (typeof id === "string" && /^\d+$/.test(id)) return Number(id);
+  }
+  return undefined;
+};
+
+type OrderAddressSnapshot = {
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  company?: string | null;
+  country?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  postalCode?: string | null;
+  state?: string | null;
+  title?: string | null;
+};
+
+const linkOrderToCustomerAddress: CollectionBeforeValidateHook = async ({ data, originalDoc, req }) => {
+  if (!data) return data;
+
+  const customer = relationshipID(data.customer ?? originalDoc?.customer);
+  const existingAddress = relationshipID(data.customerAddress ?? originalDoc?.customerAddress);
+  const shippingAddress = (data.shippingAddress ?? originalDoc?.shippingAddress) as OrderAddressSnapshot | undefined;
+
+  if (!customer || existingAddress || !shippingAddress?.addressLine1) return data;
+
+  const destinationClause: Where = shippingAddress.postalCode
+    ? { postalCode: { equals: shippingAddress.postalCode } }
+    : { city: { equals: shippingAddress.city ?? "" } };
+  const clauses: Where[] = [
+    { customer: { equals: customer } },
+    { addressLine1: { equals: shippingAddress.addressLine1 } },
+    destinationClause,
+  ];
+  const matches = await req.payload.find({
+    collection: "addresses",
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    where: { and: clauses },
+  });
+  const address = matches.docs[0] ?? await req.payload.create({
+    collection: "addresses",
+    data: {
+      ...shippingAddress,
+      country: "IR",
+      customer,
+      title: shippingAddress.title || "آدرس سفارش",
+    },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  });
+
+  return { ...data, customerAddress: address.id };
+};
+
+const setAddressDisplayLabel: CollectionBeforeValidateHook = ({ data, originalDoc }) => {
+  if (!data) return data;
+
+  const title = data.title ?? originalDoc?.title ?? "آدرس";
+  const city = data.city ?? originalDoc?.city;
+  const addressLine = data.addressLine1 ?? originalDoc?.addressLine1;
+  const displayLabel = [title, city, addressLine]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim())
+    .join(" - ");
+
+  return { ...data, displayLabel };
+};
 
 const shippingModeField = (): Field => ({
   name: "shippingMode",
@@ -258,6 +371,22 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
       },
     } as Field;
   };
+  const standardRelationship = (name: "product" | "options", label: string, description?: string) => {
+    const field = take(name);
+    if (!field || field.type !== "relationship") return undefined;
+    const admin = { ...field.admin };
+    if ("components" in admin) delete admin.components;
+
+    return {
+      ...field,
+      label,
+      admin: {
+        ...admin,
+        ...(name === "product" ? { readOnly: false } : {}),
+        ...(description ? { description } : {}),
+      },
+    } satisfies Field;
+  };
   const localizePriceField = (field: Field): Field => {
     if (field.type === "group") {
       return {
@@ -300,10 +429,10 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
     .map(withCommerceValidation)
     .map(localizePriceField);
   return [
-    present("product", "محصول"),
+    standardRelationship("product", "محصول", "محصول مادر را پیش از انتخاب گزینه‌های گونه مشخص کنید."),
     { name: "nilperCode", type: "text", label: "کد ثبت نیلپر / SKU", required: true, unique: true },
     present("title", "عنوان گونه", "عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود."),
-    present("options", "گزینه‌های گونه"),
+    standardRelationship("options", "گزینه‌های گونه", "گزینه‌هایی را انتخاب کنید که در محصول مادر فعال شده‌اند."),
     shippingModeField(),
     ...parcelFields(),
     ...priceFields,
@@ -329,14 +458,22 @@ export const ecommerce = ecommercePlugin({
       labels: { singular: "آدرس", plural: "آدرس‌ها" },
       admin: {
         ...defaultCollection.admin,
-        hidden: false,
-        group: "فروشگاه",
+        hidden: true,
+        useAsTitle: "displayLabel",
         defaultColumns: ["title", "firstName", "phone", "city", "isDefault", "updatedAt"],
       },
       fields: [
         ...defaultCollection.fields,
+        { name: "displayLabel", type: "text", label: "عنوان نمایشی", index: true, admin: { hidden: true } },
         { name: "isDefault", type: "checkbox", label: "آدرس پیش‌فرض", defaultValue: false },
       ],
+      hooks: {
+        ...defaultCollection.hooks,
+        beforeValidate: [
+          ...(defaultCollection.hooks?.beforeValidate ?? []),
+          setAddressDisplayLabel,
+        ],
+      },
     }),
   },
   carts: {
@@ -368,82 +505,144 @@ export const ecommerce = ecommercePlugin({
   // The supplied Nilper sheets contain orderability, not stock counts. Do not invent inventory.
   inventory: false,
   orders: {
-    ordersCollectionOverride: ({ defaultCollection }) => ({
-      ...defaultCollection,
-      labels: { singular: "سفارش", plural: "سفارش‌ها" },
-      admin: {
-        ...defaultCollection.admin,
-        hidden: false,
-        group: "فروشگاه",
-        useAsTitle: "orderNumber",
-        defaultColumns: ["orderNumber", "contactName", "contactPhone", "status", "amount", "createdAt"],
-      },
-      fields: [
-        ...defaultCollection.fields
-          .map(withNilperCommerceItemFields)
-          .map(withCommerceValidation)
-          .map(withNilperOrderStatus),
-        {
-          name: "orderNumber",
-          type: "text",
-          label: "شماره سفارش",
-          required: true,
-          unique: true,
-          index: true,
-          defaultValue: () => `NP-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`,
-          admin: { position: "sidebar", readOnly: true },
+    ordersCollectionOverride: ({ defaultCollection }) => {
+      const defaultFields = defaultCollection.fields
+        .map(withNilperCommerceItemFields)
+        .map(withCommerceValidation)
+        .map(withNilperOrderStatus);
+      const customerEmail = hiddenAdminField(requireField(defaultFields, "customerEmail"));
+      const transactionHistory = hiddenAdminField(requireField(defaultFields, "transactions"));
+
+      return {
+        ...defaultCollection,
+        labels: { singular: "سفارش", plural: "سفارش‌ها" },
+        admin: {
+          ...defaultCollection.admin,
+          hidden: false,
+          group: "فروشگاه",
+          useAsTitle: "orderNumber",
+          defaultColumns: ["orderNumber", "contactName", "contactPhone", "status", "amount", "createdAt"],
         },
-        {
-          name: "sourceCart",
-          type: "relationship",
-          relationTo: "carts",
-          label: "سبد مبدأ",
-          unique: true,
-          admin: { position: "sidebar", readOnly: true },
-          access: { create: () => false, update: () => false },
-        },
-        {
-          name: "paymentTransaction",
-          type: "relationship",
-          relationTo: "transactions",
-          label: "تراکنش پرداخت",
-          unique: true,
-          admin: { position: "sidebar", readOnly: true },
-          access: { create: () => false, update: () => false },
-        },
-        { name: "contactName", type: "text", label: "نام مشتری", required: true, admin: { rtl: true } },
-        { name: "contactPhone", type: "text", label: "شماره موبایل", required: true, admin: { position: "sidebar" } },
-        {
-          name: "deliveryMethod",
-          type: "select",
-          label: "روش تحویل",
-          required: true,
-          options: [{ label: "هماهنگی تحویل و نصب توسط NPGroup", value: "advisor" }],
-        },
-        ...shippingSnapshotFields(true),
-        {
-          name: "paymentMethod",
-          type: "select",
-          label: "روش پرداخت درخواستی",
-          required: true,
-          options: [
-            { label: "زرین‌پال", value: "zarinpal" },
-            { label: "فاکتور و پرداخت مرحله‌ای", value: "invoice" },
+        fields: [
+          {
+            type: "tabs",
+            tabs: [
+              {
+                label: "اقلام سفارش",
+                description: "محصولات، تعداد و مشخصات ثبت‌شده در زمان سفارش.",
+                fields: [requireField(defaultFields, "items")],
+              },
+              {
+                label: "مشتری و تحویل",
+                fields: [
+                  withoutSidebarPosition(requireField(defaultFields, "customer")),
+                  {
+                    type: "row",
+                    fields: [
+                      { name: "contactName", type: "text", label: "نام گیرنده", required: true, admin: { rtl: true, width: "50%" } },
+                      { name: "contactPhone", type: "text", label: "شماره موبایل گیرنده", required: true, admin: { width: "50%" } },
+                    ],
+                  },
+                  {
+                    name: "customerAddress",
+                    type: "relationship",
+                    relationTo: "addresses",
+                    label: "آدرس ذخیره‌شده مشتری",
+                    admin: {
+                      components: {
+                        Field: "./src/components/payload/order-customer-address-field#OrderCustomerAddressField",
+                      },
+                      description: "این ارتباط خودکار است؛ جزئیات ثبت‌شده پایین، تصویر ثابت آدرس در زمان سفارش است.",
+                    },
+                    filterOptions: ({ siblingData }) => {
+                      const customer = relationshipID((siblingData as { customer?: unknown })?.customer);
+                      return customer ? { customer: { equals: customer } } : false;
+                    },
+                  },
+                  requireField(defaultFields, "shippingAddress"),
+                  {
+                    name: "deliveryMethod",
+                    type: "select",
+                    label: "روش تحویل",
+                    required: true,
+                    options: [{ label: "هماهنگی تحویل و نصب توسط NPGroup", value: "advisor" }],
+                  },
+                ],
+              },
+              {
+                label: "ارسال و پیگیری",
+                fields: shippingSnapshotFields(true),
+              },
+              {
+                label: "پرداخت",
+                fields: [
+                  {
+                    type: "row",
+                    fields: [
+                      withoutSidebarPosition(requireField(defaultFields, "amount")),
+                      withoutSidebarPosition(requireField(defaultFields, "currency")),
+                    ],
+                  },
+                  {
+                    name: "paymentMethod",
+                    type: "select",
+                    label: "روش پرداخت درخواستی",
+                    required: true,
+                    options: [
+                      { label: "زرین‌پال", value: "zarinpal" },
+                      { label: "فاکتور و پرداخت مرحله‌ای", value: "invoice" },
+                    ],
+                  },
+                  {
+                    name: "paymentTransaction",
+                    type: "relationship",
+                    relationTo: "transactions",
+                    label: "تراکنش مرجع پرداخت",
+                    unique: true,
+                    admin: { readOnly: true },
+                    access: { create: () => false, update: () => false },
+                  },
+                ],
+              },
+            ],
+          },
+          customerEmail,
+          transactionHistory,
+          requireField(defaultFields, "status"),
+          {
+            name: "orderNumber",
+            type: "text",
+            label: "شماره سفارش",
+            required: true,
+            unique: true,
+            index: true,
+            defaultValue: () => `NP-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`,
+            admin: { position: "sidebar", readOnly: true },
+          },
+          {
+            name: "sourceCart",
+            type: "relationship",
+            relationTo: "carts",
+            label: "سبد مبدأ",
+            unique: true,
+            admin: { position: "sidebar", readOnly: true },
+            access: { create: () => false, update: () => false },
+          },
+        ],
+        hooks: {
+          ...defaultCollection.hooks,
+          beforeOperation: [
+            ...(defaultCollection.hooks?.beforeOperation ?? []),
+            nilperCommerceBeforeOperation("order"),
+          ],
+          beforeValidate: [
+            ...(defaultCollection.hooks?.beforeValidate ?? []),
+            linkOrderToCustomerAddress,
+            nilperCommerceItemsHook("order"),
           ],
         },
-      ],
-      hooks: {
-        ...defaultCollection.hooks,
-        beforeOperation: [
-          ...(defaultCollection.hooks?.beforeOperation ?? []),
-          nilperCommerceBeforeOperation("order"),
-        ],
-        beforeValidate: [
-          ...(defaultCollection.hooks?.beforeValidate ?? []),
-          nilperCommerceItemsHook("order"),
-        ],
-      },
-    }),
+      };
+    },
   },
   payments: {
     paymentMethods: [zarinpalAdapter()],

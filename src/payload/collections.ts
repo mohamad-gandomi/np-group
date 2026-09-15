@@ -122,17 +122,60 @@ export const Customers: CollectionConfig = {
     defaultColumns: ["fullName", "phone", "active", "updatedAt"],
   },
   fields: [
-    rtlText("fullName", "نام و نام خانوادگی"),
     {
-      name: "phone",
-      type: "text",
-      label: "شماره همراه تأییدشده",
-      required: true,
-      unique: true,
-      index: true,
-      admin: { readOnly: true },
+      type: "tabs",
+      tabs: [
+        {
+          label: "اطلاعات مشتری",
+          fields: [
+            rtlText("fullName", "نام و نام خانوادگی"),
+            {
+              name: "phone",
+              type: "text",
+              label: "شماره همراه تأییدشده",
+              required: true,
+              unique: true,
+              index: true,
+              admin: { readOnly: true },
+            },
+            { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
+          ],
+        },
+        {
+          label: "آدرس‌ها",
+          fields: [
+            {
+              name: "addresses",
+              type: "join",
+              collection: "addresses",
+              on: "customer",
+              label: "آدرس‌های مشتری",
+              defaultSort: "-isDefault",
+              admin: {
+                defaultColumns: ["title", "firstName", "phone", "city", "isDefault", "updatedAt"],
+              },
+            },
+          ],
+        },
+        {
+          label: "سفارش‌ها",
+          fields: [
+            {
+              name: "orders",
+              type: "join",
+              collection: "orders",
+              on: "customer",
+              label: "سفارش‌های مشتری",
+              defaultSort: "-createdAt",
+              admin: {
+                allowCreate: false,
+                defaultColumns: ["orderNumber", "status", "amount", "createdAt"],
+              },
+            },
+          ],
+        },
+      ],
     },
-    { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
   ],
 };
 
@@ -193,6 +236,48 @@ export const Media: CollectionConfig = {
   labels: { singular: "رسانه", plural: "رسانه‌ها" },
   admin: { group: "محتوا", useAsTitle: "alt", defaultColumns: ["alt", "filename", "updatedAt"] },
   fields: [rtlText("alt", "متن جایگزین فارسی", true), { name: "captionFa", type: "textarea", label: "توضیح تصویر" }],
+};
+
+export const BlogCategories: CollectionConfig = {
+  slug: "blog-categories",
+  access: publishedContentAccess,
+  labels: { singular: "دسته‌بندی مجله", plural: "دسته‌بندی‌های مجله" },
+  admin: {
+    group: "مجله",
+    useAsTitle: "title",
+    defaultColumns: ["title", "slug", "sortOrder", "published", "updatedAt"],
+    description: "دسته‌بندی‌های تحریریه برای گروه‌بندی و فیلتر مطالب مجله.",
+  },
+  defaultSort: "sortOrder",
+  fields: [
+    rtlText("title", "عنوان دسته‌بندی", true),
+    {
+      name: "slug",
+      type: "text",
+      label: "نامک انگلیسی",
+      required: true,
+      unique: true,
+      index: true,
+      validate: (value: unknown) => typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
+        ? true
+        : "نامک فقط با حروف کوچک انگلیسی، عدد و خط تیره نوشته شود.",
+    },
+    { name: "description", type: "textarea", label: "توضیح کوتاه", admin: { rtl: true } },
+    { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
+    { name: "published", type: "checkbox", label: "فعال", defaultValue: true },
+    {
+      name: "posts",
+      type: "join",
+      collection: "posts",
+      on: "category",
+      label: "مطالب این دسته‌بندی",
+      defaultSort: "-publishedAt",
+      admin: {
+        allowCreate: false,
+        defaultColumns: ["title", "_status", "publishedAt", "updatedAt"],
+      },
+    },
+  ],
 };
 
 export const Brands: CollectionConfig = {
@@ -295,6 +380,7 @@ export const collections: CollectionConfig[] = [
   CustomerOtpChallenges,
   CustomerSessions,
   Media,
+  BlogCategories,
   Posts,
   Brands,
   Categories,

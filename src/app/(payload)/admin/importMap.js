@@ -23,11 +23,12 @@ import { LinkFeatureClient as LinkFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { RelationshipFeatureClient as RelationshipFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { UploadFeatureClient as UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
+import { OrderCustomerAddressField as OrderCustomerAddressField_668cfbc790a5620014b0d6d5560b5ead } from '../../../../src/components/payload/order-customer-address-field'
 import { AdminAvatar as AdminAvatar_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
 import { AdminBrandIcon as AdminBrandIcon_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
+import { AdminBrandLogo as AdminBrandLogo_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
 import { AdminHeaderAction as AdminHeaderAction_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
 import { AdminDashboard as AdminDashboard_6cda42e11a411ed465c8f0a64400abcb } from '../../../../src/components/payload/admin-dashboard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
@@ -59,11 +60,12 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#RelationshipFeatureClient": RelationshipFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#UploadFeatureClient": UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
+  "./src/components/payload/order-customer-address-field#OrderCustomerAddressField": OrderCustomerAddressField_668cfbc790a5620014b0d6d5560b5ead,
   "./src/components/payload/admin-shell#AdminAvatar": AdminAvatar_03de78193e779e74eecf0968a5d7a65b,
   "./src/components/payload/admin-shell#AdminBrandIcon": AdminBrandIcon_03de78193e779e74eecf0968a5d7a65b,
+  "./src/components/payload/admin-shell#AdminBrandLogo": AdminBrandLogo_03de78193e779e74eecf0968a5d7a65b,
   "./src/components/payload/admin-shell#AdminHeaderAction": AdminHeaderAction_03de78193e779e74eecf0968a5d7a65b,
   "./src/components/payload/admin-dashboard#AdminDashboard": AdminDashboard_6cda42e11a411ed465c8f0a64400abcb,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1

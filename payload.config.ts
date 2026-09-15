@@ -41,6 +41,7 @@ export default buildConfig({
       actions: ["./src/components/payload/admin-shell#AdminHeaderAction"],
       graphics: {
         Icon: "./src/components/payload/admin-shell#AdminBrandIcon",
+        Logo: "./src/components/payload/admin-shell#AdminBrandLogo",
       },
       views: {
         dashboard: {

@@ -79,6 +79,7 @@ export interface Config {
     'customer-otp-challenges': CustomerOtpChallenge;
     'customer-sessions': CustomerSession;
     media: Media;
+    'blog-categories': BlogCategory;
     posts: Post;
     brands: Brand;
     categories: Category;
@@ -99,6 +100,13 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    customers: {
+      addresses: 'addresses';
+      orders: 'orders';
+    };
+    'blog-categories': {
+      posts: 'posts';
+    };
     'configuration-groups': {
       options: 'configuration-options';
     };
@@ -115,6 +123,7 @@ export interface Config {
     'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
     'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
@@ -240,235 +249,19 @@ export interface Customer {
   fullName?: string | null;
   phone: string;
   active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-  collection: 'customers';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customer-otp-challenges".
- */
-export interface CustomerOtpChallenge {
-  id: number;
-  phoneKey: string;
-  requestIpKey: string;
-  codeHash: string;
-  codeSalt: string;
-  expiresAt: string;
-  attempts: number;
-  deliveryState: 'pending' | 'delivered' | 'failed';
-  providerMessageId?: string | null;
-  consumedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customer-sessions".
- */
-export interface CustomerSession {
-  id: number;
-  customer: number | Customer;
-  tokenHash: string;
-  challengeKey: string;
-  expiresAt: string;
-  revokedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  captionFa?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    adminThumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
+  addresses?: {
+    docs?: (number | Address)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
   };
-}
-/**
- * عنوان صفحه از فیلد «عنوان» می‌آید؛ داخل متن از تیتر ۲ تا ۴ استفاده کنید. فهرست مطلب و زمان مطالعه خودکار ساخته می‌شوند.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
- */
-export interface Post {
-  id: number;
-  title: string;
-  /**
-   * مثال: choosing-sofa-dimensions — بعد از انتشار تغییر ندهید.
-   */
-  slug: string;
-  category: 'planning' | 'materials' | 'lighting' | 'living';
-  description: string;
-  /**
-   * پاسخ مستقیم و مستقل به پرسش اصلی مطلب؛ در صفحه نیز دیده می‌شود.
-   */
-  summary: string;
-  heroImage: number | Media;
-  heroCaption?: string | null;
-  /**
-   * برای بخش‌های اصلی H2 بگذارید؛ فهرست خودکار از H2ها ساخته می‌شود. H3 و H4 برای زیربخش‌ها هستند.
-   */
-  content: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  takeaway: string;
-  callToAction: {
-    label: string;
-    /**
-     * مثال: /shop یا /contact
-     */
-    href: string;
-  };
-  relatedPosts?: (number | Post)[] | null;
-  authorName: string;
-  authorUrl?: string | null;
-  authorBio?: string | null;
-  seo?: {
-    /**
-     * اگر خالی باشد، عنوان اصلی استفاده می‌شود.
-     */
-    title?: string | null;
-    /**
-     * اگر خالی باشد، خلاصه کارت استفاده می‌شود.
-     */
-    description?: string | null;
-    socialImage?: (number | null) | Media;
-    /**
-     * برای تمرکز تحریریه است؛ به‌عنوان meta keywords منتشر نمی‌شود.
-     */
-    primaryTopic?: string | null;
-    /**
-     * فقط برای مطالبی که نباید در نتایج جست‌وجو دیده شوند.
-     */
-    noIndex?: boolean | null;
-  };
-  /**
-   * در اولین انتشار، اگر خالی باشد خودکار ثبت می‌شود.
-   */
-  publishedAt?: string | null;
-  featured?: boolean | null;
-  sortOrder?: number | null;
-  wordCount?: number | null;
-  readingTimeMinutes?: number | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "brands".
- */
-export interface Brand {
-  id: number;
-  title: string;
-  slug: string;
-  descriptionFa?: string | null;
-  logo?: (number | null) | Media;
-  published?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
- */
-export interface Category {
-  id: number;
-  title: string;
-  slug: string;
-  parent?: (number | null) | Category;
-  image?: (number | null) | Media;
-  descriptionFa?: string | null;
-  sortOrder?: number | null;
-  published?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "product-series".
- */
-export interface ProductSery {
-  id: number;
-  title: string;
-  slug: string;
-  styleFa?: string | null;
-  descriptionFa?: string | null;
-  heroMedia?: (number | null) | Media;
-  published?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "configuration-groups".
- */
-export interface ConfigurationGroup {
-  id: number;
-  title: string;
-  key: string;
-  inputType: 'swatch' | 'select' | 'radio';
-  required?: boolean | null;
-  active?: boolean | null;
-  helpTextFa?: string | null;
-  options?: {
-    docs?: (number | ConfigurationOption)[];
+  orders?: {
+    docs?: (number | Order)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "configuration-options".
- */
-export interface ConfigurationOption {
-  id: number;
-  '_configuration-options_options_order'?: string | null;
-  group: number | ConfigurationGroup;
-  title: string;
-  code?: string | null;
-  swatchColor?: string | null;
-  swatchMedia?: (number | null) | Media;
-  active?: boolean | null;
-  sortOrder?: number | null;
-  updatedAt: string;
-  createdAt: string;
+  collection: 'customers';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -488,66 +281,105 @@ export interface Address {
   postalCode?: string | null;
   country: 'IR';
   phone?: string | null;
+  displayLabel?: string | null;
   isDefault?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * هر گونه باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.
- *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variants".
+ * via the `definition` "orders".
  */
-export interface Variant {
+export interface Order {
   id: number;
-  product: number | Product;
-  nilperCode: string;
-  /**
-   * عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود.
-   */
-  title?: string | null;
-  options: (number | VariantOption)[];
-  shippingMode?: ('parcel' | 'freight') | null;
-  /**
-   * وزن واقعی خود کالا؛ وزن بسته‌بندی عمومی از تنظیمات محرمانه تاپین افزوده می‌شود.
-   */
-  parcelWeightInGrams?: number | null;
-  tapinBoxID?: number | null;
-  priceInTMNEnabled?: boolean | null;
-  /**
-   * مبلغ را به تومان و بدون جداکننده وارد کنید.
-   */
-  priceInTMN?: number | null;
-  /**
-   * فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه.
-   */
-  measurements?:
+  items?:
     | {
-        key: string;
-        labelFa: string;
-        value: number;
-        unit: 'cm' | 'kg' | 'm' | 'unit';
-        sortOrder?: number | null;
+        product?: (number | null) | Product;
+        variant?: (number | null) | Variant;
+        quantity: number;
+        /**
+         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         */
+        configuration?:
+          | {
+              groupKey: string;
+              group?: (number | null) | ConfigurationGroup;
+              groupLabelFaSnapshot: string;
+              option?: (number | null) | ConfigurationOption;
+              optionCodeSnapshot?: string | null;
+              labelFaSnapshot: string;
+              id?: string | null;
+            }[]
+          | null;
+        configurationKey: string;
+        productTitleSnapshot: string;
+        variantCodeSnapshot?: string | null;
+        unitPriceInTMN: number;
+        shippingModeSnapshot?: ('parcel' | 'freight') | null;
+        parcelWeightInGramsSnapshot?: number | null;
+        tapinBoxIDSnapshot?: number | null;
         id?: string | null;
       }[]
     | null;
-  manufacturingNotesFa?: string | null;
+  customer?: (number | null) | Customer;
+  contactName: string;
+  contactPhone: string;
   /**
-   * برای واردات تکرارپذیر؛ از شماره ردیف، عنوان فارسی یا نام محلی فایل ساخته نمی‌شود.
+   * این ارتباط خودکار است؛ جزئیات ثبت‌شده پایین، تصویر ثابت آدرس در زمان سفارش است.
    */
-  sourceKey: string;
-  sourceMetadata: {
-    workbookKey: string;
-    file: string;
-    sheet: string;
-    identityRaw: string;
-    catalogCodeRaw?: string | null;
-    dataQualityNotes?: string | null;
+  customerAddress?: (number | null) | Address;
+  shippingAddress?: {
+    title?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    company?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+    phone?: string | null;
   };
+  deliveryMethod: 'advisor';
+  shippingMode?: ('parcel' | 'freight') | null;
+  shippingAmountInTMN?: number | null;
+  shippingProvider?: ('tapin' | 'manual') | null;
+  shippingServiceID?: string | null;
+  shippingServiceLabel?: string | null;
+  shippingProvinceCode?: number | null;
+  shippingCityCode?: number | null;
+  shippingWeightInGrams?: number | null;
+  shippingBoxID?: number | null;
+  shippingQuotedAt?: string | null;
+  shippingStatus?:
+    | (
+        | 'manual_coordination'
+        | 'quoted'
+        | 'shipment_pending'
+        | 'creating'
+        | 'created'
+        | 'in_transit'
+        | 'delivered'
+        | 'failed'
+      )
+    | null;
+  shippingShipmentID?: string | null;
+  shippingTrackingCode?: string | null;
+  shippingProviderStatus?: string | null;
+  shippingFailureMessage?: string | null;
+  shipmentCreatedAt?: string | null;
+  amount?: number | null;
+  currency?: 'TMN' | null;
+  paymentMethod: 'zarinpal' | 'invoice';
+  paymentTransaction?: (number | null) | Transaction;
+  customerEmail?: string | null;
+  transactions?: (number | Transaction)[] | null;
+  status?: OrderStatus;
+  orderNumber: string;
+  sourceCart?: (number | null) | Cart;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * پیش‌نمایش مدیریت محصول نیلپر؛ گونه‌های SKU از انتخاب‌های پارچه و رنگ چوب جدا هستند.
@@ -656,6 +488,118 @@ export interface Product {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  title: string;
+  slug: string;
+  descriptionFa?: string | null;
+  logo?: (number | null) | Media;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  captionFa?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    adminThumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  slug: string;
+  parent?: (number | null) | Category;
+  image?: (number | null) | Media;
+  descriptionFa?: string | null;
+  sortOrder?: number | null;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-series".
+ */
+export interface ProductSery {
+  id: number;
+  title: string;
+  slug: string;
+  styleFa?: string | null;
+  descriptionFa?: string | null;
+  heroMedia?: (number | null) | Media;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "configuration-groups".
+ */
+export interface ConfigurationGroup {
+  id: number;
+  title: string;
+  key: string;
+  inputType: 'swatch' | 'select' | 'radio';
+  required?: boolean | null;
+  active?: boolean | null;
+  helpTextFa?: string | null;
+  options?: {
+    docs?: (number | ConfigurationOption)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "configuration-options".
+ */
+export interface ConfigurationOption {
+  id: number;
+  '_configuration-options_options_order'?: string | null;
+  group: number | ConfigurationGroup;
+  title: string;
+  code?: string | null;
+  swatchColor?: string | null;
+  swatchMedia?: (number | null) | Media;
+  active?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variantTypes".
  */
 export interface VariantType {
@@ -689,139 +633,67 @@ export interface VariantOption {
   deletedAt?: string | null;
 }
 /**
+ * هر گونه باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "carts".
+ * via the `definition` "variants".
  */
-export interface Cart {
+export interface Variant {
   id: number;
-  items?:
-    | {
-        product?: (number | null) | Product;
-        variant?: (number | null) | Variant;
-        quantity: number;
-        /**
-         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
-         */
-        configuration?:
-          | {
-              groupKey: string;
-              group?: (number | null) | ConfigurationGroup;
-              groupLabelFaSnapshot: string;
-              option?: (number | null) | ConfigurationOption;
-              optionCodeSnapshot?: string | null;
-              labelFaSnapshot: string;
-              id?: string | null;
-            }[]
-          | null;
-        configurationKey: string;
-        productTitleSnapshot: string;
-        variantCodeSnapshot?: string | null;
-        unitPriceInTMN: number;
-        shippingModeSnapshot?: ('parcel' | 'freight') | null;
-        parcelWeightInGramsSnapshot?: number | null;
-        tapinBoxIDSnapshot?: number | null;
-        id?: string | null;
-      }[]
-    | null;
-  secret?: string | null;
-  customer?: (number | null) | Customer;
-  purchasedAt?: string | null;
-  status?: ('active' | 'purchased' | 'abandoned') | null;
-  subtotal?: number | null;
-  currency?: 'TMN' | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "orders".
- */
-export interface Order {
-  id: number;
-  items?:
-    | {
-        product?: (number | null) | Product;
-        variant?: (number | null) | Variant;
-        quantity: number;
-        /**
-         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
-         */
-        configuration?:
-          | {
-              groupKey: string;
-              group?: (number | null) | ConfigurationGroup;
-              groupLabelFaSnapshot: string;
-              option?: (number | null) | ConfigurationOption;
-              optionCodeSnapshot?: string | null;
-              labelFaSnapshot: string;
-              id?: string | null;
-            }[]
-          | null;
-        configurationKey: string;
-        productTitleSnapshot: string;
-        variantCodeSnapshot?: string | null;
-        unitPriceInTMN: number;
-        shippingModeSnapshot?: ('parcel' | 'freight') | null;
-        parcelWeightInGramsSnapshot?: number | null;
-        tapinBoxIDSnapshot?: number | null;
-        id?: string | null;
-      }[]
-    | null;
-  shippingAddress?: {
-    title?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    company?: string | null;
-    addressLine1?: string | null;
-    addressLine2?: string | null;
-    city?: string | null;
-    state?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-    phone?: string | null;
-  };
-  customer?: (number | null) | Customer;
-  customerEmail?: string | null;
-  transactions?: (number | Transaction)[] | null;
-  status?: OrderStatus;
-  amount?: number | null;
-  currency?: 'TMN' | null;
-  orderNumber: string;
-  sourceCart?: (number | null) | Cart;
-  paymentTransaction?: (number | null) | Transaction;
-  contactName: string;
-  contactPhone: string;
-  deliveryMethod: 'advisor';
+  /**
+   * محصول مادر را پیش از انتخاب گزینه‌های گونه مشخص کنید.
+   */
+  product: number | Product;
+  nilperCode: string;
+  /**
+   * عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود.
+   */
+  title?: string | null;
+  /**
+   * گزینه‌هایی را انتخاب کنید که در محصول مادر فعال شده‌اند.
+   */
+  options: (number | VariantOption)[];
   shippingMode?: ('parcel' | 'freight') | null;
-  shippingAmountInTMN?: number | null;
-  shippingProvider?: ('tapin' | 'manual') | null;
-  shippingServiceID?: string | null;
-  shippingServiceLabel?: string | null;
-  shippingProvinceCode?: number | null;
-  shippingCityCode?: number | null;
-  shippingWeightInGrams?: number | null;
-  shippingBoxID?: number | null;
-  shippingQuotedAt?: string | null;
-  shippingStatus?:
-    | (
-        | 'manual_coordination'
-        | 'quoted'
-        | 'shipment_pending'
-        | 'creating'
-        | 'created'
-        | 'in_transit'
-        | 'delivered'
-        | 'failed'
-      )
+  /**
+   * وزن واقعی خود کالا؛ وزن بسته‌بندی عمومی از تنظیمات محرمانه تاپین افزوده می‌شود.
+   */
+  parcelWeightInGrams?: number | null;
+  tapinBoxID?: number | null;
+  priceInTMNEnabled?: boolean | null;
+  /**
+   * مبلغ را به تومان و بدون جداکننده وارد کنید.
+   */
+  priceInTMN?: number | null;
+  /**
+   * فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه.
+   */
+  measurements?:
+    | {
+        key: string;
+        labelFa: string;
+        value: number;
+        unit: 'cm' | 'kg' | 'm' | 'unit';
+        sortOrder?: number | null;
+        id?: string | null;
+      }[]
     | null;
-  shippingShipmentID?: string | null;
-  shippingTrackingCode?: string | null;
-  shippingProviderStatus?: string | null;
-  shippingFailureMessage?: string | null;
-  shipmentCreatedAt?: string | null;
-  paymentMethod: 'zarinpal' | 'invoice';
+  manufacturingNotesFa?: string | null;
+  /**
+   * برای واردات تکرارپذیر؛ از شماره ردیف، عنوان فارسی یا نام محلی فایل ساخته نمی‌شود.
+   */
+  sourceKey: string;
+  sourceMetadata: {
+    workbookKey: string;
+    file: string;
+    sheet: string;
+    identityRaw: string;
+    catalogCodeRaw?: string | null;
+    dataQualityNotes?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -907,6 +779,185 @@ export interface Transaction {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts".
+ */
+export interface Cart {
+  id: number;
+  items?:
+    | {
+        product?: (number | null) | Product;
+        variant?: (number | null) | Variant;
+        quantity: number;
+        /**
+         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         */
+        configuration?:
+          | {
+              groupKey: string;
+              group?: (number | null) | ConfigurationGroup;
+              groupLabelFaSnapshot: string;
+              option?: (number | null) | ConfigurationOption;
+              optionCodeSnapshot?: string | null;
+              labelFaSnapshot: string;
+              id?: string | null;
+            }[]
+          | null;
+        configurationKey: string;
+        productTitleSnapshot: string;
+        variantCodeSnapshot?: string | null;
+        unitPriceInTMN: number;
+        shippingModeSnapshot?: ('parcel' | 'freight') | null;
+        parcelWeightInGramsSnapshot?: number | null;
+        tapinBoxIDSnapshot?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  secret?: string | null;
+  customer?: (number | null) | Customer;
+  purchasedAt?: string | null;
+  status?: ('active' | 'purchased' | 'abandoned') | null;
+  subtotal?: number | null;
+  currency?: 'TMN' | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-otp-challenges".
+ */
+export interface CustomerOtpChallenge {
+  id: number;
+  phoneKey: string;
+  requestIpKey: string;
+  codeHash: string;
+  codeSalt: string;
+  expiresAt: string;
+  attempts: number;
+  deliveryState: 'pending' | 'delivered' | 'failed';
+  providerMessageId?: string | null;
+  consumedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-sessions".
+ */
+export interface CustomerSession {
+  id: number;
+  customer: number | Customer;
+  tokenHash: string;
+  challengeKey: string;
+  expiresAt: string;
+  revokedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * دسته‌بندی‌های تحریریه برای گروه‌بندی و فیلتر مطالب مجله.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-categories".
+ */
+export interface BlogCategory {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string | null;
+  sortOrder?: number | null;
+  published?: boolean | null;
+  posts?: {
+    docs?: (number | Post)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * عنوان صفحه از فیلد «عنوان» می‌آید؛ داخل متن از تیتر ۲ تا ۴ استفاده کنید. فهرست مطلب و زمان مطالعه خودکار ساخته می‌شوند.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * مثال: choosing-sofa-dimensions — بعد از انتشار تغییر ندهید.
+   */
+  slug: string;
+  category: number | BlogCategory;
+  description: string;
+  /**
+   * پاسخ مستقیم و مستقل به پرسش اصلی مطلب؛ در صفحه نیز دیده می‌شود.
+   */
+  summary: string;
+  heroImage: number | Media;
+  heroCaption?: string | null;
+  /**
+   * برای بخش‌های اصلی H2 بگذارید؛ فهرست خودکار از H2ها ساخته می‌شود. H3 و H4 برای زیربخش‌ها هستند.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  takeaway: string;
+  callToAction: {
+    label: string;
+    /**
+     * مثال: /shop یا /contact
+     */
+    href: string;
+  };
+  relatedPosts?: (number | Post)[] | null;
+  authorName: string;
+  authorUrl?: string | null;
+  authorBio?: string | null;
+  seo?: {
+    /**
+     * اگر خالی باشد، عنوان اصلی استفاده می‌شود.
+     */
+    title?: string | null;
+    /**
+     * اگر خالی باشد، خلاصه کارت استفاده می‌شود.
+     */
+    description?: string | null;
+    socialImage?: (number | null) | Media;
+    /**
+     * برای تمرکز تحریریه است؛ به‌عنوان meta keywords منتشر نمی‌شود.
+     */
+    primaryTopic?: string | null;
+    /**
+     * فقط برای مطالبی که نباید در نتایج جست‌وجو دیده شوند.
+     */
+    noIndex?: boolean | null;
+  };
+  /**
+   * در اولین انتشار، اگر خالی باشد خودکار ثبت می‌شود.
+   */
+  publishedAt?: string | null;
+  featured?: boolean | null;
+  sortOrder?: number | null;
+  wordCount?: number | null;
+  readingTimeMinutes?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -948,6 +999,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'blog-categories';
+        value: number | BlogCategory;
       } | null)
     | ({
         relationTo: 'posts';
@@ -1091,6 +1146,8 @@ export interface CustomersSelect<T extends boolean = true> {
   fullName?: T;
   phone?: T;
   active?: T;
+  addresses?: T;
+  orders?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1156,6 +1213,20 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-categories_select".
+ */
+export interface BlogCategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  sortOrder?: T;
+  published?: T;
+  posts?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1289,6 +1360,7 @@ export interface AddressesSelect<T extends boolean = true> {
   postalCode?: T;
   country?: T;
   phone?: T;
+  displayLabel?: T;
   isDefault?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1501,6 +1573,10 @@ export interface OrdersSelect<T extends boolean = true> {
         tapinBoxIDSnapshot?: T;
         id?: T;
       };
+  customer?: T;
+  contactName?: T;
+  contactPhone?: T;
+  customerAddress?: T;
   shippingAddress?:
     | T
     | {
@@ -1516,17 +1592,6 @@ export interface OrdersSelect<T extends boolean = true> {
         country?: T;
         phone?: T;
       };
-  customer?: T;
-  customerEmail?: T;
-  transactions?: T;
-  status?: T;
-  amount?: T;
-  currency?: T;
-  orderNumber?: T;
-  sourceCart?: T;
-  paymentTransaction?: T;
-  contactName?: T;
-  contactPhone?: T;
   deliveryMethod?: T;
   shippingMode?: T;
   shippingAmountInTMN?: T;
@@ -1544,7 +1609,15 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingProviderStatus?: T;
   shippingFailureMessage?: T;
   shipmentCreatedAt?: T;
+  amount?: T;
+  currency?: T;
   paymentMethod?: T;
+  paymentTransaction?: T;
+  customerEmail?: T;
+  transactions?: T;
+  status?: T;
+  orderNumber?: T;
+  sourceCart?: T;
   updatedAt?: T;
   createdAt?: T;
 }

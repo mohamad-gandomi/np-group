@@ -4,6 +4,7 @@ import { getPayload } from "payload";
 
 import config from "../../payload.config";
 import type { Post, Product } from "../payload-types";
+import { journalCategories } from "../features/journal/config";
 import { journalSeedPosts } from "../features/journal/seed-posts";
 import type { ArticleSection, LegacyJournalPost } from "../features/journal/types";
 import { manualCatalogProducts } from "./manual-catalog";
@@ -475,6 +476,21 @@ for (const sourceProduct of manualCatalogProducts) {
   }
 }
 
+const journalCategoryIDs = new Map<string, number>();
+for (const [index, category] of journalCategories.entries()) {
+  const existing = await payload.find({ collection: "blog-categories", where: { slug: { equals: category.id } }, limit: 1 });
+  const record = existing.docs[0] ?? await payload.create({
+    collection: "blog-categories",
+    data: {
+      title: category.label,
+      slug: category.id,
+      sortOrder: index + 1,
+      published: true,
+    },
+  });
+  journalCategoryIDs.set(category.id, record.id as number);
+}
+
 const journalMedia = new Map<string, Identified>();
 for (const post of journalSeedPosts) {
   const source = `public${post.image}`;
@@ -485,9 +501,15 @@ for (const post of journalSeedPosts) {
 const journalPostIDs = new Map<string, number>();
 const createdJournalSlugs = new Set<string>();
 for (const [index, post] of journalSeedPosts.entries()) {
+  const categoryID = journalCategoryIDs.get(post.category);
+  if (!categoryID) throw new Error(`Missing journal category ${post.category}.`);
   const existing = await payload.find({ collection: "posts", where: { slug: { equals: post.slug } }, limit: 1 });
   if (existing.docs[0]) {
     journalPostIDs.set(post.slug, existing.docs[0].id as number);
+    const currentCategoryID = typeof existing.docs[0].category === "object" ? existing.docs[0].category.id : existing.docs[0].category;
+    if (currentCategoryID !== categoryID) {
+      await payload.update({ collection: "posts", id: existing.docs[0].id, data: { category: categoryID } });
+    }
     continue;
   }
   const heroImage = journalMedia.get(post.slug);
@@ -498,7 +520,7 @@ for (const [index, post] of journalSeedPosts.entries()) {
     data: {
       title: post.title,
       slug: post.slug,
-      category: post.category,
+      category: categoryID,
       description: post.description,
       summary: post.summary,
       heroImage: heroImage.id,

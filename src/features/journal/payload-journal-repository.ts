@@ -5,10 +5,10 @@ import { cache } from "react";
 import { getPayload } from "payload";
 
 import config from "../../../payload.config";
-import type { Media, Post as PayloadPost } from "@/payload-types";
+import type { BlogCategory, Media, Post as PayloadPost } from "@/payload-types";
 import { journalAuthor } from "./config";
 import { journalTableOfContents } from "./content";
-import type { JournalCategory, JournalPost, JournalRichText } from "./types";
+import type { JournalPost, JournalRichText } from "./types";
 
 const JOURNAL_REVALIDATE_SECONDS = 300;
 const getJournalPayload = cache(() => getPayload({ config }));
@@ -32,17 +32,23 @@ function relationshipSlug(value: number | PayloadPost) {
   return typeof value === "object" ? value.slug : null;
 }
 
+function categoryRecord(value: number | BlogCategory) {
+  return typeof value === "object" ? value : null;
+}
+
 function mapPost(post: PayloadPost): JournalPost | null {
   const hero = mediaRecord(post.heroImage);
   const image = mediaPath(post.heroImage);
-  if (!image || !hero || !post.publishedAt || !post.content) return null;
+  const category = categoryRecord(post.category);
+  if (!image || !hero || !category || !post.publishedAt || !post.content) return null;
 
   const socialImage = mediaPath(post.seo?.socialImage);
   const content = post.content as JournalRichText;
   return {
     id: post.id,
     slug: post.slug,
-    category: post.category as JournalCategory,
+    category: category.slug,
+    categoryLabel: category.title,
     title: post.title,
     description: post.description,
     image,
@@ -97,6 +103,12 @@ const getCachedJournalPosts = unstable_cache(
 );
 
 export const getJournalPosts = cache(() => getCachedJournalPosts());
+
+export const getJournalCategories = cache(async () => {
+  const categories = new Map<string, string>();
+  for (const post of await getJournalPosts()) categories.set(post.category, post.categoryLabel);
+  return [...categories].map(([id, label]) => ({ id, label }));
+});
 
 export const getJournalPost = cache(async (slug: string) =>
   (await getJournalPosts()).find((post) => post.slug === slug) ?? null,

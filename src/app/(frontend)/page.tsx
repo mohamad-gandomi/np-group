@@ -18,7 +18,6 @@ import { SectionHeading } from "@/components/section-heading";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getCatalogFacets, getCatalogProducts } from "@/features/catalog/payload-catalog-repository";
-import { categoryLabel } from "@/features/journal/config";
 import { getJournalPosts } from "@/features/journal/payload-journal-repository";
 import { formatJournalDate } from "@/features/journal/format";
 import { brandRegistry, brandPath } from "@/features/showcase/brand-registry";
@@ -245,7 +244,7 @@ export default async function Home() {
                     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                       <Image src={post.image} alt={post.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
                     </div>
-                    <div className="flex items-center justify-between pt-5 text-xs text-muted-foreground"><span className="text-wine">{categoryLabel(post.category)}</span><time dateTime={post.publishedAt}>{formatJournalDate(post.publishedAt)}</time></div>
+                    <div className="flex items-center justify-between pt-5 text-xs text-muted-foreground"><span className="text-wine">{post.categoryLabel}</span><time dateTime={post.publishedAt}>{formatJournalDate(post.publishedAt)}</time></div>
                     <h3 className="mt-3 text-xl font-medium leading-8 transition-colors group-hover:text-wine">{post.title}</h3>
                   </Link>
                 </article>

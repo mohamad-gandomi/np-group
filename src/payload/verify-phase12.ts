@@ -23,7 +23,9 @@ try {
   }
 
   const heroImage = publicPosts.docs[0]?.heroImage;
+  const blogCategory = publicPosts.docs[0]?.category;
   assert.ok(heroImage);
+  assert.ok(blogCategory);
   const draftSlug = `phase12-private-draft-${Date.now()}`;
   const draft = await payload.create({
     collection: "posts",
@@ -31,7 +33,7 @@ try {
     data: {
       title: "پیش‌نویس بررسی فاز دوازده",
       slug: draftSlug,
-      category: "planning",
+      category: typeof blogCategory === "object" ? blogCategory.id : blogCategory,
       description: "این رکورد موقت فقط جداسازی پیش‌نویس از محتوای عمومی را بررسی می‌کند.",
       summary: "این مطلب نباید پیش از انتشار در سایت عمومی نمایش داده شود.",
       heroImage: typeof heroImage === "object" ? heroImage.id : heroImage,

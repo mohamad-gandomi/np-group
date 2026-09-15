@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { siteConfig } from "@/config/site";
-import { categoryLabel, journalAuthor } from "./config";
+import { journalAuthor } from "./config";
 import type { JournalPost } from "./types";
 
 export const journalTitle = "مجله ان‌پی؛ راهنمای مبلمان، نور و زندگی";
@@ -27,7 +27,7 @@ export function journalMetadata(post?: JournalPost): Metadata {
       siteName: `گروه ${siteConfig.nameFa}`,
       locale: "fa_IR",
       images: [image],
-      ...(post ? { type: "article", publishedTime: post.publishedAt, modifiedTime: post.updatedAt, authors: [absoluteJournalUrl(author.url)], section: categoryLabel(post.category) } : { type: "website" }),
+      ...(post ? { type: "article", publishedTime: post.publishedAt, modifiedTime: post.updatedAt, authors: [absoluteJournalUrl(author.url)], section: post.categoryLabel } : { type: "website" }),
     },
     twitter: { card: "summary_large_image", title, description, images: [image] },
     robots: { index, follow: true, googleBot: { index, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
@@ -59,7 +59,7 @@ export function journalSchema(post?: JournalPost, posts: JournalPost[] = []) {
         image: [absoluteJournalUrl(post.seo.socialImage || post.image)],
         datePublished: post.publishedAt, dateModified: post.updatedAt,
         author: { "@type": "Organization", name: post.author.name, url: absoluteJournalUrl(post.author.url) },
-        publisher: { "@id": publisher["@id"] }, articleSection: categoryLabel(post.category),
+        publisher: { "@id": publisher["@id"] }, articleSection: post.categoryLabel,
         ...(post.seo.primaryTopic ? { about: post.seo.primaryTopic, keywords: post.seo.primaryTopic } : {}),
         wordCount: post.wordCount, timeRequired: `PT${post.readingTimeMinutes}M`, inLanguage: "fa-IR", isAccessibleForFree: true,
       } : {

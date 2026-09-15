@@ -8,6 +8,9 @@ import * as migration_20260912_111822_nilper_payload_account_cutover from './202
 import * as migration_20260912_174237 from './20260912_174237';
 import * as migration_20260913_085957_nilper_tapin_shipping from './20260913_085957_nilper_tapin_shipping';
 import * as migration_20260913_094955_phase12_dynamic_journal from './20260913_094955_phase12_dynamic_journal';
+import * as migration_20260915_145847_blog_categories from './20260915_145847_blog_categories';
+import * as migration_20260915_152427_order_customer_address from './20260915_152427_order_customer_address';
+import * as migration_20260915_153600_address_display_label from './20260915_153600_address_display_label';
 
 export const migrations = [
   {
@@ -58,6 +61,21 @@ export const migrations = [
   {
     up: migration_20260913_094955_phase12_dynamic_journal.up,
     down: migration_20260913_094955_phase12_dynamic_journal.down,
-    name: '20260913_094955_phase12_dynamic_journal'
+    name: '20260913_094955_phase12_dynamic_journal',
+  },
+  {
+    up: migration_20260915_145847_blog_categories.up,
+    down: migration_20260915_145847_blog_categories.down,
+    name: '20260915_145847_blog_categories',
+  },
+  {
+    up: migration_20260915_152427_order_customer_address.up,
+    down: migration_20260915_152427_order_customer_address.down,
+    name: '20260915_152427_order_customer_address',
+  },
+  {
+    up: migration_20260915_153600_address_display_label.up,
+    down: migration_20260915_153600_address_display_label.down,
+    name: '20260915_153600_address_display_label'
   },
 ];

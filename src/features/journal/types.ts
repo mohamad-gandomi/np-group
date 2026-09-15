@@ -17,7 +17,8 @@ export type JournalTocItem = { id: string; title: string };
 export type JournalPost = {
   id: number | string;
   slug: string;
-  category: JournalCategory;
+  category: string;
+  categoryLabel: string;
   title: string;
   description: string;
   image: string;

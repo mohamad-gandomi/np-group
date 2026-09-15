@@ -65,6 +65,158 @@ html[data-theme="dark"] body {
   color: var(--np-text);
 }
 
+.login.template-minimal {
+  background: var(--np-canvas);
+  min-height: 100vh;
+}
+
+.login .template-minimal__wrap {
+  background: var(--np-surface);
+  border: 1px solid var(--np-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 28%);
+  max-width: 440px;
+  padding: 38px;
+  width: calc(100% - 40px);
+}
+
+.login__brand {
+  border-bottom: 1px solid var(--np-border);
+  justify-content: flex-start;
+  margin-bottom: 28px;
+  padding-bottom: 26px;
+}
+
+.nilper-login-brand {
+  align-items: center;
+  direction: rtl;
+  display: flex;
+  gap: 16px;
+  text-align: right;
+}
+
+.nilper-login-brand img {
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
+  height: 56px;
+  object-fit: cover;
+  width: 56px;
+}
+
+.nilper-login-brand__copy {
+  display: grid;
+  gap: 5px;
+}
+
+.nilper-login-brand__copy strong {
+  color: var(--np-text);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.nilper-login-brand__copy small {
+  color: var(--np-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.login__form__inputWrap {
+  gap: 18px;
+}
+
+.login .field-label {
+  color: #cbd1d8;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.login input {
+  background: #10151b !important;
+  border: 1px solid var(--np-border-strong) !important;
+  border-radius: var(--np-radius) !important;
+  box-shadow: none !important;
+  color: var(--np-text) !important;
+  direction: ltr;
+  height: 48px !important;
+  padding-inline: 14px !important;
+  text-align: left;
+}
+
+.login input:hover {
+  border-color: #46515e !important;
+}
+
+.login input:focus {
+  border-color: var(--np-accent) !important;
+  box-shadow: 0 0 0 3px var(--np-accent-soft) !important;
+}
+
+.login__form > a {
+  color: var(--np-muted);
+  display: inline-block;
+  font-size: 12px;
+  margin-top: 6px;
+  text-decoration: none;
+}
+
+.login__form > a:hover,
+.login__form > a:focus-visible {
+  color: var(--np-text);
+}
+
+.login .form-submit {
+  margin-top: 22px;
+}
+
+.login .form-submit .btn {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--np-radius);
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  margin: 0;
+  width: 100%;
+}
+
+.login .form-submit .btn__content,
+.login .form-submit .btn__label {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .login .template-minimal__wrap {
+    padding: 28px 22px;
+    width: calc(100% - 28px);
+  }
+
+  .nilper-login-brand__copy strong {
+    font-size: 18px;
+  }
+}
+
+.query-inspector,
+.query-inspector__configuration,
+.query-inspector__results-wrapper,
+.query-inspector__results {
+  direction: ltr;
+  text-align: left;
+}
+
+.query-inspector__api-url a,
+.query-inspector__value,
+.query-inspector__row-line,
+.query-inspector__list-toggle {
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
 .app-header {
   background: var(--np-header);
   border-bottom: 1px solid var(--np-border);

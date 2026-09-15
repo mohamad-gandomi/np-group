@@ -304,7 +304,7 @@ async function ensureTransactions(orders: Array<{ document: Order; items: Return
     await payload.update({
       collection: "orders",
       id: order.id,
-      data: { transactions: [transaction.id] },
+      data: { paymentTransaction: transaction.id, transactions: [transaction.id] },
       depth: 0,
       overrideAccess: true,
     });

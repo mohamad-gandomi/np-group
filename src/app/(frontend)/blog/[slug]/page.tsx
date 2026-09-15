@@ -6,7 +6,6 @@ import { ArrowLeft, ChevronDown, ChevronLeft, Clock3 } from "lucide-react";
 import { ArticleTools } from "@/features/journal/components/article-tools";
 import { JournalRichText } from "@/features/journal/components/journal-rich-text";
 import { PostCard } from "@/features/journal/components/post-card";
-import { categoryLabel } from "@/features/journal/config";
 import { formatJournalDate, journalNumber } from "@/features/journal/format";
 import { getJournalPost, getJournalPosts } from "@/features/journal/payload-journal-repository";
 import { journalMetadata, journalSchema } from "@/features/journal/seo";
@@ -34,7 +33,7 @@ export default async function ArticlePage({ params }: Props) {
       <div className="journal-shell">
         <nav className="journal-breadcrumbs" aria-label="مسیر صفحه"><Link href="/">خانه</Link><ChevronLeft size={12} aria-hidden="true" /><Link href="/blog">مجله ان‌پی</Link><ChevronLeft size={12} aria-hidden="true" /><span aria-current="page">{post.title}</span></nav>
         <article>
-          <header className="journal-article-header"><Link href="/blog#articles" className="journal-eyebrow">{categoryLabel(post.category)}</Link><h1>{post.title}</h1><p className="journal-article-deck">{post.description}</p><div className="journal-byline"><Link href={post.author.url} className="journal-author-link"><span aria-hidden="true" className="journal-author-avatar">ن‌پ</span>{post.author.name}</Link><span className="journal-byline-date">انتشار <time dateTime={post.publishedAt}>{formatJournalDate(post.publishedAt)}</time></span><span className="journal-reading-time"><Clock3 size={15} aria-hidden="true" />{journalNumber.format(post.readingTimeMinutes)} دقیقه مطالعه</span></div>{post.updatedAt !== post.publishedAt && <p className="journal-updated">آخرین بازبینی: <time dateTime={post.updatedAt}>{formatJournalDate(post.updatedAt)}</time></p>}</header>
+          <header className="journal-article-header"><Link href="/blog#articles" className="journal-eyebrow">{post.categoryLabel}</Link><h1>{post.title}</h1><p className="journal-article-deck">{post.description}</p><div className="journal-byline"><Link href={post.author.url} className="journal-author-link"><span aria-hidden="true" className="journal-author-avatar">ن‌پ</span>{post.author.name}</Link><span className="journal-byline-date">انتشار <time dateTime={post.publishedAt}>{formatJournalDate(post.publishedAt)}</time></span><span className="journal-reading-time"><Clock3 size={15} aria-hidden="true" />{journalNumber.format(post.readingTimeMinutes)} دقیقه مطالعه</span></div>{post.updatedAt !== post.publishedAt && <p className="journal-updated">آخرین بازبینی: <time dateTime={post.updatedAt}>{formatJournalDate(post.updatedAt)}</time></p>}</header>
           <figure className="journal-cover"><div><Image src={post.image} alt={post.imageAlt} fill sizes="(max-width: 1280px) calc(100vw - 40px), 1240px" loading="eager" fetchPriority="high" /></div>{post.imageCaption ? <figcaption>{post.imageCaption}</figcaption> : null}</figure>
           <div className="journal-reading-layout">
             <aside className="journal-sidebar"><nav aria-label="فهرست این مطلب"><p className="journal-eyebrow">در این یادداشت</p>{contents}</nav><Link href="/blog" className="journal-back-link">بازگشت به مجله <ArrowLeft size={16} aria-hidden="true" /></Link></aside>

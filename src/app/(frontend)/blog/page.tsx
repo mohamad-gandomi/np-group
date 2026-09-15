@@ -4,16 +4,15 @@ import { ArrowLeft, ArrowDownLeft, ArrowUpLeft } from "lucide-react";
 
 import { PostCard } from "@/features/journal/components/post-card";
 import { PostExplorer } from "@/features/journal/components/post-explorer";
-import { categoryLabel, journalCategories } from "@/features/journal/config";
 import { formatJournalDate, journalNumber } from "@/features/journal/format";
-import { getJournalPosts } from "@/features/journal/payload-journal-repository";
+import { getJournalCategories, getJournalPosts } from "@/features/journal/payload-journal-repository";
 import { journalMetadata, journalSchema } from "@/features/journal/seo";
 
 export const metadata = journalMetadata();
 export const revalidate = 300;
 
 export default async function BlogPage() {
-  const posts = await getJournalPosts();
+  const [posts, journalCategories] = await Promise.all([getJournalPosts(), getJournalCategories()]);
   const featured = posts.find((post) => post.featured) ?? posts[0];
   return (
     <main id="journal-main" className="journal" tabIndex={-1}>
@@ -26,10 +25,10 @@ export default async function BlogPage() {
         {featured ? (
           <section aria-label="مطلب منتخب" className="journal-featured">
             <Link className="journal-featured-image" href={`/blog/${featured.slug}`} aria-label={featured.title}><Image src={featured.image} alt={featured.imageAlt} fill sizes="(max-width: 800px) calc(100vw - 40px), (max-width: 1280px) 58vw, 740px" loading="eager" fetchPriority="high" /><span className="journal-image-label">انتخاب تحریریه <ArrowUpLeft size={16} aria-hidden="true" /></span></Link>
-            <div className="journal-featured-copy"><p className="journal-eyebrow">۰۱ / {categoryLabel(featured.category)}</p><h2><Link href={`/blog/${featured.slug}`}>{featured.title}</Link></h2><p className="journal-featured-description">{featured.description}</p><div className="journal-meta"><time dateTime={featured.publishedAt}>{formatJournalDate(featured.publishedAt)}</time><span>{journalNumber.format(featured.readingTimeMinutes)} دقیقه مطالعه</span></div><Link href={`/blog/${featured.slug}`} className="journal-text-link">خواندن این یادداشت <ArrowLeft size={18} aria-hidden="true" /></Link></div>
+            <div className="journal-featured-copy"><p className="journal-eyebrow">۰۱ / {featured.categoryLabel}</p><h2><Link href={`/blog/${featured.slug}`}>{featured.title}</Link></h2><p className="journal-featured-description">{featured.description}</p><div className="journal-meta"><time dateTime={featured.publishedAt}>{formatJournalDate(featured.publishedAt)}</time><span>{journalNumber.format(featured.readingTimeMinutes)} دقیقه مطالعه</span></div><Link href={`/blog/${featured.slug}`} className="journal-text-link">خواندن این یادداشت <ArrowLeft size={18} aria-hidden="true" /></Link></div>
           </section>
         ) : null}
-        <PostExplorer categories={journalCategories} entries={posts.map((post) => ({ slug: post.slug, category: post.category, searchText: `${post.title} ${post.description} ${categoryLabel(post.category)}`, card: <PostCard post={post} /> }))} />
+        <PostExplorer categories={journalCategories} entries={posts.map((post) => ({ slug: post.slug, category: post.category, searchText: `${post.title} ${post.description} ${post.categoryLabel}`, card: <PostCard post={post} /> }))} />
         <aside className="journal-editor-note"><span className="journal-editor-mark" aria-hidden="true">ن‌پ</span><div><p className="journal-eyebrow">از تحریریه</p><h2>انتخاب‌های بهتر، از نگاه دقیق‌تر شروع می‌شوند.</h2><p>اینجا درباره چیزهایی می‌نویسیم که یک خانه را به خانه شما تبدیل می‌کنند؛ تناسب یک مبل، لمس یک پارچه و نوری که عصر را دلنشین‌تر می‌کند.</p><Link href="/about" className="journal-text-link">آشنایی با نگاه ان‌پی <ArrowLeft size={18} aria-hidden="true" /></Link></div><p className="journal-english" lang="en" dir="ltr">SPACES.<br />MATERIALS.<br />EVERYDAY LIFE.</p></aside>
       </div>
     </main>

@@ -28,6 +28,18 @@ export function AdminBrandIcon() {
   );
 }
 
+export function AdminBrandLogo() {
+  return (
+    <div className="nilper-login-brand" aria-label="مدیریت نیلپر">
+      <Image src="/admin/np-mark.webp" alt="" width={64} height={64} priority />
+      <span className="nilper-login-brand__copy">
+        <strong>مدیریت نیلپر</strong>
+        <small>فروشگاه و محتوای NP Group</small>
+      </span>
+    </div>
+  );
+}
+
 export function AdminHeaderAction() {
   return (
     <>

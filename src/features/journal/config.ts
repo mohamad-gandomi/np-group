@@ -1,5 +1,3 @@
-import type { JournalCategory } from "./types";
-
 export const journalCategories = [
   { id: "planning", label: "راهنمای انتخاب" },
   { id: "materials", label: "بافت و متریال" },
@@ -13,6 +11,6 @@ export const journalAuthor = {
   url: "/about",
 };
 
-export function categoryLabel(category: JournalCategory) {
+export function categoryLabel(category: string) {
   return journalCategories.find((item) => item.id === category)?.label ?? "مجله ان‌پی";
 }

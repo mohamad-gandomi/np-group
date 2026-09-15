@@ -58,7 +58,7 @@ export const Posts: CollectionConfig = {
     update: isAdmin,
   },
   admin: {
-    group: "محتوا",
+    group: "مجله",
     useAsTitle: "title",
     defaultColumns: ["title", "category", "_status", "publishedAt", "updatedAt"],
     description: "عنوان صفحه از فیلد «عنوان» می‌آید؛ داخل متن از تیتر ۲ تا ۴ استفاده کنید. فهرست مطلب و زمان مطالعه خودکار ساخته می‌شوند.",
@@ -91,15 +91,10 @@ export const Posts: CollectionConfig = {
             },
             {
               name: "category",
-              type: "select",
-              label: "موضوع",
+              type: "relationship",
+              relationTo: "blog-categories",
+              label: "دسته‌بندی",
               required: true,
-              options: [
-                { label: "راهنمای انتخاب", value: "planning" },
-                { label: "بافت و متریال", value: "materials" },
-                { label: "نور و فضا", value: "lighting" },
-                { label: "هنر زندگی", value: "living" },
-              ],
             },
             { name: "description", type: "textarea", label: "خلاصه کارت و مقدمه نتایج", required: true, maxLength: 240, admin: { rtl: true } },
             { name: "summary", type: "textarea", label: "پاسخ سریع یک‌دقیقه‌ای", required: true, admin: { rtl: true, description: "پاسخ مستقیم و مستقل به پرسش اصلی مطلب؛ در صفحه نیز دیده می‌شود." } },
