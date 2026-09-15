@@ -16,6 +16,7 @@
     "payload:migrate:create": "payload migrate:create",
     "payload:migrate": "payload migrate",
     "payload:seed": "payload run src/payload/seed.ts",
+    "payload:seed:admin-demo": "payload run src/payload/seed-admin-demo.ts",
     "payload:verify:phase3": "payload run src/payload/verify-phase3.ts",
     "payload:verify:phase4": "payload run src/payload/verify-phase4.ts",
     "payload:verify:phase5": "payload run src/payload/verify-phase5.ts",

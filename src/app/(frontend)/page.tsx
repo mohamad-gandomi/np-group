@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { ProductCard } from "@/components/product-card";
+import { HeroBackgroundVideo } from "@/components/hero-background-video";
 import { SectionHeading } from "@/components/section-heading";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -65,6 +66,7 @@ export default async function Home() {
             sizes="100vw"
             priority
           />
+          <HeroBackgroundVideo />
           <div className="image-wash absolute inset-0" />
           <div className="container-shell relative flex min-h-[calc(100svh-104px)] items-end pb-12 pt-24 sm:pb-16 lg:pb-20">
             <div className="grid w-full items-end gap-10 lg:grid-cols-[1fr_22rem]">

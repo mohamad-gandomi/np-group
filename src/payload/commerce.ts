@@ -245,14 +245,65 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
 const variantFields = (defaultCollection: CollectionConfig): Field[] => {
   const defaults = defaultCollection.fields;
   const take = (name: string) => defaults.find((field) => fieldNamed(field, name));
+  const present = (name: string, label: string, description?: string) => {
+    const field = take(name);
+    if (!field) return undefined;
+
+    return {
+      ...field,
+      label,
+      admin: {
+        ...("admin" in field ? field.admin : undefined),
+        ...(description ? { description } : {}),
+      },
+    } as Field;
+  };
+  const localizePriceField = (field: Field): Field => {
+    if (field.type === "group") {
+      return {
+        ...field,
+        admin: { ...field.admin, description: "قیمت فروش این گونه به تومان." },
+        fields: field.fields.map(localizePriceField),
+      };
+    }
+
+    if (field.type === "row") {
+      return {
+        ...field,
+        fields: field.fields.map(localizePriceField),
+      };
+    }
+
+    if (field.type === "collapsible") {
+      return {
+        ...field,
+        fields: field.fields.map(localizePriceField),
+      };
+    }
+
+    if (fieldNamed(field, "priceInTMNEnabled")) {
+      return { ...field, label: "فعال‌سازی قیمت (تومان)" } as Field;
+    }
+
+    if (fieldNamed(field, "priceInTMN")) {
+      return {
+        ...field,
+        label: "قیمت (تومان)",
+        admin: { ...("admin" in field ? field.admin : undefined), description: "مبلغ را به تومان و بدون جداکننده وارد کنید." },
+      } as Field;
+    }
+
+    return field;
+  };
   const priceFields = defaults
     .filter((field) => !("name" in field) || !field.name)
-    .map(withCommerceValidation);
+    .map(withCommerceValidation)
+    .map(localizePriceField);
   return [
-    take("product")!,
+    present("product", "محصول"),
     { name: "nilperCode", type: "text", label: "کد ثبت نیلپر / SKU", required: true, unique: true },
-    take("title")!,
-    take("options")!,
+    present("title", "عنوان گونه", "عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود."),
+    present("options", "گزینه‌های گونه"),
     shippingModeField(),
     ...parcelFields(),
     ...priceFields,

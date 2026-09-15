@@ -2,14 +2,37 @@ import {
   EXPERIMENTAL_TableFeature,
   FixedToolbarFeature,
   HeadingFeature,
+  HorizontalRuleFeature,
   InlineToolbarFeature,
   lexicalEditor,
 } from "@payloadcms/richtext-lexical";
+import type { FeatureProviderServer } from "@payloadcms/richtext-lexical";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { adminOrPublishedStatus, isAdmin } from "./access";
 import { journalReadingStats } from "../features/journal/content";
 import type { JournalRichText } from "../features/journal/types";
+
+function withPersianFeatureLabel<ServerProps = undefined, SanitizedProps = ServerProps, ClientProps = undefined>(
+  provider: FeatureProviderServer<ServerProps, SanitizedProps, ClientProps>,
+  label: string,
+): FeatureProviderServer<ServerProps, SanitizedProps, ClientProps> {
+  const feature = provider.feature;
+
+  return {
+    ...provider,
+    feature: async (args) => {
+      const resolved = typeof feature === "function" ? await feature(args) : feature;
+      return {
+        ...resolved,
+        i18n: {
+          ...resolved.i18n,
+          fa: { ...resolved.i18n?.fa, label },
+        },
+      };
+    },
+  };
+}
 
 const calculateReadingStats: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
   const content = (data.content ?? originalDoc?.content) as JournalRichText | undefined;
@@ -90,8 +113,9 @@ export const Posts: CollectionConfig = {
               admin: { description: "برای بخش‌های اصلی H2 بگذارید؛ فهرست خودکار از H2ها ساخته می‌شود. H3 و H4 برای زیربخش‌ها هستند." },
               editor: lexicalEditor({
                 features: ({ defaultFeatures }) => [
-                  ...defaultFeatures.filter((feature) => feature.key !== "heading" && feature.key !== "fixedToolbar" && feature.key !== "inlineToolbar"),
-                  HeadingFeature({ enabledHeadingSizes: ["h2", "h3", "h4"] }),
+                  ...defaultFeatures.filter((feature) => !["heading", "horizontalRule", "fixedToolbar", "inlineToolbar"].includes(feature.key)),
+                  withPersianFeatureLabel(HeadingFeature({ enabledHeadingSizes: ["h2", "h3", "h4"] }), "تیتر {{headingLevel}}"),
+                  withPersianFeatureLabel(HorizontalRuleFeature(), "خط افقی"),
                   EXPERIMENTAL_TableFeature(),
                   FixedToolbarFeature(),
                   InlineToolbarFeature(),

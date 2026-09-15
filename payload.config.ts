@@ -8,6 +8,20 @@ import sharp from "sharp";
 import { ecommerce } from "./src/payload/commerce";
 import { collections } from "./src/payload/collections";
 
+const nilperFa = {
+  ...fa,
+  translations: {
+    ...fa.translations,
+    general: {
+      ...fa.translations.general,
+      column: "ستون",
+      columns: "ستون‌ها",
+      row: "سطر",
+      rows: "سطرها",
+    },
+  },
+};
+
 const projectRoot = process.cwd();
 const databaseURI = process.env.DATABASE_URI;
 const payloadSecret = process.env.PAYLOAD_SECRET;
@@ -18,8 +32,16 @@ if (!payloadSecret) throw new Error("PAYLOAD_SECRET is required for Payload.");
 export default buildConfig({
   admin: {
     user: "users",
+    theme: "dark",
+    avatar: {
+      Component: "./src/components/payload/admin-shell#AdminAvatar",
+    },
     importMap: { baseDir: projectRoot },
     components: {
+      actions: ["./src/components/payload/admin-shell#AdminHeaderAction"],
+      graphics: {
+        Icon: "./src/components/payload/admin-shell#AdminBrandIcon",
+      },
       views: {
         dashboard: {
           Component: "./src/components/payload/admin-dashboard#AdminDashboard",
@@ -42,7 +64,7 @@ export default buildConfig({
   editor: lexicalEditor(),
   i18n: {
     fallbackLanguage: "fa",
-    supportedLanguages: { fa },
+    supportedLanguages: { fa: nilperFa },
   },
   plugins: [ecommerce],
   secret: payloadSecret,

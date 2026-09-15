@@ -503,7 +503,7 @@ export interface Variant {
   product: number | Product;
   nilperCode: string;
   /**
-   * Used for administrative purposes, not shown to customers. This is populated by default.
+   * عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود.
    */
   title?: string | null;
   options: (number | VariantOption)[];
@@ -514,6 +514,9 @@ export interface Variant {
   parcelWeightInGrams?: number | null;
   tapinBoxID?: number | null;
   priceInTMNEnabled?: boolean | null;
+  /**
+   * مبلغ را به تومان و بدون جداکننده وارد کنید.
+   */
   priceInTMN?: number | null;
   /**
    * فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه.

@@ -1,4 +1,14 @@
 import { Gutter } from "@payloadcms/ui";
+import {
+  ChartNoAxesCombined,
+  CircleAlert,
+  Clock3,
+  PackageCheck,
+  ShoppingBag,
+  Truck,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
 import type { AdminViewServerProps, PayloadRequest, Where } from "payload";
 import Link from "next/link";
 
@@ -209,19 +219,57 @@ async function loadDashboardData(req: PayloadRequest): Promise<DashboardData> {
   };
 }
 
-function SummaryCard({ label, value, tone }: { label: string; value: number; tone: string }) {
+function SummaryCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
   return (
-    <article className={`nilper-dashboard__summary nilper-dashboard__summary--${tone}`}>
-      <span>{label}</span>
+    <article className="nilper-dashboard__summary">
+      <div className="nilper-dashboard__summary-head">
+        <span>{label}</span>
+        <span className="nilper-dashboard__summary-icon" aria-hidden="true">
+          <Icon size={17} strokeWidth={1.8} />
+        </span>
+      </div>
       <strong>{numberFormatter.format(value)}</strong>
     </article>
+  );
+}
+
+function EmptyState({
+  action,
+  compact = false,
+  description,
+  icon: Icon,
+  title,
+}: {
+  action?: { href: string; label: string };
+  compact?: boolean;
+  description: string;
+  icon: LucideIcon;
+  title: string;
+}) {
+  return (
+    <div className={`nilper-dashboard__empty${compact ? " nilper-dashboard__empty--small" : ""}`}>
+      <span className="nilper-dashboard__empty-icon" aria-hidden="true">
+        <Icon size={21} strokeWidth={1.65} />
+      </span>
+      <div>
+        <strong>{title}</strong>
+        <p>{description}</p>
+      </div>
+      {action ? <Link className="nilper-dashboard__empty-action" href={action.href}>{action.label}</Link> : null}
+    </div>
   );
 }
 
 function OrdersTrendChart({ data }: { data: DashboardData["trend"] }) {
   const hasOrders = data.some((day) => day.count > 0);
   if (!hasOrders) {
-    return <div className="nilper-dashboard__empty">در ۳۰ روز گذشته سفارشی ثبت نشده است.</div>;
+    return (
+      <EmptyState
+        description="با ثبت سفارش جدید، روند روزانه اینجا شکل می‌گیرد."
+        icon={ChartNoAxesCombined}
+        title="داده‌ای برای نمودار وجود ندارد"
+      />
+    );
   }
 
   const width = 720;
@@ -277,7 +325,14 @@ function StatusOverview({ data }: { data: DashboardData }) {
   const max = Math.max(...groups.map((group) => group.value));
 
   if (max === 0) {
-    return <div className="nilper-dashboard__empty nilper-dashboard__empty--small">هنوز سفارشی برای نمایش وضعیت وجود ندارد.</div>;
+    return (
+      <EmptyState
+        compact
+        description="پس از ورود سفارش‌ها، وضعیت چرخه آن‌ها اینجا دیده می‌شود."
+        icon={PackageCheck}
+        title="وضعیتی برای نمایش نیست"
+      />
+    );
   }
 
   return (
@@ -306,7 +361,14 @@ function StatusBadge({ children, tone }: { children: React.ReactNode; tone?: str
 
 function LatestOrders({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
-    return <div className="nilper-dashboard__empty">هنوز سفارشی ثبت نشده است.</div>;
+    return (
+      <EmptyState
+        action={{ href: "/admin/collections/orders/create", label: "ثبت سفارش جدید" }}
+        description="سفارش‌های تازه برای پیگیری سریع در این بخش نمایش داده می‌شوند."
+        icon={ShoppingBag}
+        title="هنوز سفارشی ثبت نشده است"
+      />
+    );
   }
 
   return (
@@ -364,12 +426,19 @@ function DashboardError() {
     <Gutter className="nilper-dashboard">
       <div className="nilper-dashboard__heading">
         <div>
+          <span className="nilper-dashboard__eyebrow">مرکز عملیات</span>
           <h1>داشبورد مدیریت</h1>
-          <p>{fullDateFormatter.format(new Date())}</p>
+          <p>مرور سریع سفارش‌ها و فعالیت‌های فروشگاه</p>
         </div>
       </div>
       <div className="nilper-dashboard__empty nilper-dashboard__empty--error">
-        اطلاعات داشبورد در حال حاضر در دسترس نیست. کمی بعد دوباره تلاش کنید.
+        <span className="nilper-dashboard__empty-icon" aria-hidden="true">
+          <CircleAlert size={21} strokeWidth={1.65} />
+        </span>
+        <div>
+          <strong>اطلاعات داشبورد در دسترس نیست</strong>
+          <p>کمی بعد دوباره تلاش کنید یا صفحه را تازه کنید.</p>
+        </div>
       </div>
     </Gutter>
   );
@@ -388,17 +457,18 @@ export async function AdminDashboard({ initPageResult }: AdminViewServerProps) {
     <Gutter className="nilper-dashboard">
       <header className="nilper-dashboard__heading">
         <div>
+          <span className="nilper-dashboard__eyebrow">مرکز عملیات</span>
           <h1>داشبورد مدیریت</h1>
-          <p>{fullDateFormatter.format(new Date())}</p>
+          <p>مرور سریع سفارش‌ها و فعالیت‌های فروشگاه</p>
         </div>
         <Link className="nilper-dashboard__all-orders" href="/admin/collections/orders">همه سفارش‌ها</Link>
       </header>
 
       <section className="nilper-dashboard__summaries" aria-label="خلاصه فعالیت‌های نیازمند توجه">
-        <SummaryCard label="نیازمند بررسی" value={data.pendingReview} tone="review" />
-        <SummaryCard label="سفارش‌های فعال" value={data.active} tone="active" />
-        <SummaryCard label="نیازمند پیگیری ارسال" value={data.shippingAttention} tone="shipping" />
-        <SummaryCard label="مشتریان جدید" value={data.customersThisMonth} tone="customers" />
+        <SummaryCard icon={CircleAlert} label="نیازمند بررسی" value={data.pendingReview} />
+        <SummaryCard icon={Clock3} label="سفارش‌های فعال" value={data.active} />
+        <SummaryCard icon={Truck} label="نیازمند پیگیری ارسال" value={data.shippingAttention} />
+        <SummaryCard icon={UserPlus} label="مشتریان جدید" value={data.customersThisMonth} />
       </section>
 
       <div className="nilper-dashboard__charts">
