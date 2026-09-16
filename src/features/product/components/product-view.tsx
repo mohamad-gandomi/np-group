@@ -4,12 +4,13 @@ import { ProductCard } from "@/components/product-card";
 import { SectionHeading } from "@/components/section-heading";
 import { siteConfig } from "@/config/site";
 import type { Product } from "@/features/catalog/catalog-types";
+import type { SalesContact } from "../payload-sales-contacts";
 import { getProductPresentation } from "../product-details";
 import { ProductGallery } from "./product-gallery";
 import { ProductSpecifications } from "./product-specifications";
 import { ProductSummary } from "./product-summary";
 
-export function ProductView({ product, relatedProducts = [] }: { product: Product; relatedProducts?: readonly Product[] }) {
+export function ProductView({ product, relatedProducts = [], salesContacts = [] }: { product: Product; relatedProducts?: readonly Product[]; salesContacts?: readonly SalesContact[] }) {
   const details = getProductPresentation(product);
   const categoryTitle = product.categoryTitle ?? "مبلمان خانگی";
   const path = `/shop/${product.category}/${product.slug}`;
@@ -30,7 +31,7 @@ export function ProductView({ product, relatedProducts = [] }: { product: Produc
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground" aria-label="مسیر صفحه"><Link href="/">خانه</Link><span>/</span><Link href="/shop">فروشگاه</Link><span>/</span><Link href={`/shop/${product.category}`}>{categoryTitle}</Link><span>/</span><span className="text-foreground">{product.name}</span></nav>
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.72fr)] lg:items-start xl:gap-12" dir="rtl">
           <ProductGallery images={details.gallery} name={product.name} brand={product.brand} />
-          <div dir="rtl"><ProductSummary product={product} description={details.description} depth={details.depth} height={details.height} leadTime={details.leadTime} /></div>
+          <div dir="rtl"><ProductSummary product={product} description={details.description} depth={details.depth} height={details.height} leadTime={details.leadTime} salesContacts={salesContacts} /></div>
         </div>
       </div>
 

@@ -82,6 +82,7 @@ export interface Config {
     'blog-categories': BlogCategory;
     posts: Post;
     brands: Brand;
+    projects: Project;
     categories: Category;
     'product-series': ProductSery;
     'configuration-groups': ConfigurationGroup;
@@ -126,6 +127,7 @@ export interface Config {
     'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
+    projects: ProjectsSelect<false> | ProjectsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'product-series': ProductSeriesSelect<false> | ProductSeriesSelect<true>;
     'configuration-groups': ConfigurationGroupsSelect<false> | ConfigurationGroupsSelect<true>;
@@ -219,7 +221,10 @@ export interface User {
   id: number;
   fullName: string;
   phone?: string | null;
-  role: 'admin' | 'editor';
+  role: 'admin' | 'editor' | 'seller';
+  contactTitle?: string | null;
+  contactDescription?: string | null;
+  whatsappPhone?: string | null;
   active?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -495,7 +500,14 @@ export interface Brand {
   title: string;
   slug: string;
   descriptionFa?: string | null;
+  taglineFa?: string | null;
+  storyFa?: string | null;
   logo?: (number | null) | Media;
+  heroMedia?: (number | null) | Media;
+  heroAlt?: string | null;
+  heroCaption?: string | null;
+  featured?: boolean | null;
+  sortOrder?: number | null;
   published?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -958,6 +970,50 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects".
+ */
+export interface Project {
+  id: number;
+  title: string;
+  slug: string;
+  sector: 'residential' | 'hospitality' | 'commercial' | 'workplace' | 'healthcare';
+  descriptionFa: string;
+  briefFa: string;
+  heroMedia: number | Media;
+  heroAlt: string;
+  heroCaption?: string | null;
+  gallery?:
+    | {
+        image: number | Media;
+        alt: string;
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  approach?:
+    | {
+        title: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  palette?:
+    | {
+        name: string;
+        color: string;
+        id?: string | null;
+      }[]
+    | null;
+  products?: (number | Product)[] | null;
+  article?: (number | null) | Post;
+  featured?: boolean | null;
+  sortOrder?: number | null;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1011,6 +1067,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'brands';
         value: number | Brand;
+      } | null)
+    | ({
+        relationTo: 'projects';
+        value: number | Project;
       } | null)
     | ({
         relationTo: 'categories';
@@ -1120,6 +1180,9 @@ export interface UsersSelect<T extends boolean = true> {
   fullName?: T;
   phone?: T;
   role?: T;
+  contactTitle?: T;
+  contactDescription?: T;
+  whatsappPhone?: T;
   active?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1278,7 +1341,57 @@ export interface BrandsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   descriptionFa?: T;
+  taglineFa?: T;
+  storyFa?: T;
   logo?: T;
+  heroMedia?: T;
+  heroAlt?: T;
+  heroCaption?: T;
+  featured?: T;
+  sortOrder?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_select".
+ */
+export interface ProjectsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  sector?: T;
+  descriptionFa?: T;
+  briefFa?: T;
+  heroMedia?: T;
+  heroAlt?: T;
+  heroCaption?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        alt?: T;
+        caption?: T;
+        id?: T;
+      };
+  approach?:
+    | T
+    | {
+        title?: T;
+        text?: T;
+        id?: T;
+      };
+  palette?:
+    | T
+    | {
+        name?: T;
+        color?: T;
+        id?: T;
+      };
+  products?: T;
+  article?: T;
+  featured?: T;
+  sortOrder?: T;
   published?: T;
   updatedAt?: T;
   createdAt?: T;

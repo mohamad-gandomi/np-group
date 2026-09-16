@@ -12,13 +12,19 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 12 blog/post migration is complete in the working tree.
+- **Active phase:** Phase 12 blog/post migration and the owner-approved brand/project showcase migration are complete in the working tree.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
-- **Next implementation task:** The owner can begin authoring/editing journal posts in Payload Admin. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
-- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete; Phase 6 remains deferred by owner decision. Projects, brand editorial pages, and homepage sections remain file-backed until the owner explicitly asks to migrate them.
+- **Next implementation task:** The owner can author journal posts, brands and projects in Payload Admin and assign active users the `seller` role for product-page contact cards. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
+- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete; Phase 6 remains deferred by owner decision. Homepage editorial sections remain file-backed until the owner explicitly asks to migrate them.
 
 ## Latest Session Note
+
+- **Date:** 2026-09-16
+- [x] Added Payload-owned brand editorial fields and a Projects collection, then connected brand/project indexes, detail pages, product relationships, article links, metadata and sitemap records through a cached server-only repository.
+- [x] Added the `seller` user role and safe contact fields without granting editorial permissions; product pages now open a responsive consultation dialog backed by active Payload seller records and the main store contact details.
+- [x] Added the Accessories homepage category, balanced the desktop category grid, equalized product cards, added a temporary Enamad footer mark and refined article tables.
+- [x] Added migration `20260916_084808_storefront_showcase_and_sales_contacts`, regenerated Payload types and seeded seven brands plus three projects for local evaluation.
 
 - **Date:** 2026-09-13
 - [x] Completed the owner-approved Phase 12 scope: the journal is now backed by the Payload `posts` collection while preserving all four existing public slugs and the current Persian visual design.
@@ -841,8 +847,8 @@ Owner-approved scope completed:
 
 Possible later editorial collections, only on explicit owner request:
 
-- [ ] projects
-- [ ] brand editorial pages (catalog brands already live in Payload)
+- [x] projects
+- [x] brand editorial pages (catalog brands already live in Payload)
 - [ ] homepage/editorial sections
 
 The blog runtime no longer reads static article data. The original snapshot remains only as a seed source so clean databases can receive the four established articles without copying content into a second roadmap.

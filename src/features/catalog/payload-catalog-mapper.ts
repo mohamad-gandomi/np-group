@@ -136,6 +136,7 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     slug: product.slug,
     name: product.title,
     brand: brand?.title ?? "نیلپر",
+    ...(brand?.slug ? { brandSlug: brand.slug } : {}),
     category: taxonomy.slug,
     categoryTitle: taxonomy.title,
     room: taxonomy.rooms,

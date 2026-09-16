@@ -1,5 +1,3 @@
-import "server-only";
-
 import { products } from "@/features/catalog/catalog-data";
 import { brandRegistry } from "./brand-registry";
 
@@ -13,7 +11,7 @@ export type BrandProfile = {
   image: ShowcaseImage; publication: Publication;
 };
 export type Project = {
-  slug: string; title: string; sector: "residential" | "hospitality";
+  slug: string; title: string; sector: "residential" | "hospitality" | "commercial" | "workplace" | "healthcare";
   description: string; brief: string; image: ShowcaseImage;
   approach: { title: string; text: string }[];
   palette: { name: string; color: string }[];
@@ -78,7 +76,13 @@ export const projects: Project[] = [
   },
 ];
 
-export const sectorLabels = { residential: "مسکونی", hospitality: "هتلداری" };
+export const sectorLabels = {
+  residential: "مسکونی",
+  hospitality: "هتلداری",
+  commercial: "تجاری و رستوران",
+  workplace: "فضای کاری",
+  healthcare: "درمانی",
+} satisfies Record<Project["sector"], string>;
 export const getBrand = (slug: string) => brands.find((brand) => brand.slug === slug);
 export const getProject = (slug: string) => projects.find((project) => project.slug === slug);
 export const brandProducts = (brand: BrandProfile) => products.filter((product) => product.brand === brand.name);

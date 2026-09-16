@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Check, ClipboardPenLine, MessageCircle, PackageCheck, Ruler, Truck } from "lucide-react";
+import { ArrowLeft, Check, PackageCheck, Ruler, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
 import type { Product } from "@/features/catalog/catalog-types";
 import type { CartConfigurationSelection } from "@/features/cart/cart-context";
 import { QuantityControl, useCart } from "@/features/cart/cart-context";
 import { ProductSaveButton } from "@/features/saved/saved-context";
 import { brandPath } from "@/features/showcase/brand-registry";
+import type { SalesContact } from "../payload-sales-contacts";
+import { SalesConsultationDialog } from "./sales-consultation-dialog";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const colorValues: Record<string, string> = { "کرم": "#d8cbb7", "قهوه‌ای": "#76543c", "مشکی": "#1f2022", "طلایی": "#b69a59", "سبز": "#677565", "طوسی": "#aaa8a4", "قرمز": "#8f3035" };
@@ -31,7 +32,7 @@ type QuoteResponse = {
   };
 };
 
-export function ProductSummary({ product, description, depth, height, leadTime }: { product: Product; description: string; depth: number | null; height: number | null; leadTime: string }) {
+export function ProductSummary({ product, description, depth, height, leadTime, salesContacts }: { product: Product; description: string; depth: number | null; height: number | null; leadTime: string; salesContacts: readonly SalesContact[] }) {
   const { addItem } = useCart();
   const [color, setColor] = useState(product.colors[0] ?? "پیش‌فرض");
   const [variantId, setVariantId] = useState<number | undefined>();
@@ -113,7 +114,7 @@ export function ProductSummary({ product, description, depth, height, leadTime }
   };
   return (
     <div className="lg:sticky lg:top-6">
-      <Link href={brandPath(product.brand)} className="inline-block text-xs font-semibold tracking-[0.18em] text-wine underline-offset-4 hover:underline" dir="ltr" aria-label={`مشاهده مجموعه ${product.brand}`}>{product.brand}</Link>
+      <Link href={product.brandSlug ? `/brands/${product.brandSlug}` : brandPath(product.brand)} className="inline-block text-xs font-semibold tracking-[0.18em] text-wine underline-offset-4 hover:underline" dir="ltr" aria-label={`مشاهده مجموعه ${product.brand}`}>{product.brand}</Link>
       <h1 className="mt-3 text-4xl font-medium leading-[1.25] sm:text-5xl">{product.name}</h1>
       <p className="mt-5 text-sm leading-7 text-muted-foreground">{description}</p>
       <p className="mt-7 text-2xl font-semibold text-wine">{awaitingVariant ? "برای مشاهده قیمت، مدل را انتخاب کنید" : effectivePrice === null ? "قیمت پس از انتخاب و تأیید مشاور" : <>{priceFormatter.format(effectivePrice)} <span className="text-sm font-normal text-muted-foreground">تومان</span></>}</p>
@@ -132,8 +133,7 @@ export function ProductSummary({ product, description, depth, height, leadTime }
       <div className="mt-7 flex items-center justify-between border border-black/15 bg-secondary/25 px-3 py-2"><span className="text-sm">تعداد</span><QuantityControl value={quantity} onChange={setQuantity} /></div>
       <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">{priceUnavailable ? <Button asChild className="h-12 rounded-none bg-wine text-sm hover:bg-ink"><Link href="/#contact">استعلام قیمت و ثبت درخواست <ArrowLeft /></Link></Button> : <Button onClick={addToCart} disabled={adding || !variantComplete || !groupsComplete || effectivePrice === null} className="h-12 rounded-none bg-wine text-sm hover:bg-ink">{adding ? "در حال اعتبارسنجی…" : added ? "به سبد اضافه شد ✓" : !variantComplete ? "مدل را انتخاب کنید" : !groupsComplete ? "انتخاب‌ها را کامل کنید" : product.availability === "in-stock" ? "افزودن به سبد خرید" : "افزودن سفارش سفارشی"}<ArrowLeft /></Button>}<ProductSaveButton product={product} className="size-12 bg-white" /></div>
       {cartError ? <p role="alert" className="mt-2 text-xs leading-6 text-destructive">{cartError}</p> : null}
-      <Button asChild variant="outline" className="mt-3 h-11 w-full rounded-none"><Link href="/#contact"><ClipboardPenLine className="size-4" />درخواست مشاوره خرید</Link></Button>
-      <a href={siteConfig.phoneHref} className="mt-3 flex h-11 items-center justify-center gap-2 border border-black/15 text-sm transition-colors hover:border-wine hover:text-wine"><MessageCircle className="size-4" />گفت‌وگو با مشاور</a>
+      <SalesConsultationDialog contacts={salesContacts} />
       <div className="mt-5 grid gap-3 border-y border-black/10 py-4 text-xs text-muted-foreground"><p className="flex items-center gap-2"><Truck className="size-4 text-wine" />هزینه و زمان ارسال پس از انتخاب شهر محاسبه می‌شود.</p><p className="flex items-center gap-2"><PackageCheck className="size-4 text-wine" />ضمانت اصالت، کنترل کیفیت و پشتیبانی پس از تحویل</p></div>
       <p className="mt-4 text-center text-xs leading-6 text-muted-foreground">برای بررسی پارچه، رنگ و ابعاد سفارشی با شما هماهنگ می‌کنیم.</p>
     </div>

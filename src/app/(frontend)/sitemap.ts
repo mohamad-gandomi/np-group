@@ -4,11 +4,17 @@ import { siteConfig } from "@/config/site";
 import { getCatalogCategories, getCatalogProducts } from "@/features/catalog/payload-catalog-repository";
 import { getJournalPosts } from "@/features/journal/payload-journal-repository";
 import { absoluteJournalUrl } from "@/features/journal/seo";
-import { brands, projects } from "@/features/showcase/data";
+import { getShowcaseBrands, getShowcaseProjects } from "@/features/showcase/payload-showcase-repository";
 import { absoluteShowcaseUrl } from "@/features/showcase/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [categories, products, journalPosts] = await Promise.all([getCatalogCategories(), getCatalogProducts(), getJournalPosts()]);
+  const [categories, products, journalPosts, brands, projects] = await Promise.all([
+    getCatalogCategories(),
+    getCatalogProducts(),
+    getJournalPosts(),
+    getShowcaseBrands(),
+    getShowcaseProjects(),
+  ]);
   const indexableJournalPosts = journalPosts.filter((post) => !post.seo.noIndex);
   const routes = [
     { path: "", priority: 1, changeFrequency: "weekly" as const },

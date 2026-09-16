@@ -118,15 +118,24 @@ const valueOptions = (values: readonly string[]) => [...new Set(values)]
   .map((value) => ({ label: value, value }));
 
 const categoryClasses = [
-  "md:col-span-7 md:row-span-2",
-  "md:col-span-5",
-  "md:col-span-5",
-  "md:col-span-7",
+  "md:col-span-4",
+  "md:col-span-4",
+  "md:col-span-4",
+  "md:col-span-6",
+  "md:col-span-6",
 ];
+
+const accessoryCategory: CatalogCategory = {
+  slug: "accessories",
+  title: "اکسسوری",
+  count: "۰ محصول",
+  image: "/placeholders/project.jpg",
+  className: "md:col-span-6",
+};
 
 export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
   const products = await getCatalogProducts();
-  const categories = [...new Set(products.map((product) => product.category))]
+  const productCategories = [...new Set(products.map((product) => product.category))]
     .map((slug, index): CatalogCategory => {
       const categoryProducts = products.filter((product) => product.category === slug);
       const first = categoryProducts[0];
@@ -138,6 +147,9 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
         className: categoryClasses[index % categoryClasses.length],
       };
     });
+  const categories = productCategories.some((category) => category.slug === accessoryCategory.slug)
+    ? productCategories
+    : [...productCategories, { ...accessoryCategory, className: categoryClasses[productCategories.length % categoryClasses.length] }];
 
   return {
     categories,

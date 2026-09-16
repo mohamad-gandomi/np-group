@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { Separator } from "@/components/ui/separator";
@@ -33,7 +34,7 @@ export function SiteFooter() {
   return (
     <footer className="bg-ink pb-8 pt-16 text-white sm:pt-20">
       <div className="container-shell">
-        <div className="grid gap-12 pb-14 md:grid-cols-2 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.9fr]">
+        <div className="grid gap-12 pb-14 md:grid-cols-2 lg:grid-cols-[1.25fr_0.65fr_0.65fr_0.9fr_auto]">
           <div>
             <p className="text-3xl font-semibold">گروه {siteConfig.nameFa}</p>
             <p className="mt-5 max-w-sm text-sm leading-7 text-white/55">{siteConfig.description}</p>
@@ -45,6 +46,14 @@ export function SiteFooter() {
             <address className="text-sm not-italic leading-7 text-white/65"><a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white" aria-label={`${siteConfig.addressLabel}؛ مسیریابی در پنجره جدید`}>{siteConfig.addressLabel}</a><br /><a href={siteConfig.phoneHref}><bdi dir="ltr">{siteConfig.phoneLabel}</bdi></a><br /><a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a></address>
             <p className="mt-3 text-xs leading-6 text-white/55">{siteConfig.hoursLabel}</p>
             <a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block py-2 text-xs text-white underline underline-offset-4">مسیریابی فروشگاه <span className="sr-only">(پنجره جدید)</span></a>
+          </div>
+          <div className="md:col-span-2 lg:col-span-1">
+            <p className="mb-5 text-sm font-semibold text-white">اعتماد خرید</p>
+            <div className="flex size-28 flex-col items-center justify-center border border-white/15 bg-white/[0.04] text-center" aria-label="جایگاه موقت نماد اعتماد الکترونیکی">
+              <ShieldCheck className="size-9 text-white/80" strokeWidth={1.4} />
+              <span className="mt-2 text-[0.65rem] leading-5 text-white/65">نماد اعتماد<br />الکترونیکی</span>
+            </div>
+            <p className="mt-2 max-w-28 text-center text-[0.58rem] leading-5 text-white/35">نمونه موقت</p>
           </div>
         </div>
         <Separator className="bg-white/12" />

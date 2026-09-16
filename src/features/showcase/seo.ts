@@ -1,23 +1,22 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/site";
-import { brands, projects, directoryRecords, type BrandProfile, type Project } from "./data";
+import type { BrandProfile, Project } from "./data";
 
 export type ShowcaseKind = "projects" | "brands";
 export const sectionNames = { projects: "پروژه‌ها", brands: "برندها" };
 const descriptions = {
-  projects: "مطالعات نمایشی چیدمان و تجهیز فضا؛ از ایده و متریال تا پیشنهاد مبلمان و روشنایی. نمونه‌های فعلی پروژه اجراشده نیستند.",
-  brands: "کاوش نام‌ها و مجموعه‌های کاتالوگ نمایشی ان‌پی؛ مبلمان، روشنایی، میز و جزئیات. اطلاعات برندهای فعلی هنوز تأیید نشده‌اند.",
+  projects: "پروژه‌ها و مطالعات چیدمان و تجهیز فضا؛ از ایده و متریال تا پیشنهاد مبلمان و روشنایی.",
+  brands: "کاوش برندها و مجموعه‌های منتخب ان‌پی؛ مبلمان، روشنایی، میز و جزئیات.",
 };
 export const absoluteShowcaseUrl = (path: string) => new URL(path, siteConfig.url).href;
 export const recordTitle = (record: BrandProfile | Project) => "name" in record ? `${record.name}؛ ${record.title}` : record.title;
 
-export function showcaseMetadata(kind: ShowcaseKind, record?: BrandProfile | Project): Metadata {
-  const records = kind === "projects" ? directoryRecords(projects) : directoryRecords(brands);
-  const index = record ? record.publication.status === "published" : records.some((item) => item.publication.status === "published");
+export function showcaseMetadata(kind: ShowcaseKind, record?: BrandProfile | Project, records: readonly (BrandProfile | Project)[] = []): Metadata {
+  const index = record ? record.publication.status === "published" : records.length > 0;
   const title = record ? recordTitle(record) : `${sectionNames[kind]}؛ انتخاب از نگاه فضا`;
   const description = record?.description ?? descriptions[kind];
   const path = `/${kind}${record ? `/${record.slug}` : ""}`;
-  const source = record?.image ?? records[0].image;
+  const source = record?.image ?? records[0]?.image ?? { src: "/placeholders/project.jpg", alt: descriptions[kind] };
   const image = { url: source.src, alt: source.alt };
   return {
     title, description, alternates: { canonical: path },
@@ -27,8 +26,7 @@ export function showcaseMetadata(kind: ShowcaseKind, record?: BrandProfile | Pro
   };
 }
 
-export function showcaseSchema(kind: ShowcaseKind, record?: BrandProfile | Project) {
-  const records = kind === "projects" ? directoryRecords(projects) : directoryRecords(brands);
+export function showcaseSchema(kind: ShowcaseKind, record?: BrandProfile | Project, records: readonly (BrandProfile | Project)[] = []) {
   const url = absoluteShowcaseUrl(`/${kind}${record ? `/${record.slug}` : ""}`);
   const crumbs = [{ name: "خانه", item: absoluteShowcaseUrl("/") }, { name: sectionNames[kind], item: absoluteShowcaseUrl(`/${kind}`) }, ...(record ? [{ name: recordTitle(record), item: url }] : [])];
   return {

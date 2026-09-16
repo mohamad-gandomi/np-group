@@ -7,6 +7,7 @@ import type { Post, Product } from "../payload-types";
 import { journalCategories } from "../features/journal/config";
 import { journalSeedPosts } from "../features/journal/seed-posts";
 import type { ArticleSection, LegacyJournalPost } from "../features/journal/types";
+import { brands as showcaseBrands, projects as showcaseProjects } from "../features/showcase/data";
 import { manualCatalogProducts } from "./manual-catalog";
 import { buildNilperSourceKey } from "./source-identity";
 
@@ -94,7 +95,7 @@ function journalRichText(post: LegacyJournalPost): Post["content"] {
   } as Post["content"];
 }
 
-async function ensureBySlug(collection: "brands" | "categories" | "product-series" | "products", slug: string, data: Record<string, unknown>): Promise<Identified> {
+async function ensureBySlug(collection: "brands" | "categories" | "product-series" | "products" | "projects", slug: string, data: Record<string, unknown>): Promise<Identified> {
   const existing = await payload.find({ collection, where: { slug: { equals: slug } }, limit: 1 });
   if (existing.docs[0]) return await payload.update({ collection, id: existing.docs[0].id, data } as never) as unknown as Identified;
   return await payload.create({ collection, data } as never) as unknown as Identified;
@@ -155,18 +156,26 @@ async function ensureVariant(sourceKey: string, nilperCode: string, data: Record
   return payload.create({ collection: "variants", data: variantData } as never);
 }
 
-const [sofaImage, livingImage, tableImage] = await Promise.all([
+const [sofaImage, livingImage, tableImage, accessoryImage] = await Promise.all([
   ensureMedia("delan-sofa.webp", "src/payload/seed-assets/catalog/delan-sofa.webp", "مبل دلان"),
   ensureMedia("delan-living-preview.jpg", "public/placeholders/living.jpg", "تصویر نمایشی فضای پذیرایی دلان"),
   ensureMedia("delan-table-preview.jpg", "public/placeholders/dining.jpg", "تصویر نمایشی میز هماهنگ دلان"),
+  ensureMedia("accessories-preview.jpg", "public/placeholders/project.jpg", "اکسسوری و جزئیات دکوراسیون"),
 ]);
 
 const brand = await ensureBySlug("brands", "nilper", {
   title: "نیلپر",
   slug: "nilper",
   descriptionFa: "برند نمونه برای ارزیابی داشبورد مدیریت محصولات نیلپر.",
+  taglineFa: "طراحی برای زندگی روزمره",
+  storyFa: "مجموعه نیلپر با تمرکز بر راحتی، دوام و انتخاب آگاهانه برای خانه و محیط کار شکل گرفته است.",
   published: true,
   logo: sofaImage.id,
+  heroMedia: sofaImage.id,
+  heroAlt: "مبلمان نیلپر در فضای داخلی",
+  heroCaption: "مجموعه محصولات نیلپر",
+  featured: true,
+  sortOrder: 0,
 });
 
 const furniture = await ensureBySlug("categories", "home-furniture", {
@@ -191,6 +200,14 @@ await ensureBySlug("categories", "dining", {
   descriptionFa: "محصولات ناهارخوری هماهنگ با خانواده‌های نیلپر.",
   image: tableImage.id,
   sortOrder: 30,
+  published: true,
+});
+await ensureBySlug("categories", "accessories", {
+  title: "اکسسوری",
+  slug: "accessories",
+  descriptionFa: "جزئیات و اکسسوری‌های تکمیل‌کننده فضای خانه.",
+  image: accessoryImage.id,
+  sortOrder: 40,
   published: true,
 });
 
@@ -553,5 +570,78 @@ for (const post of journalSeedPosts) {
   });
 }
 
-payload.logger.info(`Nilper Payload seed is ready: ${manualCatalogProducts.length + 2} curated products and ${journalPostIDs.size} journal posts.`);
+for (const [index, brandProfile] of showcaseBrands.entries()) {
+  const source = `public${brandProfile.image.src}`;
+  const hero = await ensureMedia(
+    `showcase-brand-${brandProfile.slug}-${path.basename(brandProfile.image.src)}`,
+    source,
+    brandProfile.image.alt,
+    brandProfile.image.caption,
+  );
+  await ensureBySlug("brands", brandProfile.slug, {
+    title: brandProfile.name,
+    slug: brandProfile.slug,
+    descriptionFa: brandProfile.description,
+    taglineFa: brandProfile.title,
+    storyFa: brandProfile.story,
+    heroMedia: hero.id,
+    heroAlt: brandProfile.image.alt,
+    heroCaption: brandProfile.image.caption,
+    featured: index === 0,
+    sortOrder: index + 10,
+    published: true,
+  });
+}
+
+const showcaseCatalog = await payload.find({
+  collection: "products",
+  depth: 0,
+  limit: 100,
+  pagination: false,
+  sort: "createdAt",
+});
+const showcaseProductIDs = showcaseCatalog.docs.map((product) => product.id as number);
+
+for (const [index, project] of showcaseProjects.entries()) {
+  const hero = await ensureMedia(
+    `showcase-project-${project.slug}-${path.basename(project.image.src)}`,
+    `public${project.image.src}`,
+    project.image.alt,
+    project.image.caption,
+  );
+  const gallery = [];
+  for (const [galleryIndex, image] of project.gallery.entries()) {
+    const media = await ensureMedia(
+      `showcase-project-${project.slug}-${galleryIndex + 1}-${path.basename(image.src)}`,
+      `public${image.src}`,
+      image.alt,
+      image.caption,
+    );
+    gallery.push({ image: media.id, alt: image.alt, caption: image.caption });
+  }
+  const projectProducts = showcaseProductIDs.length
+    ? Array.from({ length: Math.min(4, showcaseProductIDs.length) }, (_, offset) =>
+        showcaseProductIDs[(index * 3 + offset) % showcaseProductIDs.length])
+    : [];
+  await ensureBySlug("projects", project.slug, {
+    title: project.title,
+    slug: project.slug,
+    sector: project.sector,
+    descriptionFa: project.description,
+    briefFa: project.brief,
+    heroMedia: hero.id,
+    heroAlt: project.image.alt,
+    heroCaption: project.image.caption,
+    approach: project.approach,
+    palette: project.palette,
+    gallery,
+    products: projectProducts,
+    article: journalPostIDs.get(project.articleSlug),
+    featured: index === 0,
+    sortOrder: index + 1,
+    published: true,
+  });
+}
+
+payload.logger.info(`Nilper Payload seed is ready: ${manualCatalogProducts.length + 2} curated products, ${journalPostIDs.size} journal posts, ${showcaseBrands.length + 1} brands, and ${showcaseProjects.length} projects.`);
 await payload.destroy();

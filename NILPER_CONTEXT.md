@@ -651,7 +651,7 @@ reviewed Payload catalog records
 
 Payload now drives public category/product listings, database-backed filters/search/sort/pagination, product details, related products, homepage selections, desktop/mobile navigation and sitemap entries. Product routes are generated from reviewed Payload records and catalog reads use a five-minute Next.js revalidation policy.
 
-`src/features/catalog/catalog-data.ts` is intentionally retained only for explicitly labeled, non-interactive demo product references on the static brand/project showcase pages.
+`src/features/catalog/catalog-data.ts` is retained only for catalog fixture and seed compatibility. Public brand and project showcase pages read Payload records through the server-only showcase repository.
 
 Fixture records no longer create public product-detail routes or appear in the shop, navigation, homepage product selection, or sitemap.
 
@@ -832,14 +832,21 @@ At the current reviewed state:
 - The four original Persian articles and hero images are installed idempotently by the Payload seed. `src/features/journal/seed-posts.ts` is seed-only migration material and must not be used by runtime routes.
 - Migration `20260913_094955_phase12_dynamic_journal`, generated types/import map, Phase 12 verification, TypeScript, clean lint, production build, journal SEO/HTML tests and showcase regressions pass.
 
+### Payload showcase and sales-contact completion
+
+- Brand editorial fields and the new `projects` collection own the public brand/project copy, imagery, ordering, publication state and product/article relationships.
+- `/brands`, `/brands/[slug]`, `/projects` and `/projects/[slug]` read published Payload data through `src/features/showcase/payload-showcase-repository.ts`; their established presentation and static calls to action remain intact.
+- Active Payload users with the `seller` role and a phone number are exposed through a narrow public contact DTO for the product consultation dialog. Editorial access remains limited to administrators and editors.
+- The idempotent seed installs the Accessories category, seven showcase brands and three showcase projects. Migration `20260916_084808_storefront_showcase_and_sales_contacts` carries the schema changes for clean databases.
+
 ### Remaining boundary after the gate
 
 - The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
 - Eight additional manually curated products and their real images are live through the Payload-backed storefront catalog.
-- Demo catalog fixtures remain only for non-interactive brand/project references.
+- Brand and project showcase pages are Payload-backed; remaining catalog fixtures are seed/compatibility material rather than a public runtime source.
 - Payload owns authenticated cart persistence and all new checkout orders; guest browser storage is ID-only and non-authoritative.
 - Payload/PostgreSQL is the only customer/account/commerce datastore; Kavenegar remains an OTP delivery provider, not an identity store.
-- Phase 12 blog/post migration is complete. Projects, brand editorial pages and homepage editorial sections stay file-backed until separately authorized; live Tapin certification remains an external operational dependency.
+- Phase 12 blog/post migration and the separately authorized brand/project showcase migration are complete. Homepage editorial sections remain file-backed; live Tapin certification remains an external operational dependency.
 
 ---
 

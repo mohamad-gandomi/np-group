@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getCatalogProductPaths, getProductBySlug, getRelatedProducts } from "@/features/catalog/payload-catalog-repository";
 import { ProductView } from "@/features/product/components/product-view";
+import { getSalesContacts } from "@/features/product/payload-sales-contacts";
 
 type Props = { params: Promise<{ category: string; product: string }> };
 
@@ -34,5 +35,6 @@ export default async function ProductPage({ params }: Props) {
   const { category, product: slug } = await params;
   const product = await resolveProduct(category, slug);
   if (!product) notFound();
-  return <ProductView product={product} relatedProducts={await getRelatedProducts(product)} />;
+  const [relatedProducts, salesContacts] = await Promise.all([getRelatedProducts(product), getSalesContacts()]);
+  return <ProductView product={product} relatedProducts={relatedProducts} salesContacts={salesContacts} />;
 }

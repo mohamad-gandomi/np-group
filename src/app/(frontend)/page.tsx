@@ -100,7 +100,7 @@ export default async function Home() {
         <section id="categories" className="editorial-section py-20 sm:py-28 lg:py-36">
           <div className="container-shell">
             <SectionHeading eyebrow="انتخاب بر اساس دسته‌بندی" title="هر آنچه یک فضا را کامل می‌کند" link="همه محصولات" />
-            <div className="grid gap-3 md:grid-cols-12 md:grid-rows-2 lg:gap-5">
+            <div className="grid gap-3 md:grid-cols-12 lg:gap-5">
               {categories.map((category) => (
                 <Link key={category.title} href={`/shop/${category.slug}`} className={`group relative min-h-80 overflow-hidden md:min-h-72 ${category.className}`}>
                   <Image src={category.image} alt={`دسته‌بندی ${category.title}`} fill sizes="(max-width: 768px) 100vw, 58vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />

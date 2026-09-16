@@ -46,6 +46,7 @@ export type Product = {
   slug: string;
   name: string;
   brand: string;
+  brandSlug?: string;
   category: string;
   categoryTitle?: string;
   room: readonly string[];

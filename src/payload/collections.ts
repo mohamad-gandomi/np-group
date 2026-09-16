@@ -17,6 +17,11 @@ const hasEditorialRole = (user: unknown) => {
   return user.role === "admin" || user.role === "editor";
 };
 
+const hasAdminPanelRole = (user: unknown) => {
+  if (!user || typeof user !== "object" || !("role" in user)) return false;
+  return user.role === "admin" || user.role === "editor" || user.role === "seller";
+};
+
 const hasAdminRole = (user: unknown) => {
   if (!user || typeof user !== "object" || !("role" in user)) return false;
   return user.role === "admin";
@@ -65,7 +70,7 @@ export const Users: CollectionConfig = {
   slug: "users",
   auth: true,
   access: {
-    admin: ({ req }) => hasEditorialRole(req.user),
+    admin: ({ req }) => hasAdminPanelRole(req.user),
     create: adminOrFirstUser,
     delete: adminOnly,
     read: editorialOnly,
@@ -90,8 +95,12 @@ export const Users: CollectionConfig = {
       options: [
         { label: "مدیر", value: "admin" },
         { label: "ویرایشگر", value: "editor" },
+        { label: "فروشنده", value: "seller" },
       ],
     },
+    rtlText("contactTitle", "عنوان ارتباطی"),
+    { name: "contactDescription", type: "textarea", label: "توضیح کوتاه برای مشتری", admin: { rtl: true } },
+    rtlText("whatsappPhone", "شماره واتساپ"),
     { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
   ],
 };
@@ -289,8 +298,107 @@ export const Brands: CollectionConfig = {
     rtlText("title", "نام فارسی برند", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
     { name: "descriptionFa", type: "textarea", label: "توضیح فارسی" },
+    rtlText("taglineFa", "تیتر معرفی"),
+    { name: "storyFa", type: "textarea", label: "داستان و معرفی کامل", admin: { rtl: true } },
     { name: "logo", type: "upload", relationTo: "media", label: "نشان برند" },
+    { name: "heroMedia", type: "upload", relationTo: "media", label: "تصویر اصلی صفحه برند" },
+    rtlText("heroAlt", "متن جایگزین تصویر"),
+    rtlText("heroCaption", "توضیح زیر تصویر"),
+    { name: "featured", type: "checkbox", label: "برند منتخب", defaultValue: false },
+    { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
     { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
+  ],
+};
+
+export const Projects: CollectionConfig = {
+  slug: "projects",
+  access: publishedContentAccess,
+  labels: { singular: "پروژه", plural: "پروژه‌ها" },
+  admin: {
+    group: "محتوا",
+    useAsTitle: "title",
+    defaultColumns: ["title", "sector", "featured", "published", "updatedAt"],
+  },
+  fields: [
+    {
+      type: "tabs",
+      tabs: [
+        {
+          label: "معرفی",
+          fields: [
+            rtlText("title", "عنوان پروژه", true),
+            { name: "slug", type: "text", label: "نامک", required: true, unique: true, index: true },
+            {
+              name: "sector",
+              type: "select",
+              label: "نوع فضا",
+              required: true,
+              options: [
+                { label: "مسکونی", value: "residential" },
+                { label: "هتلداری", value: "hospitality" },
+                { label: "تجاری و رستوران", value: "commercial" },
+                { label: "فضای کاری", value: "workplace" },
+                { label: "درمانی", value: "healthcare" },
+              ],
+            },
+            { name: "descriptionFa", type: "textarea", label: "توضیح کوتاه", required: true, admin: { rtl: true } },
+            { name: "briefFa", type: "textarea", label: "شرح پروژه", required: true, admin: { rtl: true } },
+          ],
+        },
+        {
+          label: "تصاویر",
+          fields: [
+            { name: "heroMedia", type: "upload", relationTo: "media", label: "تصویر اصلی", required: true },
+            rtlText("heroAlt", "متن جایگزین تصویر اصلی", true),
+            rtlText("heroCaption", "توضیح تصویر اصلی"),
+            {
+              name: "gallery",
+              type: "array",
+              label: "گالری",
+              labels: { singular: "تصویر", plural: "تصاویر" },
+              fields: [
+                { name: "image", type: "upload", relationTo: "media", label: "تصویر", required: true },
+                rtlText("alt", "متن جایگزین", true),
+                rtlText("caption", "توضیح تصویر"),
+              ],
+            },
+          ],
+        },
+        {
+          label: "رویکرد و پالت",
+          fields: [
+            {
+              name: "approach",
+              type: "array",
+              label: "مراحل و رویکرد",
+              fields: [
+                rtlText("title", "عنوان", true),
+                { name: "text", type: "textarea", label: "توضیح", required: true, admin: { rtl: true } },
+              ],
+            },
+            {
+              name: "palette",
+              type: "array",
+              label: "پالت رنگ و متریال",
+              fields: [
+                rtlText("name", "نام", true),
+                { name: "color", type: "text", label: "رنگ HEX", required: true },
+              ],
+            },
+          ],
+        },
+        {
+          label: "ارتباط‌ها و انتشار",
+          fields: [
+            { name: "products", type: "relationship", relationTo: "products", hasMany: true, label: "محصولات پیشنهادی" },
+            { name: "article", type: "relationship", relationTo: "posts", label: "مطلب مرتبط" },
+            { name: "featured", type: "checkbox", label: "پروژه منتخب", defaultValue: false },
+            { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
+            { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
+          ],
+        },
+      ],
+    },
   ],
 };
 
@@ -383,6 +491,7 @@ export const collections: CollectionConfig[] = [
   BlogCategories,
   Posts,
   Brands,
+  Projects,
   Categories,
   ProductSeries,
   ConfigurationGroups,

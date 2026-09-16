@@ -11,6 +11,7 @@ import * as migration_20260913_094955_phase12_dynamic_journal from './20260913_0
 import * as migration_20260915_145847_blog_categories from './20260915_145847_blog_categories';
 import * as migration_20260915_152427_order_customer_address from './20260915_152427_order_customer_address';
 import * as migration_20260915_153600_address_display_label from './20260915_153600_address_display_label';
+import * as migration_20260916_084808_storefront_showcase_and_sales_contacts from './20260916_084808_storefront_showcase_and_sales_contacts';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20260915_153600_address_display_label.up,
     down: migration_20260915_153600_address_display_label.down,
-    name: '20260915_153600_address_display_label'
+    name: '20260915_153600_address_display_label',
+  },
+  {
+    up: migration_20260916_084808_storefront_showcase_and_sales_contacts.up,
+    down: migration_20260916_084808_storefront_showcase_and_sales_contacts.down,
+    name: '20260916_084808_storefront_showcase_and_sales_contacts'
   },
 ];

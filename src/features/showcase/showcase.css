@@ -85,6 +85,7 @@
 .showcase-empty { text-align: center; padding: 80px 20px; }
 .showcase-empty :where(h1, h3) { font-size: 32px; margin-bottom: 18px; }
 .showcase-empty p { color: var(--sc-muted); line-height: 2; margin-bottom: 20px; }
+.showcase-inline-empty { display: flex; min-height: 190px; flex-direction: column; align-items: center; justify-content: center; gap: 14px; border-block: 1px solid var(--sc-line); padding: 35px 20px; text-align: center; color: var(--sc-muted); font-size: 13px; line-height: 2; }
 .showcase-brand-intro { display: grid; grid-template-columns: 1.1fr 1fr; gap: 65px; align-items: center; padding-block: 24px 45px; }
 .showcase-brand-intro h1 { font-size: clamp(40px, 4.5vw, 64px); line-height: 1.65; margin-top: 24px; letter-spacing: -.04em; }
 .showcase-brand-intro-copy > p:not(.showcase-eyebrow) { color: var(--sc-muted); font-size: 14px; line-height: 2.2; max-width: 410px; margin-top: 25px; }
