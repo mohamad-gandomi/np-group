@@ -9,7 +9,6 @@ import { journalSeedPosts } from "../features/journal/seed-posts";
 import type { ArticleSection, LegacyJournalPost } from "../features/journal/types";
 import { brands as showcaseBrands, projects as showcaseProjects } from "../features/showcase/data";
 import { manualCatalogProducts } from "./manual-catalog";
-import { buildNilperSourceKey } from "./source-identity";
 
 const richText = (text: string): Product["descriptionFa"] => ({
   root: {
@@ -101,13 +100,13 @@ async function ensureBySlug(collection: "brands" | "categories" | "product-serie
   return await payload.create({ collection, data } as never) as unknown as Identified;
 }
 
-async function ensureProduct(sourceKey: string, slug: string, data: Record<string, unknown>): Promise<Identified> {
+async function ensureProduct(slug: string, data: Record<string, unknown>): Promise<Identified> {
   const existing = await payload.find({
     collection: "products",
-    where: { or: [{ sourceKey: { equals: sourceKey } }, { slug: { equals: slug } }] },
+    where: { slug: { equals: slug } },
     limit: 1,
   });
-  const productData = { ...data, sourceKey, slug };
+  const productData = { ...data, slug };
   if (existing.docs[0]) return await payload.update({ collection: "products", id: existing.docs[0].id, data: productData } as never) as unknown as Identified;
   return await payload.create({ collection: "products", data: productData } as never) as unknown as Identified;
 }
@@ -145,13 +144,13 @@ async function ensureVariantOption(variantType: number, value: string, label: st
   return await payload.create({ collection: "variantOptions", data: { variantType, value, label } }) as Identified;
 }
 
-async function ensureVariant(sourceKey: string, nilperCode: string, data: Record<string, unknown>) {
+async function ensureVariant(nilperCode: string, data: Record<string, unknown>) {
   const existing = await payload.find({
     collection: "variants",
-    where: { or: [{ sourceKey: { equals: sourceKey } }, { nilperCode: { equals: nilperCode } }] },
+    where: { nilperCode: { equals: nilperCode } },
     limit: 1,
   });
-  const variantData = { nilperCode, sourceKey, _status: "published" as const, ...data };
+  const variantData = { nilperCode, _status: "published" as const, ...data };
   if (existing.docs[0]) return payload.update({ collection: "variants", id: existing.docs[0].id, data: variantData } as never);
   return payload.create({ collection: "variants", data: variantData } as never);
 }
@@ -256,13 +255,7 @@ const variantType = await ensureVariantType("seating-form", "فرم نشیمن")
 const singleSeat = await ensureVariantOption(variantType.id, "single-seat", "تک نفره");
 const threeSeat = await ensureVariantOption(variantType.id, "three-seat", "سه نفره");
 
-const relatedTableSourceKey = buildNilperSourceKey({
-  workbookKey: "994",
-  sheet: "HFC 594-HFS 394",
-  entity: "product",
-  rawIdentity: "جلومبلی HFC 594-عسلی HFS 394",
-});
-const relatedTable = await ensureProduct(relatedTableSourceKey, "delan-coffee-side-table", {
+const relatedTable = await ensureProduct("delan-coffee-side-table", {
   title: "جلومبلی و عسلی دلان",
   slug: "delan-coffee-side-table",
   catalogCode: "HFC 594 / HFS 394",
@@ -282,24 +275,10 @@ const relatedTable = await ensureProduct(relatedTableSourceKey, "delan-coffee-si
   orderNotesFa: "رکورد سبک برای ارزیابی رابطه محصول؛ مدل‌سازی کامل این محصول عمداً به مرحله بعد موکول شده است.",
   configurationGroups: [woodGroup.id],
   enableVariants: false,
-  sourceMetadata: {
-    workbookKey: "994",
-    file: "994.xlsx",
-    sheet: "HFC 594-HFS 394",
-    identityRaw: "جلومبلی HFC 594-عسلی HFS 394",
-    catalogCodeRaw: "جلومبلی HFC 594-عسلی HFS 394",
-    dataQualityNotes: "رکورد رابطه‌ای پیش‌نمایش؛ هنوز واردات کامل انجام نشده است.",
-  },
   _status: "published",
 });
 
-const delanSourceKey = buildNilperSourceKey({
-  workbookKey: "994",
-  sheet: "HSS 994",
-  entity: "product",
-  rawIdentity: "مبل خانگی NHSS 994",
-});
-const delan = await ensureProduct(delanSourceKey, "delan-sofa", {
+const delan = await ensureProduct("delan-sofa", {
   title: "مبل دلان",
   slug: "delan-sofa",
   catalogCode: "NHSS 994",
@@ -329,18 +308,10 @@ const delan = await ensureProduct(delanSourceKey, "delan-sofa", {
   matchingProducts: [relatedTable.id],
   enableVariants: true,
   variantTypes: [variantType.id],
-  sourceMetadata: {
-    workbookKey: "994",
-    file: "994.xlsx",
-    sheet: "HSS 994",
-    identityRaw: "مبل خانگی NHSS 994",
-    catalogCodeRaw: "مبل خانگی NHSS 994",
-    dataQualityNotes: "کدهای ثبت تک‌رنگ در منبع با NHSS940 آغاز می‌شوند و با شماره کاتالوگ 994 هم‌خوان نیستند؛ عیناً و بدون اصلاح ثبت شده‌اند.",
-  },
   _status: "published",
 });
 
-await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994", entity: "variant", rawIdentity: "NHSS94012" }), "NHSS94012", {
+await ensureVariant("NHSS94012", {
   product: delan.id,
   options: [singleSeat.id],
   priceInTMNEnabled: false,
@@ -351,16 +322,8 @@ await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994",
     { key: "fabric-single-color", labelFa: "متراژ پارچه تک‌رنگ بدون کوسن", value: 4.5, unit: "m", sortOrder: 40 },
   ],
   manufacturingNotesFa: "تک نفره، تک‌رنگ، بدون محاسبه پارچه کوسن.",
-  sourceMetadata: {
-    workbookKey: "994",
-    file: "994.xlsx",
-    sheet: "HSS 994",
-    identityRaw: "NHSS94012",
-    catalogCodeRaw: "مبل خانگی NHSS 994",
-    dataQualityNotes: "کد عیناً از HSS 994 سلول D40 ثبت شده است؛ اختلاف 940/994 نیازمند تأیید نیلپر است.",
-  },
 });
-await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994", entity: "variant", rawIdentity: "NHSS94015" }), "NHSS94015", {
+await ensureVariant("NHSS94015", {
   product: delan.id,
   options: [threeSeat.id],
   priceInTMNEnabled: false,
@@ -371,14 +334,6 @@ await ensureVariant(buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994",
     { key: "fabric-single-color", labelFa: "متراژ پارچه تک‌رنگ بدون کوسن", value: 10.5, unit: "m", sortOrder: 40 },
   ],
   manufacturingNotesFa: "سه نفره، تک‌رنگ، بدون محاسبه پارچه کوسن.",
-  sourceMetadata: {
-    workbookKey: "994",
-    file: "994.xlsx",
-    sheet: "HSS 994",
-    identityRaw: "NHSS94015",
-    catalogCodeRaw: "مبل خانگی NHSS 994",
-    dataQualityNotes: "کد عیناً از HSS 994 سلول D42 ثبت شده است؛ اختلاف 940/994 نیازمند تأیید نیلپر است.",
-  },
 });
 
 const bedroom = await ensureBySlug("categories", "bedroom-furniture", {
@@ -428,13 +383,7 @@ for (const sourceProduct of manualCatalogProducts) {
     }
   }
 
-  const sourceKey = buildNilperSourceKey({
-    workbookKey: sourceProduct.workbookKey,
-    sheet: sourceProduct.sheet,
-    entity: "product",
-    rawIdentity: sourceProduct.identityRaw,
-  });
-  const catalogProduct = await ensureProduct(sourceKey, sourceProduct.slug, {
+  const catalogProduct = await ensureProduct(sourceProduct.slug, {
     title: sourceProduct.title,
     catalogCode: sourceProduct.catalogCode,
     brand: brand.id,
@@ -452,14 +401,6 @@ for (const sourceProduct of manualCatalogProducts) {
     configurationGroups: (sourceProduct.configurationGroupKeys ?? []).map((key) => configurationGroupIDs[key]),
     enableVariants: sourceProduct.variants.length > 0,
     variantTypes: variantTypeIDs,
-    sourceMetadata: {
-      workbookKey: sourceProduct.workbookKey,
-      file: sourceProduct.file,
-      sheet: sourceProduct.sheet,
-      identityRaw: sourceProduct.identityRaw,
-      catalogCodeRaw: sourceProduct.identityRaw,
-      dataQualityNotes: sourceProduct.dataQualityNotes,
-    },
     _status: "published",
   });
 
@@ -469,26 +410,13 @@ for (const sourceProduct of manualCatalogProducts) {
       if (!optionID) throw new Error(`Missing manual variant option ${key} for ${sourceProduct.slug}.`);
       return optionID;
     });
-    await ensureVariant(buildNilperSourceKey({
-      workbookKey: sourceProduct.workbookKey,
-      sheet: sourceProduct.sheet,
-      entity: "variant",
-      rawIdentity: sourceVariant.code,
-    }), sourceVariant.code, {
+    await ensureVariant(sourceVariant.code, {
       product: catalogProduct.id,
       title: sourceVariant.title,
       options,
       priceInTMNEnabled: false,
       measurements: sourceVariant.measurements ?? [],
       manufacturingNotesFa: sourceVariant.manufacturingNotesFa,
-      sourceMetadata: {
-        workbookKey: sourceProduct.workbookKey,
-        file: sourceProduct.file,
-        sheet: sourceProduct.sheet,
-        identityRaw: sourceVariant.code,
-        catalogCodeRaw: sourceProduct.identityRaw,
-        dataQualityNotes: sourceVariant.dataQualityNotes,
-      },
     });
   }
 }

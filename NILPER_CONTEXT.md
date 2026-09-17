@@ -335,9 +335,6 @@ leadTimeFa
 configurationGroups
 relatedProducts
 matchingProducts
-
-sourceKey
-sourceMetadata
 ```
 
 Sales modes currently include:
@@ -368,8 +365,6 @@ options
 price fields from Payload Ecommerce
 variant measurements
 manufacturing notes
-sourceKey
-sourceMetadata
 ```
 
 A Nilper SKU/registration code is intentionally separate from fabric/wood/customization choices.
@@ -378,7 +373,7 @@ Shared specifications and measurements belong on Product. Measurements that diff
 
 `matchingProducts` records explicit set/coordination relationships from Nilper source material. `relatedProducts` remains available for general merchandising recommendations; the two meanings must not be merged.
 
-Products and variants carry a unique stable `sourceKey` plus raw source metadata. For the existing source-backed seed, the key derives from the stable workbook key, worksheet, entity type and raw product/registration identity. Row numbers, display titles and local filenames are deliberately excluded. Raw worksheet names, codes and inconsistencies remain in source metadata and quality notes.
+Portable catalog operations use the public product `slug` and the unique variant `nilperCode`. Workbook provenance and data-quality-note fields are intentionally not part of the production product/variant domain.
 
 ### Commerce features currently configured
 
@@ -563,27 +558,13 @@ This validates:
 - separate Configuration Groups.
 - related/matching relationships.
 
-### Source-quality rule
+### Data entry and transfer status
 
-The spreadsheets contain apparent inconsistencies.
+The owner deferred workbook-specific Excel automation because the files require different extraction rules and manual decisions. The workbooks remain outside the repository and must not be copied into `public/` or committed. Do not add an Excel parser or workbook-specific automation unless the owner explicitly reopens that work with approved mapping rules.
 
-Never silently repair:
+Routine reviewed data transfer uses Payload's official import/export plugin with one JSON array per collection. Administrators may export the current selection/filter or all records, and may create, update, or upsert a small batch. Media files are bulk-uploaded to Payload first; JSON refers to them by filename. Product/post/project relations use `slug`, variants use `nilperCode`, configuration groups use `key`, and variant types use `name` where those stable fields are available.
 
-- catalog codes.
-- registration codes.
-- worksheet names.
-- copied labels.
-- suspicious numbering.
-
-Retain raw source traceability and add data-quality notes.
-
-### Automated import status
-
-The owner deferred the automated Excel import pipeline on 2026-09-10 because the workbooks require different extraction rules and manual handling. The workbooks remain outside the repository and must not be copied into `public/` or committed.
-
-For the current implementation, catalog records are prepared and reviewed manually in Payload. Do not add an Excel parser, staging pipeline, or workbook-specific automation unless the owner explicitly reopens that work with approved mapping rules.
-
-The existing `sourceKey` and `sourceMetadata` fields remain part of the domain. They are already used by the Delan seed, committed migrations, and verification suites, and continue to preserve provenance for manually reviewed source-backed records.
+Imports and exports are admin-only and execute through Payload Jobs. A daily scheduled task deletes import/export files and their administrative records after seven days without deleting imported content. Plesk must run `npm run payload:jobs` every minute as a one-shot scheduled command, and every deployment must run `npm run payload:migrate`.
 
 ---
 
@@ -602,12 +583,11 @@ It creates representative preview data for:
 - upholstery/fabric configuration.
 - real-style variant/registration-code records.
 - Persian technical specifications.
-- source metadata.
 - supplied Delan product photography plus placeholder media for the lightweight related-product record.
 
 Important:
 
-This seed proves Admin usability and the finalized domain shape, including stable source identity, flexible measurements/specifications and explicit matching products. Phase 5 now also maps the primary Delan sofa into the public storefront DTO and existing Product UI.
+This seed proves Admin usability and the finalized domain shape, including stable slugs/SKUs, flexible measurements/specifications and explicit matching products. Phase 5 now also maps the primary Delan sofa into the public storefront DTO and existing Product UI.
 
 It is **not** a full product importer and must not be treated as authoritative bulk catalog data.
 
@@ -728,7 +708,7 @@ Always preserve:
 - payment confirmation only after authoritative provider verification of the stored server amount.
 - historical order snapshots.
 - committed Postgres migrations.
-- no credentials in source metadata/import files.
+- no credentials in import/export files.
 - no silent source-data correction.
 
 Historical orders must not be reconstructed from the current mutable product state.
@@ -746,7 +726,7 @@ At the current reviewed state:
 - The only Rial conversion is the explicit payment-gateway boundary.
 - Inventory remains disabled because no supplied source contains authoritative stock quantities.
 - Flexible Persian technical specs and measurements were checked against the representative 506, 886 and 994 workbooks.
-- Stable source identity and idempotent seed/upsert rules remain in place for the existing source-backed records; automated bulk import is deferred.
+- Stable product slugs and variant registration codes remain the idempotent seed/upsert keys; workbook-specific automated import is deferred.
 - Explicit `matchingProducts` and general `relatedProducts` are separate relationships.
 - Migration up/down/up and Phase 3 integration verification passed on a disposable clean database.
 
@@ -841,7 +821,7 @@ At the current reviewed state:
 
 ### Remaining boundary after the gate
 
-- The automated Excel import pipeline is deferred by owner decision; catalog preparation is manual until that decision is reopened.
+- Workbook-specific Excel automation remains deferred by owner decision; routine reviewed JSON import/export is available to administrators through Payload.
 - Eight additional manually curated products and their real images are live through the Payload-backed storefront catalog.
 - Brand and project showcase pages are Payload-backed; remaining catalog fixtures are seed/compatibility material rather than a public runtime source.
 - Payload owns authenticated cart persistence and all new checkout orders; guest browser storage is ID-only and non-authoritative.

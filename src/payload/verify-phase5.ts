@@ -55,8 +55,8 @@ try {
   product = products.docs[0];
   assert(product, "Run `npm run payload:seed` before Phase 5 verification.");
   assert.equal(product._status, "published");
-  assert.equal(product.sourceMetadata.file, "994.xlsx");
-  assert.equal(product.sourceMetadata.sheet, "HSS 994");
+  assert.equal(product.slug, "delan-sofa");
+  assert.equal(product.catalogCode, "NHSS 994");
 
   const groupIDs = (product.configurationGroups ?? []).map((value) => typeof value === "number" ? value : value.id);
   const [groupsResult, optionsResult, variantsResult] = await Promise.all([

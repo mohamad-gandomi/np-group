@@ -1,0 +1,23 @@
+[
+  {
+    "title": "پروژه نمونه مسکونی",
+    "slug": "sample-residential-project",
+    "sector": "residential",
+    "descriptionFa": "معرفی کوتاه پروژه نمونه.",
+    "briefFa": "شرح مسئله، راهکار طراحی و نتیجه پروژه.",
+    "heroMedia": "sample-project-hero.webp",
+    "heroAlt": "فضای داخلی پروژه نمونه",
+    "gallery": [
+      {
+        "image": "sample-project-gallery-01.webp",
+        "alt": "نمای دیگر پروژه نمونه",
+        "caption": "جزئیات فضای داخلی"
+      }
+    ],
+    "products": ["sample-chair"],
+    "article": "choosing-the-right-chair",
+    "featured": false,
+    "sortOrder": 10,
+    "published": true
+  }
+]

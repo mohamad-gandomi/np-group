@@ -1,6 +1,4 @@
-import type { ArrayField, Field } from "payload";
-
-import { isNilperSourceKey } from "./source-identity";
+import type { ArrayField } from "payload";
 
 export const technicalSpecGroupOptions = [
   { label: "هویت و کاربرد", value: "identity" },
@@ -52,34 +50,4 @@ export function technicalSpecsField(): ArrayField {
       { name: "sortOrder", type: "number", label: "ترتیب", defaultValue: 0 },
     ],
   };
-}
-
-export function sourceFields(): Field[] {
-  return [
-    {
-      name: "sourceKey",
-      type: "text",
-      label: "شناسه پایدار منبع",
-      required: true,
-      unique: true,
-      index: true,
-      admin: {
-        description: "برای واردات تکرارپذیر؛ از شماره ردیف، عنوان فارسی یا نام محلی فایل ساخته نمی‌شود.",
-      },
-      validate: (value: unknown) => isNilperSourceKey(value) || "شناسه منبع باید با قالب پایدار nilper:xlsx:… ساخته شود.",
-    },
-    {
-      name: "sourceMetadata",
-      type: "group",
-      label: "ردیابی منبع",
-      fields: [
-        { name: "workbookKey", type: "text", label: "کلید دفترکار", required: true },
-        { name: "file", type: "text", label: "نام فایل مشاهده‌شده", required: true },
-        { name: "sheet", type: "text", label: "برگه منبع", required: true },
-        { name: "identityRaw", type: "text", label: "هویت خام رکورد", required: true },
-        { name: "catalogCodeRaw", type: "text", label: "کد خام کاتالوگ" },
-        { name: "dataQualityNotes", type: "textarea", label: "یادداشت کیفیت داده" },
-      ],
-    },
-  ];
 }

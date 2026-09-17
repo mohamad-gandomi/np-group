@@ -28,9 +28,9 @@ function checkPage(html, path, type) {
   assert.equal(meta(html, "og:url"), canonical(html));
   assert.equal(meta(html, "twitter:card"), "summary_large_image");
   assert.ok(meta(html, "og:image"));
-  assert.match(meta(html, "robots"), /noindex, follow/, "demo must not be indexed");
+  assert.match(meta(html, "robots"), /index, follow/, "published content is indexable");
   assert.ok(!body.includes("نسخه نمایشی"), "removed notice is absent");
-  assert.ok(!sitemap.includes(`<loc>${canonical(html)}</loc>`), "demo is excluded from sitemap");
+  assert.ok(sitemap.includes(`<loc>${canonical(html)}</loc>`), "published content is included in sitemap");
   const schema = graph(html);
   const page = schema.find((item) => item["@type"] === type);
   assert.equal(page.url, canonical(html));
@@ -38,8 +38,10 @@ function checkPage(html, path, type) {
   assert.ok(!descriptions.has(page.description), "unique page description");
   descriptions.add(page.description);
   assert.equal(schema.find((item) => item["@type"] === "BreadcrumbList").itemListElement.at(-1).item, page.url);
-  assert.ok(!schema.some((item) => item["@type"] === "Brand" || item["@type"] === "Review"), "no unverified brand or review assertions");
-  assert.ok(page.mainEntity?.["@type"] !== "Brand", "demo profiles do not assert verified brand identity");
+  assert.ok(!schema.some((item) => item["@type"] === "Review"), "no unverified review assertions");
+  if (type === "WebPage") {
+    assert.equal(page.mainEntity?.["@type"], path.startsWith("/brands/") ? "Brand" : "CreativeWork");
+  }
   const ids = [...body.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
   assert.equal(new Set(ids).size, ids.length, "unique HTML IDs");
   for (const match of body.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.includes(match[1]), `anchor ${match[1]} exists`);
@@ -56,9 +58,9 @@ for (const kind of ["projects", "brands"]) {
   const collection = graph(indexHtml).find((item) => item["@type"] === "CollectionPage");
   const paths = collection.mainEntity.itemListElement.map((item) => new URL(item.url).pathname);
   allPaths.push(`/${kind}`, ...paths);
-  test(`/${kind}: static directory, crawlable links, safe demo indexing`, () => {
+  test(`/${kind}: static directory, crawlable links, published indexing`, () => {
     checkPage(indexHtml, `/${kind}`, "CollectionPage");
-    assert.equal(paths.length, kind === "projects" ? 3 : 6);
+    assert.equal(paths.length, kind === "projects" ? 3 : 7);
     assert.equal(collection.mainEntity.numberOfItems, paths.length);
     assert.equal(new Set(paths).size, paths.length);
     assert.ok(home.includes(`href="/${kind}"`), "homepage links to directory");
@@ -72,22 +74,26 @@ for (const kind of ["projects", "brands"]) {
       assert.ok(body.replace(/<[^>]+>/g, " ").split(/\s+/).length > 250, "detail content is rendered without JavaScript");
       assert.ok(body.includes("/contact"));
       assert.ok(body.includes('href="/shop"'), "detail links to the current catalog");
-      if (kind === "projects") assert.match(body, /حضور آن‌ها در تصاویر/);
+      if (kind === "projects") assert.match(body, /محصولات پیشنهادی این فضا را می‌توانید در کاتالوگ بررسی کنید/);
     });
   }
 }
 
-test("demo product references do not link to retired fixture detail routes", async () => {
+test("showcase product references link to built catalog detail routes", async () => {
+  let linkedProductCount = 0;
   for (const path of ["projects/a-welcoming-lobby", "brands/noma"]) {
     const html = visible(await readBuild(`server/app/${path}.html`));
-    assert.doesNotMatch(html, /href="\/shop\/[^"?#]+\/[^"?#]+"/);
+    const productLinks = [...html.matchAll(/href="(\/shop\/[^"?#]+\/[^"?#]+)"/g)].map((match) => match[1]);
+    linkedProductCount += productLinks.length;
+    for (const productPath of productLinks) assert.ok(manifest.routes[productPath], `linked route ${productPath} is built`);
     assert.ok(html.includes('href="/shop"'));
   }
+  assert.ok(linkedProductCount > 0, "linked Payload products are rendered");
 });
 
 if (process.env.SHOWCASE_TEST_URL) {
   const origin = process.env.SHOWCASE_TEST_URL;
-  test("HTTP: static public pages, crawler noindex, localized missing routes", async () => {
+  test("HTTP: static published pages, crawler indexing, localized missing routes", async () => {
     for (const path of allPaths) {
       const response = await fetch(new URL(path, origin), { redirect: "manual" });
       assert.equal(response.status, 200, path);
@@ -98,7 +104,7 @@ if (process.env.SHOWCASE_TEST_URL) {
       for (const userAgent of ["Googlebot", "OAI-SearchBot", "bingbot"]) {
         const response = await fetch(new URL(`/${kind}`, origin), { headers: { "user-agent": userAgent } });
         assert.equal(response.status, 200);
-        assert.match(meta(await response.text(), "robots"), /noindex, follow/);
+        assert.match(meta(await response.text(), "robots"), /index, follow/);
       }
       const missing = await fetch(new URL(`/${kind}/not-a-real-record`, origin), { redirect: "manual" });
       assert.equal(missing.status, 404);

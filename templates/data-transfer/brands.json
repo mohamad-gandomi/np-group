@@ -1,0 +1,13 @@
+[
+  {
+    "title": "برند نمونه",
+    "slug": "sample-brand",
+    "descriptionFa": "توضیح کوتاه برند نمونه.",
+    "logo": "sample-brand-logo.webp",
+    "heroMedia": "sample-brand-hero.webp",
+    "heroAlt": "نمای محصولات برند نمونه",
+    "featured": false,
+    "sortOrder": 10,
+    "published": true
+  }
+]

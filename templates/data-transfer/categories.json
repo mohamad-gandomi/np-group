@@ -1,0 +1,11 @@
+[
+  {
+    "title": "صندلی",
+    "slug": "chairs",
+    "parent": null,
+    "image": "chairs-category.webp",
+    "descriptionFa": "انواع صندلی برای خانه و محیط کار.",
+    "sortOrder": 10,
+    "published": true
+  }
+]

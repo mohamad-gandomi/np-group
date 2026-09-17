@@ -12,13 +12,28 @@ Before implementation, read these files completely in order:
 
 ## Current State
 
-- **Active phase:** Phase 12 blog/post migration and the owner-approved brand/project showcase migration are complete in the working tree.
+- **Active phase:** Post-Phase 12 Payload administration and data operations.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
-- **Next implementation task:** The owner can author journal posts, brands and projects in Payload Admin and assign active users the `seller` role for product-page contact cards. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
-- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete; Phase 6 remains deferred by owner decision. Homepage editorial sections remain file-backed until the owner explicitly asks to migrate them.
+- **Next implementation task:** Deploy the committed data-transfer migration, configure the daily Payload worker in Plesk, and perform an authenticated production smoke test of import/export. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
+- **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete. Workbook-specific Phase 6 automation remains deferred, while official Payload JSON transfer is available for routine small batches. Homepage editorial sections remain file-backed until the owner explicitly asks to migrate them.
 
 ## Latest Session Note
+
+- **Date:** 2026-09-17
+- [x] Added the official Payload import/export plugin for products, variants, posts, projects, brands, categories, series, configuration groups/options, variant types/options, and blog categories.
+- [x] Restricted transfer collections, endpoints, jobs access, and list-menu controls to the `admin` role; localized the workflow for the Persian admin and forced portable JSON exports.
+- [x] Added stable-reference conversion for slugs, `nilperCode`, configuration keys, variant type/option identities, and media filenames. Images are uploaded through Payload Media before the JSON batch.
+- [x] Added background import/export processing, a daily seven-day retention task, the one-shot `payload:jobs` command, Plesk Scheduled Task instructions, and per-collection sample JSON templates.
+- [x] Removed `sourceKey`, `sourceMetadata`, all source-quality-note fields, the Admin «منبع داده» section, obsolete source-identity code, and their seed/verification dependencies.
+- [x] Generated migration `20260917_101243_nilper_data_transfer`, which creates official import/export/job tables and removes source columns and indexes from products, variants, and their version tables on deployment.
+- [x] Regenerated Payload types/import map and passed TypeScript, clean lint, the production build, all Payload Phase 3–5 and 8–12 checks, manual-catalog verification, 6 journal tests, and 13 showcase tests before commit/push.
+- [x] Clarified that the import/export collections are seven-day operation histories and renamed their navigation labels accordingly. Replaced the CDN-dependent JSON editor after its Monaco loader failed locally, and made JSON/table previews contained, horizontally scrollable, and left-to-right/left-aligned inside the RTL admin.
+- [x] Added an explicit saved-file download action to export history rows and document controls, exposed pending background status when a file is not ready, and removed the empty upload surface from saved export pages.
+- [x] Ran the local Payload worker and generated the two surviving project export files. One orphaned job for an already-deleted export history record failed safely and does not affect the surviving records; the scheduled Plesk worker remains required in production.
+- [x] Updated the showcase regression suite to reflect the Payload-published, indexable brand/project records and their real catalog links introduced by the previous storefront checkpoint.
+- [!] Local migration status shows the two newest migrations as pending because this development database was synchronized through Payload's development schema push. Production must run the normal `payload:migrate` command before serving the new release.
+- **Session checkpoint:** The data-transfer/admin cleanup is complete on `main`; use `git log` for the immutable commit hash.
 
 - **Date:** 2026-09-16
 - [x] Added Payload-owned brand editorial fields and a Projects collection, then connected brand/project indexes, detail pages, product relationships, article links, metadata and sitemap records through a cached server-only repository.
@@ -94,8 +109,8 @@ Before implementation, read these files completely in order:
 - [x] Stopped Phase 6 before implementation at the owner's request because the workbooks require different extraction rules and manual handling.
 - [x] Confirmed that no workbook was copied, changed, staged, or committed and no importer dependency or importer code was added.
 - [x] Marked the automated Excel import pipeline as deferred; manual Payload catalog preparation is the interim path.
-- [x] Preserved the existing Delan source metadata and stable identity fields because current seeded records, migrations, and verification suites actively depend on them.
-- [x] Reused and verified the existing `994.xlsx` / `HSS 994` Delan seed foundation without duplicating or bulk-importing records.
+- [x] The later 2026-09-17 admin cleanup removed workbook provenance fields from the production domain and replaced them with stable slug/SKU-based JSON transfer.
+- [x] Reused and verified the existing Delan seed foundation without duplicating or bulk-importing workbook records.
 - [x] Added the server-only Payload catalog repository and mapper while preserving the existing serializable storefront Product DTO.
 - [x] Added Delan to the hybrid shop listing and rendered its real source-backed description, media, variants, specifications and configuration choices in the existing Product UI.
 - [x] Added a server cart-quote bridge that reuses Phase 4 validation before a Payload-backed product enters the browser cart.
@@ -116,7 +131,7 @@ Before implementation, read these files completely in order:
 - Do not reintroduce Supabase or a second customer/account datastore without an explicit architecture decision.
 - Do not build or run an Excel product importer unless the owner explicitly reopens the deferred Phase 6 work.
 - Do not treat every fabric/wood/color choice as a Variant.
-- Do not silently correct source Excel codes or names.
+- Do not add workbook-specific Excel automation unless the owner explicitly reopens that work.
 - Keep commits small and focused.
 - Run lint/build/tests at meaningful checkpoints.
 - Read root `AGENTS.md` before editing Next.js code.
@@ -372,7 +387,7 @@ Completion record:
 - [x] Base and commerce collections finalized with editorial/public access controls.
 - [x] Flexible shared Product specs and Product/Variant measurements implemented.
 - [x] Variant operational identity remains separate from configuration choices.
-- [x] Stable source identity and raw traceability implemented for idempotent future imports.
+- [x] Stable product slugs and unique variant registration codes implemented for idempotent seed and JSON transfer operations.
 - [x] Explicit matching-product relationships separated from general recommendations.
 - [x] Integer `TMN` application currency and explicit gateway-unit conversion finalized.
 - [x] Inventory policy finalized without inventing quantities absent from source data.
@@ -502,18 +517,11 @@ At minimum:
 
 These must not generate combinatorial variants.
 
-## 5.5 Add source metadata
+## 5.5 Stable catalog identity
 
-**Existing foundation: [x] File, sheet, raw identities, and data-quality notes are seeded.**
+**Current foundation: [x] Products use stable unique slugs and variants use unique Nilper registration codes.**
 
-The seeded/imported document must retain traceability:
-
-```text
-source file: 994.xlsx
-source sheet: HSS 994
-```
-
-Include a place for `dataQualityNotes`.
+Workbook provenance and data-quality-note fields were removed from the production schema on 2026-09-17. Reviewed facts belong in the actual catalog fields; portable JSON transfer uses stable business identifiers rather than database IDs where practical.
 
 ## 5.6 Expose through a storefront repository
 
@@ -562,7 +570,7 @@ If all Phase 5 acceptance criteria pass, mark Payload architecture **LOCKED** an
 
 Completion record:
 
-- [x] Existing Delan series, sofa, operational variants, configuration groups and source metadata reused and verified.
+- [x] Existing Delan series, sofa, operational variants and configuration groups reused and verified.
 - [x] Server-only Payload repository and mapper implemented without leaking generated Payload types through UI components.
 - [x] Delan included in the hybrid shop listing and rendered through the existing Product UI.
 - [x] Real Persian content replaces fixture-derived descriptions/specifications on the Payload product path.
@@ -591,10 +599,10 @@ Current rules:
 
 - keep the source workbooks outside the repository and outside `public/`;
 - enter and review catalog records manually in Payload for the current implementation;
-- retain raw codes and uncertainty notes when data is entered manually;
 - do not silently correct suspicious catalog or registration identities;
-- preserve existing `sourceKey` and `sourceMetadata` fields used by the Delan seed and current migrations;
 - reopen this phase only when the owner supplies explicit workbook-by-workbook mapping and approval rules.
+
+Separate from the deferred Excel pipeline, routine small-batch administration now uses Payload's official JSON import/export plugin. It is admin-only, supports selected/filtered exports plus create/update/upsert imports, resolves portable relationships, runs in the background, and deletes transfer files after seven days.
 
 ---
 
@@ -885,10 +893,10 @@ Give Codex these inputs together:
 5. local Postgres connection through environment variables (never paste production secrets into prompts)
 6. current official Payload docs if Codex needs API-specific verification
 
-The three source workbooks are not a required session input while Phase 6 is deferred. Do not request, copy, inspect, or automate them unless the owner explicitly reopens that work.
+The source workbooks are not a required session input while workbook automation is deferred. Do not request, copy, inspect, or automate them unless the owner explicitly reopens that work. Use the official Payload JSON transfer workflow for reviewed operational batches.
 
 Suggested opening prompt for a new Codex session:
 
-> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–12 are complete, the architecture is locked, and Phase 6 is deferred by the owner; do not build an Excel importer or reintroduce Supabase. Journal posts are managed through Payload; migrate other optional editorial areas only on explicit owner direction. Live Tapin activation still requires the documented production account settings and confirmed API amount unit.
+> Read `NILPER_CONTEXT.md`, `NILPER_TODO.md`, and `AGENTS.md` completely, then inspect Git and the current implementation. Phases 0–5 and 7–12 are complete and the architecture is locked. Workbook-specific Phase 6 automation is deferred; use the admin-only official Payload JSON transfer workflow for reviewed batches and do not reintroduce Supabase. Journal posts are managed through Payload; migrate other optional editorial areas only on explicit owner direction. Live Tapin activation still requires the documented production account settings and confirmed API amount unit.
 
 Keep each session focused on the current phase and update this file before ending.

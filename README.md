@@ -78,6 +78,7 @@ npm run payload:db:stop
 npm run payload:generate
 npm run payload:migrate:create -- descriptive-name
 npm run payload:migrate
+npm run payload:jobs
 npm run payload:seed
 npm run payload:verify:phase3
 npm run payload:verify:phase4
@@ -91,6 +92,26 @@ npm run payload:verify:manual-catalog
 ```
 
 The uploaded local Payload media directory is ignored by Git.
+
+## Payload data import and export
+
+Administrators can import or export selected records from the list menu of products, variants, posts, projects, brands, categories, series, configuration data, variant data, and blog categories. The workflow uses Payload's official import/export plugin and JSON files; each file contains an array for one collection, so a small batch such as seven products can be processed without exporting or importing the entire database.
+
+Upload images to «رسانه‌ها» first, then refer to them by exact filename in JSON. Portable relations use stable business fields such as product/post/project `slug`, variant `nilperCode`, configuration-group `key`, and variant-type `name`. For update/upsert, Nilper automatically replaces the plugin's default `id` match with the appropriate stable field where one exists. Ready-to-copy files and the dependency order are in [`templates/data-transfer`](templates/data-transfer/README.md).
+
+Imports and exports run through Payload's background jobs. Their uploaded/generated files and admin history are removed automatically after seven days; imported content is not removed.
+
+For Plesk deployment:
+
+1. Deploy the application and run `npm ci`, `npm run build`, and `npm run payload:migrate` in the configured Node.js environment.
+2. In **Websites & Domains → Scheduled Tasks**, create a **Run a command** task every minute.
+3. Replace the example path with the real application root and run:
+
+```bash
+cd /var/www/vhosts/EXAMPLE/httpdocs && npm run payload:jobs
+```
+
+The scheduled task must inherit the same production environment variables as the app. `payload:jobs` is a one-shot worker: it processes queued imports/exports, schedules the daily retention cleanup, and exits.
 
 ## Verification
 

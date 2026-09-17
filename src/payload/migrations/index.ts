@@ -12,6 +12,7 @@ import * as migration_20260915_145847_blog_categories from './20260915_145847_bl
 import * as migration_20260915_152427_order_customer_address from './20260915_152427_order_customer_address';
 import * as migration_20260915_153600_address_display_label from './20260915_153600_address_display_label';
 import * as migration_20260916_084808_storefront_showcase_and_sales_contacts from './20260916_084808_storefront_showcase_and_sales_contacts';
+import * as migration_20260917_101243_nilper_data_transfer from './20260917_101243_nilper_data_transfer';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20260916_084808_storefront_showcase_and_sales_contacts.up,
     down: migration_20260916_084808_storefront_showcase_and_sales_contacts.down,
-    name: '20260916_084808_storefront_showcase_and_sales_contacts'
+    name: '20260916_084808_storefront_showcase_and_sales_contacts',
+  },
+  {
+    up: migration_20260917_101243_nilper_data_transfer.up,
+    down: migration_20260917_101243_nilper_data_transfer.down,
+    name: '20260917_101243_nilper_data_transfer'
   },
 ];

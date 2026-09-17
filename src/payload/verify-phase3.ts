@@ -12,7 +12,6 @@ import {
   formatToman,
   toPaymentGatewayAmount,
 } from "./money";
-import { buildNilperSourceKey } from "./source-identity";
 
 const runID = randomUUID();
 const shortID = runID.slice(0, 8);
@@ -21,17 +20,6 @@ const created: Partial<Record<string, (number | string)[]>> = {};
 const remember = (collection: string, id: number | string) => {
   created[collection] = [...(created[collection] ?? []), id];
 };
-
-const source = (entity: "product" | "variant", rawIdentity: string) => ({
-  sourceKey: buildNilperSourceKey({ workbookKey: `phase3-${shortID}`, sheet: "verification", entity, rawIdentity }),
-  sourceMetadata: {
-    workbookKey: `phase3-${shortID}`,
-    file: "phase3-verification.xlsx",
-    sheet: "verification",
-    identityRaw: rawIdentity,
-    catalogCodeRaw: rawIdentity,
-  },
-});
 
 const richText = (text: string): Product["descriptionFa"] => ({
   root: {
@@ -72,12 +60,6 @@ assert.match(providerMarkup, /data-formatted="[^"]*TMN/, "EcommerceProvider must
 assert.equal(formatToman(1_234_567), "۱٬۲۳۴٬۵۶۷ تومان");
 assert.equal(toPaymentGatewayAmount(1_234_567, "toman"), 1_234_567);
 assert.equal(toPaymentGatewayAmount(1_234_567, "rial"), 12_345_670);
-assert.equal(
-  buildNilperSourceKey({ workbookKey: "994", sheet: "HSS 994", entity: "variant", rawIdentity: "NHSS94012" }),
-  buildNilperSourceKey({ workbookKey: "994", sheet: " HSS   994 ", entity: "variant", rawIdentity: " NHSS94012 " }),
-  "Source identity must be stable across harmless whitespace differences.",
-);
-
 const payload = await getPayload({ config });
 
 try {
@@ -125,7 +107,6 @@ try {
       priceInTMNEnabled: false,
       descriptionFa: richText("محصول هماهنگ برای آزمون رابطه صریح."),
       enableVariants: false,
-      ...source("product", `COMPANION-${shortID}`),
       _status: "published",
     },
   });
@@ -161,7 +142,6 @@ try {
       matchingProducts: [companion.id],
       enableVariants: true,
       variantTypes: [variantType.id],
-      ...source("product", `PRODUCT-${shortID}`),
       _status: "published",
     },
   });
@@ -184,7 +164,6 @@ try {
         { key: "seat-width", labelFa: "عرض نشیمن", value: 62, unit: "cm", sortOrder: 10 },
         { key: "fabric", labelFa: "متراژ پارچه", value: 4.5, unit: "m", sortOrder: 20 },
       ],
-      ...source("variant", `PHASE3-${shortID}`),
       _status: "published",
     },
   });
@@ -248,7 +227,7 @@ try {
   assert.equal(apiVariant.measurements?.[1]?.key, "fabric");
   assert.deepEqual(apiProduct.matchingProducts, [companion.id]);
 
-  payload.logger.info("Phase 3 domain verification passed: schema, access, source identity, TMN flow, and payment boundary.");
+  payload.logger.info("Phase 3 domain verification passed: schema, access, stable catalog identifiers, TMN flow, and payment boundary.");
 } finally {
   for (const collection of ["transactions", "orders", "carts", "variants", "products", "variantOptions", "variantTypes", "product-series", "categories", "brands"]) {
     for (const id of [...(created[collection] ?? [])].reverse()) {

@@ -1,3 +1,5 @@
+import { AdminOnlyExportListMenuItem as AdminOnlyExportListMenuItem_7546db7980130d78a6359f7decdbb297 } from '../../../../src/components/payload/data-transfer-menu'
+import { AdminOnlyImportListMenuItem as AdminOnlyImportListMenuItem_7546db7980130d78a6359f7decdbb297 } from '../../../../src/components/payload/data-transfer-menu'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -26,15 +28,33 @@ import { UploadFeatureClient as UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { OrderCustomerAddressField as OrderCustomerAddressField_668cfbc790a5620014b0d6d5560b5ead } from '../../../../src/components/payload/order-customer-address-field'
+import { ExportNameCell as ExportNameCell_40ee1d59c1e2d29f0018f3bcf65b6c18 } from '../../../../src/components/payload/data-transfer-actions'
+import { FormatField as FormatField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { LimitField as LimitField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { Page as Page_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { SortBy as SortBy_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { SortOrder as SortOrder_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { SelectionToUseField as SelectionToUseField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { FieldsToExport as FieldsToExport_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { CollectionField as CollectionField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { ExportDataPreview as ExportDataPreview_bf5c9652ed83d433578d888aa981532c } from '../../../../src/components/payload/data-transfer-preview'
+import { ExportDownloadControl as ExportDownloadControl_40ee1d59c1e2d29f0018f3bcf65b6c18 } from '../../../../src/components/payload/data-transfer-actions'
+import { ExportSaveButton as ExportSaveButton_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { HiddenExportUpload as HiddenExportUpload_40ee1d59c1e2d29f0018f3bcf65b6c18 } from '../../../../src/components/payload/data-transfer-actions'
+import { ImportPreview as ImportPreview_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { ImportSaveButton as ImportSaveButton_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { AdminAvatar as AdminAvatar_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
 import { AdminBrandIcon as AdminBrandIcon_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
 import { AdminBrandLogo as AdminBrandLogo_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
 import { AdminHeaderAction as AdminHeaderAction_03de78193e779e74eecf0968a5d7a65b } from '../../../../src/components/payload/admin-shell'
+import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { AdminDashboard as AdminDashboard_6cda42e11a411ed465c8f0a64400abcb } from '../../../../src/components/payload/admin-dashboard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "./src/components/payload/data-transfer-menu#AdminOnlyExportListMenuItem": AdminOnlyExportListMenuItem_7546db7980130d78a6359f7decdbb297,
+  "./src/components/payload/data-transfer-menu#AdminOnlyImportListMenuItem": AdminOnlyImportListMenuItem_7546db7980130d78a6359f7decdbb297,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -63,10 +83,26 @@ export const importMap = {
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
   "./src/components/payload/order-customer-address-field#OrderCustomerAddressField": OrderCustomerAddressField_668cfbc790a5620014b0d6d5560b5ead,
+  "./src/components/payload/data-transfer-actions#ExportNameCell": ExportNameCell_40ee1d59c1e2d29f0018f3bcf65b6c18,
+  "@payloadcms/plugin-import-export/rsc#FormatField": FormatField_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#LimitField": LimitField_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#Page": Page_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#SortBy": SortBy_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#SortOrder": SortOrder_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#SelectionToUseField": SelectionToUseField_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#FieldsToExport": FieldsToExport_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#CollectionField": CollectionField_cdf7e044479f899a31f804427d568b36,
+  "./src/components/payload/data-transfer-preview#ExportDataPreview": ExportDataPreview_bf5c9652ed83d433578d888aa981532c,
+  "./src/components/payload/data-transfer-actions#ExportDownloadControl": ExportDownloadControl_40ee1d59c1e2d29f0018f3bcf65b6c18,
+  "@payloadcms/plugin-import-export/rsc#ExportSaveButton": ExportSaveButton_cdf7e044479f899a31f804427d568b36,
+  "./src/components/payload/data-transfer-actions#HiddenExportUpload": HiddenExportUpload_40ee1d59c1e2d29f0018f3bcf65b6c18,
+  "@payloadcms/plugin-import-export/rsc#ImportPreview": ImportPreview_cdf7e044479f899a31f804427d568b36,
+  "@payloadcms/plugin-import-export/rsc#ImportSaveButton": ImportSaveButton_cdf7e044479f899a31f804427d568b36,
   "./src/components/payload/admin-shell#AdminAvatar": AdminAvatar_03de78193e779e74eecf0968a5d7a65b,
   "./src/components/payload/admin-shell#AdminBrandIcon": AdminBrandIcon_03de78193e779e74eecf0968a5d7a65b,
   "./src/components/payload/admin-shell#AdminBrandLogo": AdminBrandLogo_03de78193e779e74eecf0968a5d7a65b,
   "./src/components/payload/admin-shell#AdminHeaderAction": AdminHeaderAction_03de78193e779e74eecf0968a5d7a65b,
+  "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "./src/components/payload/admin-dashboard#AdminDashboard": AdminDashboard_6cda42e11a411ed465c8f0a64400abcb,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -3,7 +3,6 @@ import { getPayload } from "payload";
 
 import config from "../../payload.config";
 import { manualCatalogProducts } from "./manual-catalog";
-import { buildNilperSourceKey } from "./source-identity";
 
 const payload = await getPayload({ config });
 
@@ -25,16 +24,6 @@ for (const expected of manualCatalogProducts) {
   assert.equal(product.salesMode, "made_to_order", `${expected.slug} sales mode must remain made_to_order.`);
   assert.equal(product.availabilityMode, "orderable");
   assert.equal(product.priceInTMNEnabled, false);
-  assert.equal(product.sourceMetadata.file, expected.file);
-  assert.equal(product.sourceMetadata.sheet, expected.sheet);
-  assert.equal(product.sourceMetadata.identityRaw, expected.identityRaw);
-  assert.equal(product.sourceKey, buildNilperSourceKey({
-    workbookKey: expected.workbookKey,
-    sheet: expected.sheet,
-    entity: "product",
-    rawIdentity: expected.identityRaw,
-  }));
-
   const mainImage = product.mainImage;
   assert(mainImage && typeof mainImage === "object", `${expected.slug} must have populated media.`);
   assert.equal(mainImage.filename, expected.image.filename);
@@ -54,22 +43,6 @@ for (const expected of manualCatalogProducts) {
   );
   assert(variants.docs.every((variant) => variant.priceInTMNEnabled === false));
 }
-
-const mani = await payload.find({
-  collection: "products",
-  limit: 1,
-  overrideAccess: true,
-  where: { slug: { equals: "mani-bed" } },
-});
-assert.match(mani.docs[0]?.sourceMetadata.dataQualityNotes ?? "", /97 cm/);
-
-const dayan = await payload.find({
-  collection: "products",
-  limit: 1,
-  overrideAccess: true,
-  where: { slug: { equals: "dayan-sofa" } },
-});
-assert.match(dayan.docs[0]?.sourceMetadata.dataQualityNotes ?? "", /NHSS871002/);
 
 payload.logger.info(`Verified ${manualCatalogProducts.length} manually curated products without invented prices or duplicate slugs.`);
 await payload.destroy();

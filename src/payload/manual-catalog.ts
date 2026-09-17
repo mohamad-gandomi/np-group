@@ -26,16 +26,10 @@ type ManualVariant = {
   options: string[];
   measurements?: ManualMeasurement[];
   manufacturingNotesFa?: string;
-  dataQualityNotes?: string;
 };
 
 export type ManualCatalogProduct = {
-  workbookKey: string;
-  file: string;
-  sheet: string;
-  identityRaw: string;
   catalogCode: string;
-  dataQualityNotes?: string;
   title: string;
   slug: string;
   descriptionFa: string;
@@ -104,10 +98,6 @@ const finishClassType: ManualVariantType = {
 
 export const manualCatalogProducts: ManualCatalogProduct[] = [
   {
-    workbookKey: "886",
-    file: "886.xlsx",
-    sheet: "NBSB886",
-    identityRaw: "تخت خواب سری86 (NBSB 886)",
     catalogCode: "NBSB 886",
     title: "تخت خواب داران",
     slug: "daran-bed",
@@ -156,12 +146,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     ],
   },
   {
-    workbookKey: "850",
-    file: "850.xlsx",
-    sheet: "تخت 850",
-    identityRaw: "تخت خواب (NBSB 850)",
     catalogCode: "NBSB 850",
-    dataQualityNotes: "منبع برای عرض ۱۸۰ ابعاد دارد اما در همین برگه فقط کدهای ثبت عرض ۱۶۰ درج شده‌اند؛ گونه عرض ۱۸۰ ساخته نشده است.",
     title: "تخت خواب ژیوار",
     slug: "zhivar-bed",
     descriptionFa: "تخت نئوکلاسیک ژیوار ترکیبی از پارچه و چوب ابزارخورده است. لمسه‌کوبی سرتخت امکان هماهنگی با منسوجات اتاق خواب را فراهم می‌کند و فرم آن برای چیدمان‌های کلاسیک و نئوکلاسیک مناسب است.",
@@ -210,10 +195,6 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     ],
   },
   {
-    workbookKey: "853",
-    file: "853.xlsx",
-    sheet: "تخت 853",
-    identityRaw: "تخت خواب (NBSB 853)",
     catalogCode: "NBSB 853",
     title: "تخت خواب اورامان",
     slug: "uraman-bed",
@@ -251,12 +232,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     ],
   },
   {
-    workbookKey: "852",
-    file: "852.xlsx",
-    sheet: "NBSB886",
-    identityRaw: "تخت خواب (NBSB 852)",
     catalogCode: "NBSB 852",
-    dataQualityNotes: "نام برگه NBSB886 است، در حالی که محتوای آن محصول NBSB 852 را معرفی می‌کند. عرض گونه ۱۸۰ در سلول E25 برابر 97 cm ثبت شده و به علت مشکوک بودن، به عنوان اندازه تأییدشده نمایش داده نشده است.",
     title: "تخت خواب مانی",
     slug: "mani-bed",
     descriptionFa: "تخت خواب مانی با طراحی مدرن، پوشش پارچه‌ای و بدنه و تاج مستحکم، فضایی راحت برای استراحت و مطالعه ایجاد می‌کند. فضای انبارش زیر تخت نیز در منبع برای این مدل تأیید شده است.",
@@ -288,17 +264,12 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     variants: [
       { code: "NBSB852004", title: "عرض ۱۶۰ ساده", options: ["bed-width:160", "bed-base:fixed"], measurements: [measurement("width", "عرض کلی", 177, "cm", 10), measurement("weight", "وزن", 75, "kg", 20)] },
       { code: "NBSB852005", title: "عرض ۱۶۰ جک‌دار", options: ["bed-width:160", "bed-base:lift"], measurements: [measurement("width", "عرض کلی", 177, "cm", 10), measurement("weight", "وزن", 75, "kg", 20)] },
-      { code: "NBSB852002", title: "عرض ۱۸۰ ساده", options: ["bed-width:180", "bed-base:fixed"], measurements: [measurement("weight", "وزن", 80, "kg", 20)], dataQualityNotes: "عرض 97 cm عیناً در سلول E25 منبع ثبت شده اما تا تأیید نیلپر به عنوان اندازه ساختاریافته استفاده نشده است." },
-      { code: "NBSB852006", title: "عرض ۱۸۰ جک‌دار", options: ["bed-width:180", "bed-base:lift"], measurements: [measurement("weight", "وزن", 80, "kg", 20)], dataQualityNotes: "عرض 97 cm عیناً در سلول E25 منبع ثبت شده اما تا تأیید نیلپر به عنوان اندازه ساختاریافته استفاده نشده است." },
+      { code: "NBSB852002", title: "عرض ۱۸۰ ساده", options: ["bed-width:180", "bed-base:fixed"], measurements: [measurement("weight", "وزن", 80, "kg", 20)] },
+      { code: "NBSB852006", title: "عرض ۱۸۰ جک‌دار", options: ["bed-width:180", "bed-base:lift"], measurements: [measurement("weight", "وزن", 80, "kg", 20)] },
     ],
   },
   {
-    workbookKey: "506",
-    file: "506.xlsx",
-    sheet: "NDTN506",
-    identityRaw: "NDTN506",
     catalogCode: "NDTN506",
-    dataQualityNotes: "کدهای ثبت NDTN507003 و NDTN507004 با شماره کاتالوگ و نام برگه 506 هم‌خوان نیستند؛ عیناً و بدون اصلاح نگهداری شده‌اند.",
     title: "صندلی بار ویونا",
     slug: "viona-bar-chair",
     descriptionFa: "صندلی بار ویونا با پایه‌های چوبی ظریف، پشتی و نشیمن حجیم و راحت و طراحی ارگونومیک، برای هماهنگی با فضاهای متنوع داخلی طراحی شده است.",
@@ -334,15 +305,11 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     ],
     variantTypes: [finishClassType],
     variants: [
-      { code: "NDTN507003", title: "رنگی", options: ["finish-class:stained"], dataQualityNotes: "اختلاف 507/506 نیازمند تأیید نیلپر است." },
-      { code: "NDTN507004", title: "رنگ پوششی", options: ["finish-class:coated"], dataQualityNotes: "اختلاف 507/506 نیازمند تأیید نیلپر است." },
+      { code: "NDTN507003", title: "رنگی", options: ["finish-class:stained"] },
+      { code: "NDTN507004", title: "رنگ پوششی", options: ["finish-class:coated"] },
     ],
   },
   {
-    workbookKey: "885",
-    file: "885.xlsx",
-    sheet: "NBSB885",
-    identityRaw: "تخت خواب سری 85 (NBSB 885)",
     catalogCode: "NBSB 885",
     title: "تخت خواب لاوان",
     slug: "lavan-bed",
@@ -380,10 +347,6 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     variants: [{ code: "NBSB885001", title: "تخت خواب", options: ["bed-form:standard"] }],
   },
   {
-    workbookKey: "851",
-    file: "851.xlsx",
-    sheet: "تخت 851",
-    identityRaw: "تخت خواب (NBSB 851)",
     catalogCode: "NBSB 851",
     title: "تخت خواب ماهور",
     slug: "mahoor-bed",
@@ -421,12 +384,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
     ],
   },
   {
-    workbookKey: "871",
-    file: "871.xlsx",
-    sheet: "HSS 871",
-    identityRaw: "مبل خانگی NHSS871",
     catalogCode: "NHSS871",
-    dataQualityNotes: "کد NHSS871002 برای گونه چندرنگ تک‌نفره و سه‌نفره تکرار شده است. برای جلوگیری از ساخت دو SKU یکسان، فقط ثبت تک‌نفره نگهداری شده و گونه سه‌نفره چندرنگ تا تأیید نیلپر ایجاد نشده است.",
     title: "مبل دایان",
     slug: "dayan-sofa",
     descriptionFa: "مبل دایان با پشتی منحنی، دسته‌های رول‌شده رو به بیرون، لمسه‌دوزی پشتی و جزئیات تزئینی دست‌ساز در سبک نئوکلاسیک طراحی شده است و فضایی لوکس و مناسب گفت‌وگوهای صمیمی ایجاد می‌کند.",
@@ -484,7 +442,6 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
         title: "تک نفره چندرنگ",
         options: ["seating-form:single-seat", "upholstery-layout:polychrome"],
         measurements: [measurement("seat-height", "ارتفاع نشیمن", 46, "cm", 10), measurement("seat-depth", "عمق نشیمن", 53, "cm", 20), measurement("fabric", "متراژ پارچه بدون کوسن", 4.6, "m", 30)],
-        dataQualityNotes: "همین کد در ردیف سه‌نفره چندرنگ نیز تکرار شده است.",
       },
       {
         code: "NHSS871007",

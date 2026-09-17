@@ -1,0 +1,10 @@
+[
+  {
+    "title": "رنگ چوب",
+    "key": "wood-finish",
+    "inputType": "swatch",
+    "required": true,
+    "active": true,
+    "helpTextFa": "رنگ دلخواه را انتخاب کنید."
+  }
+]

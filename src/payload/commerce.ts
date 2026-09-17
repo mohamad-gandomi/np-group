@@ -16,7 +16,7 @@ import {
   nilperCommerceItemsHook,
   withNilperCommerceItemFields,
 } from "./cart-configuration";
-import { measurementsField, sourceFields, technicalSpecsField } from "./domain-fields";
+import { measurementsField, technicalSpecsField } from "./domain-fields";
 import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
 import { zarinpalAdapter } from "@/features/payments/zarinpal/adapter";
 
@@ -341,14 +341,10 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
               relationTo: "products",
               hasMany: true,
               label: "محصولات ست / هماهنگ",
-              admin: { description: "رابطه صریح درج‌شده در منبع؛ از پیشنهاد عمومی «محصولات مرتبط» جدا است." },
+              admin: { description: "رابطه صریح برای محصولات یک ست یا خانواده؛ از پیشنهاد عمومی «محصولات مرتبط» جدا است." },
             },
             ...[variantField("enableVariants"), variantField("variantTypes"), variantField("variants")].filter((field): field is Field => Boolean(field)),
           ],
-        },
-        {
-          label: "منبع داده",
-          fields: sourceFields(),
         },
       ],
     },
@@ -438,7 +434,6 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
     ...priceFields,
     measurementsField("فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه."),
     { name: "manufacturingNotesFa", type: "textarea", label: "یادداشت ساخت / سفارش" },
-    ...sourceFields(),
   ].filter((field): field is Field => Boolean(field));
 };
 

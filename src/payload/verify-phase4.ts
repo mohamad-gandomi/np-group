@@ -9,7 +9,6 @@ import {
   buildConfigurationKey,
   nilperCartItemMatcher,
 } from "./cart-configuration";
-import { buildNilperSourceKey } from "./source-identity";
 
 const runID = randomUUID();
 const shortID = runID.slice(0, 8);
@@ -18,17 +17,6 @@ const created: Partial<Record<string, (number | string)[]>> = {};
 const remember = (collection: string, id: number | string) => {
   created[collection] = [...(created[collection] ?? []), id];
 };
-
-const source = (entity: "product" | "variant", rawIdentity: string) => ({
-  sourceKey: buildNilperSourceKey({ workbookKey: `phase4-${shortID}`, sheet: "verification", entity, rawIdentity }),
-  sourceMetadata: {
-    workbookKey: `phase4-${shortID}`,
-    file: "phase4-verification.xlsx",
-    sheet: "verification",
-    identityRaw: rawIdentity,
-    catalogCodeRaw: rawIdentity,
-  },
-});
 
 const richText = (text: string): Product["descriptionFa"] => ({
   root: {
@@ -160,7 +148,6 @@ try {
       configurationGroups: [woodGroup.id, fabricGroup.id],
       enableVariants: true,
       variantTypes: [variantType.id],
-      ...source("product", `PRODUCT-${shortID}`),
       _status: "published",
     },
   });
@@ -179,7 +166,6 @@ try {
       descriptionFa: richText("محصول دیگر برای آزمون تعلق گونه."),
       enableVariants: true,
       variantTypes: [variantType.id],
-      ...source("product", `OTHER-${shortID}`),
       _status: "published",
     },
   });
@@ -198,7 +184,6 @@ try {
       priceInTMN: 100_000,
       descriptionFa: richText("محصول منتشرنشده."),
       enableVariants: false,
-      ...source("product", `HIDDEN-${shortID}`),
       _status: "draft",
     },
     draft: true,
@@ -213,7 +198,6 @@ try {
       options: [variantOption.id],
       priceInTMNEnabled: true,
       priceInTMN: 250_000,
-      ...source("variant", `VARIANT-${shortID}`),
       _status: "published",
     },
   });
@@ -227,7 +211,6 @@ try {
       options: [variantOption.id],
       priceInTMNEnabled: true,
       priceInTMN: 300_000,
-      ...source("variant", `OTHER-VARIANT-${shortID}`),
       _status: "published",
     },
   });

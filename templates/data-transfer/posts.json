@@ -1,0 +1,73 @@
+[
+  {
+    "title": "راهنمای انتخاب صندلی مناسب",
+    "slug": "choosing-the-right-chair",
+    "category": "buying-guides",
+    "description": "نکات مهم برای انتخاب صندلی متناسب با فضا و شیوه استفاده.",
+    "summary": "ابعاد، ارگونومی، متریال و کاربرد روزانه را پیش از خرید بررسی کنید.",
+    "heroImage": "chair-guide-hero.webp",
+    "content": {
+      "root": {
+        "type": "root",
+        "direction": "rtl",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "type": "heading",
+            "tag": "h2",
+            "direction": "rtl",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "ابعاد و ارگونومی",
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "version": 1
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "direction": "rtl",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "متن بخش اول مقاله را اینجا بنویسید.",
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "version": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "takeaway": "انتخاب درست باید هم‌زمان با ابعاد فضا و نیاز کاربر هماهنگ باشد.",
+    "callToAction": {
+      "label": "دیدن محصولات",
+      "href": "/shop"
+    },
+    "authorName": "تحریریه ان‌پی",
+    "authorUrl": "/about",
+    "seo": {
+      "primaryTopic": "چگونه صندلی مناسب انتخاب کنیم؟",
+      "socialImage": "chair-guide-social.webp",
+      "noIndex": false
+    },
+    "featured": false,
+    "sortOrder": 10,
+    "_status": "draft"
+  }
+]

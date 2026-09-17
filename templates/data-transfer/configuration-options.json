@@ -1,0 +1,11 @@
+[
+  {
+    "group": "wood-finish",
+    "title": "گردویی",
+    "code": "WALNUT",
+    "swatchColor": "#76513c",
+    "swatchMedia": "wood-walnut.webp",
+    "active": true,
+    "sortOrder": 10
+  }
+]
