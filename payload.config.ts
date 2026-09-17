@@ -12,6 +12,7 @@ import {
   dataTransferPlugin,
   isStrictAdminUser,
 } from "./src/payload/data-transfer";
+import { canRunPayloadJobs } from "./src/payload/jobs-access";
 
 const nilperFa = {
   ...fa,
@@ -119,7 +120,7 @@ export default buildConfig({
     access: {
       cancel: ({ req }) => isStrictAdminUser(req.user),
       queue: ({ req }) => isStrictAdminUser(req.user),
-      run: ({ req }) => isStrictAdminUser(req.user),
+      run: canRunPayloadJobs,
     },
     tasks: [cleanupDataTransferFilesTask],
   },

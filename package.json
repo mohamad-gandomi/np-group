@@ -16,6 +16,7 @@
     "payload:migrate:create": "payload migrate:create",
     "payload:migrate": "payload migrate",
     "payload:jobs": "payload jobs:run --all-queues --handle-schedules --limit 10",
+    "payload:verify:jobs-cron": "payload run src/payload/verify-jobs-cron.ts",
     "payload:seed": "payload run src/payload/seed.ts",
     "payload:seed:admin-demo": "payload run src/payload/seed-admin-demo.ts",
     "payload:verify:phase3": "payload run src/payload/verify-phase3.ts",

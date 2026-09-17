@@ -104,14 +104,14 @@ Imports and exports run through Payload's background jobs. Their uploaded/genera
 For Plesk deployment:
 
 1. Deploy the application and run `npm ci`, `npm run build`, and `npm run payload:migrate` in the configured Node.js environment.
-2. In **Websites & Domains → Scheduled Tasks**, create a **Run a command** task every minute.
-3. Replace the example path with the real application root and run:
+2. Generate a random URL-safe secret of at least 32 characters and set it as `PAYLOAD_JOBS_CRON_SECRET` in the same production environment as the Node.js application.
+3. In **Websites & Domains → Scheduled Tasks**, create a **Fetch a URL** task every minute using HTTPS:
 
-```bash
-cd /var/www/vhosts/EXAMPLE/httpdocs && npm run payload:jobs
+```text
+https://EXAMPLE.com/api/payload-jobs/run?allQueues=true&limit=10&cronSecret=YOUR_SECRET
 ```
 
-The scheduled task must inherit the same production environment variables as the app. `payload:jobs` is a one-shot worker: it processes queued imports/exports, schedules the daily retention cleanup, and exits.
+Payload's official jobs endpoint processes queued imports/exports and schedules the daily retention cleanup. It fails closed when the secret is missing or shorter than 32 characters, accepts the exact secret through the Plesk URL, and continues to allow authenticated administrators. Treat the complete cron URL as a credential because web-server access logs may contain its query string; rotate the secret if it is exposed. Other schedulers should prefer `Authorization: Bearer YOUR_SECRET` instead of the query parameter.
 
 ## Verification
 

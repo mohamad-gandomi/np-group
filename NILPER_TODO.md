@@ -15,7 +15,7 @@ Before implementation, read these files completely in order:
 - **Active phase:** Post-Phase 12 Payload administration and data operations.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
-- **Next implementation task:** Deploy the committed data-transfer migration, configure the daily Payload worker in Plesk, and perform an authenticated production smoke test of import/export. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
+- **Next implementation task:** Deploy the committed data-transfer migration, configure Plesk to fetch the secured Payload jobs endpoint every minute, and perform an authenticated production smoke test of import/export. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
 - **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete. Workbook-specific Phase 6 automation remains deferred, while official Payload JSON transfer is available for routine small batches. Homepage editorial sections remain file-backed until the owner explicitly asks to migrate them.
 
 ## Latest Session Note
@@ -30,8 +30,10 @@ Before implementation, read these files completely in order:
 - [x] Regenerated Payload types/import map and passed TypeScript, clean lint, the production build, all Payload Phase 3–5 and 8–12 checks, manual-catalog verification, 6 journal tests, and 13 showcase tests before commit/push.
 - [x] Clarified that the import/export collections are seven-day operation histories and renamed their navigation labels accordingly. Replaced the CDN-dependent JSON editor after its Monaco loader failed locally, and made JSON/table previews contained, horizontally scrollable, and left-to-right/left-aligned inside the RTL admin.
 - [x] Added an explicit saved-file download action to export history rows and document controls, exposed pending background status when a file is not ready, and removed the empty upload surface from saved export pages.
-- [x] Ran the local Payload worker and generated the two surviving project export files. One orphaned job for an already-deleted export history record failed safely and does not affect the surviving records; the scheduled Plesk worker remains required in production.
+- [x] Ran the local Payload worker and generated the two surviving project export files. One orphaned job for an already-deleted export history record failed safely and does not affect the surviving records; the scheduled Plesk HTTP trigger remains required in production.
 - [x] Updated the showcase regression suite to reflect the Payload-published, indexable brand/project records and their real catalog links introduced by the previous storefront checkpoint.
+- [x] Replaced the Plesk npm/SSH worker requirement with Payload's official HTTP jobs endpoint, protected by a server-only secret, constant-time comparison, minimum secret length, HTTPS deployment guidance, and a focused authorization verification script.
+- [x] Locally verified the endpoint returns `401` for an invalid secret and `200` for the configured secret. The HTTP-cron implementation is ready for production deployment.
 - [!] Local migration status shows the two newest migrations as pending because this development database was synchronized through Payload's development schema push. Production must run the normal `payload:migrate` command before serving the new release.
 - **Session checkpoint:** The data-transfer/admin cleanup is complete on `main`; use `git log` for the immutable commit hash.
 
