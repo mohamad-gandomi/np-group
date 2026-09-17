@@ -36,11 +36,10 @@ function imageFromMedia(
   value: number | Media | null | undefined,
   alt: string | null | undefined,
   caption: string | null | undefined,
-  fallback: string,
 ): ShowcaseImage {
   const media = mediaRecord(value);
   return {
-    src: mediaPath(value) ?? fallback,
+    src: mediaPath(value) ?? "",
     alt: alt || media?.alt || "",
     caption: caption || media?.captionFa || "",
   };
@@ -62,7 +61,7 @@ function mapBrand(brand: Brand, products: readonly Product[]): PayloadBrandProfi
     title: brand.taglineFa || brand.title,
     description: brand.descriptionFa || "مجموعه‌ای از محصولات منتخب برای خانه و پروژه.",
     story: brand.storyFa || brand.descriptionFa || "اطلاعات کامل این مجموعه به‌زودی تکمیل می‌شود.",
-    image: imageFromMedia(brand.heroMedia || brand.logo, brand.heroAlt, brand.heroCaption, "/placeholders/sofa.jpg"),
+    image: imageFromMedia(brand.heroMedia || brand.logo, brand.heroAlt, brand.heroCaption),
     publication: { status: "published", updatedAt: brand.updatedAt, verification: { approvedAt: brand.updatedAt, evidence: "Payload CMS" } },
     products: brandProducts,
   };
@@ -77,11 +76,11 @@ function mapProject(project: PayloadProject, products: readonly Product[]): Payl
     sector: project.sector,
     description: project.descriptionFa,
     brief: project.briefFa,
-    image: imageFromMedia(project.heroMedia, project.heroAlt, project.heroCaption, "/placeholders/project.jpg"),
+    image: imageFromMedia(project.heroMedia, project.heroAlt, project.heroCaption),
     approach: (project.approach ?? []).map((item) => ({ title: item.title, text: item.text })),
     palette: (project.palette ?? []).map((item) => ({ name: item.name, color: item.color })),
     gallery: (project.gallery ?? []).map((item) =>
-      imageFromMedia(item.image, item.alt, item.caption, "/placeholders/living.jpg")),
+      imageFromMedia(item.image, item.alt, item.caption)),
     productIds: relatedProducts.map((product) => product.id),
     articleSlug: relationshipSlug(project.article),
     publication: { status: "published", updatedAt: project.updatedAt, verification: { approvedAt: project.updatedAt, evidence: "Payload CMS" } },

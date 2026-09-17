@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: product.name,
     description: `خرید و سفارش ${product.name} از برند ${product.brand}؛ مشاهده مشخصات، متریال، رنگ‌ها و ابعاد محصول.`,
     alternates: { canonical: path },
-    openGraph: { title: product.name, description: `${product.name} از مجموعه ${product.brand}`, images: [{ url: product.image }] },
+    openGraph: { title: product.name, description: `${product.name} از مجموعه ${product.brand}`, ...(product.image ? { images: [{ url: product.image }] } : {}) },
   };
 }
 

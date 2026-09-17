@@ -98,7 +98,7 @@ export const Posts: CollectionConfig = {
             },
             { name: "description", type: "textarea", label: "خلاصه کارت و مقدمه نتایج", required: true, maxLength: 240, admin: { rtl: true } },
             { name: "summary", type: "textarea", label: "پاسخ سریع یک‌دقیقه‌ای", required: true, admin: { rtl: true, description: "پاسخ مستقیم و مستقل به پرسش اصلی مطلب؛ در صفحه نیز دیده می‌شود." } },
-            { name: "heroImage", type: "upload", relationTo: "media", label: "تصویر شاخص", required: true },
+            { name: "heroImage", type: "upload", relationTo: "media", label: "تصویر شاخص", admin: { description: "اختیاری؛ در صورت خالی بودن، جای تصویر در سایت خالی می‌ماند تا بعداً اضافه شود." } },
             { name: "heroCaption", type: "textarea", label: "توضیح زیر تصویر شاخص", admin: { rtl: true } },
             {
               name: "content",

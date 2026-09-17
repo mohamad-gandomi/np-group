@@ -564,6 +564,8 @@ The owner deferred workbook-specific Excel automation because the files require 
 
 Routine reviewed data transfer uses Payload's official import/export plugin with one JSON array per collection. Administrators may export the current selection/filter or all records, and may create, update, or upsert a small batch. Media files are bulk-uploaded to Payload first; JSON refers to them by filename. Product/post/project relations use `slug`, variants use `nilperCode`, configuration groups use `key`, and variant types use `name` where those stable fields are available.
 
+All media references exposed by this JSON workflow are optional. An omitted value, `null`, an empty string, or whitespace-only text means “leave the image empty”; a non-empty filename must still resolve to exactly one existing Payload Media record. The public storefront preserves the relevant image frame without substituting a misleading placeholder and never passes an empty source to `next/image`. Editors can attach the real media later in Payload.
+
 Imports and exports are admin-only and execute through Payload Jobs. A daily scheduled task deletes import/export files and their administrative records after seven days without deleting imported content. Plesk must fetch Payload's official `/api/payload-jobs/run` endpoint every minute over HTTPS with the server-only `PAYLOAD_JOBS_CRON_SECRET`; the endpoint fails closed unless the secret has at least 32 characters and matches exactly. Other schedulers should send the same secret as a Bearer token. Every deployment must still run `npm run payload:migrate` once before serving the new release.
 
 ---

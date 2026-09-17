@@ -381,6 +381,21 @@ const resolveStable = async (
   return resolved;
 };
 
+export const normalizeMediaImportValue = (value: unknown) =>
+  typeof value === "string" && value.trim() === "" ? null : value;
+
+const resolveMedia = (
+  req: PayloadRequest,
+  value: unknown,
+  cache: Map<string, unknown>,
+) => resolveStable(
+  req,
+  "media",
+  "filename",
+  normalizeMediaImportValue(value),
+  cache,
+);
+
 const resolveMany = async (
   req: PayloadRequest,
   collection: CollectionSlug,
@@ -429,32 +444,32 @@ const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
     }
 
     if (slug === "brands") {
-      row.logo = await resolveStable(req, "media", "filename", row.logo, cache);
-      row.heroMedia = await resolveStable(req, "media", "filename", row.heroMedia, cache);
+      row.logo = await resolveMedia(req, row.logo, cache);
+      row.heroMedia = await resolveMedia(req, row.heroMedia, cache);
     } else if (slug === "categories") {
       row.parent = await resolveStable(req, "categories", "slug", row.parent, cache);
-      row.image = await resolveStable(req, "media", "filename", row.image, cache);
+      row.image = await resolveMedia(req, row.image, cache);
     } else if (slug === "product-series") {
-      row.heroMedia = await resolveStable(req, "media", "filename", row.heroMedia, cache);
+      row.heroMedia = await resolveMedia(req, row.heroMedia, cache);
     } else if (slug === "configuration-groups") {
       delete row.options;
     } else if (slug === "configuration-options") {
       row.group = await resolveStable(req, "configuration-groups", "key", row.group, cache);
-      row.swatchMedia = await resolveStable(req, "media", "filename", row.swatchMedia, cache);
+      row.swatchMedia = await resolveMedia(req, row.swatchMedia, cache);
     } else if (slug === "variantOptions") {
       row.variantType = await resolveStable(req, "variantTypes", "name", row.variantType, cache);
     } else if (slug === "products") {
       row.brand = await resolveStable(req, "brands", "slug", row.brand, cache);
       row.categories = await resolveMany(req, "categories", "slug", row.categories, cache);
       row.series = await resolveStable(req, "product-series", "slug", row.series, cache);
-      row.mainImage = await resolveStable(req, "media", "filename", row.mainImage, cache);
+      row.mainImage = await resolveMedia(req, row.mainImage, cache);
       row.configurationGroups = await resolveMany(req, "configuration-groups", "key", row.configurationGroups, cache);
       row.relatedProducts = await resolveMany(req, "products", "slug", row.relatedProducts, cache);
       row.matchingProducts = await resolveMany(req, "products", "slug", row.matchingProducts, cache);
       row.variantTypes = await resolveMany(req, "variantTypes", "name", row.variantTypes, cache);
       if (Array.isArray(row.gallery)) {
         row.gallery = await Promise.all(row.gallery.map(async (item) => isRecord(item)
-          ? { ...item, image: await resolveStable(req, "media", "filename", item.image, cache) }
+          ? { ...item, image: await resolveMedia(req, item.image, cache) }
           : item));
       }
       delete row.variants;
@@ -467,21 +482,21 @@ const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
       delete row.posts;
     } else if (slug === "posts") {
       row.category = await resolveStable(req, "blog-categories", "slug", row.category, cache);
-      row.heroImage = await resolveStable(req, "media", "filename", row.heroImage, cache);
+      row.heroImage = await resolveMedia(req, row.heroImage, cache);
       row.relatedPosts = await resolveMany(req, "posts", "slug", row.relatedPosts, cache);
       if (isRecord(row.seo)) {
         row.seo = {
           ...row.seo,
-          socialImage: await resolveStable(req, "media", "filename", row.seo.socialImage, cache),
+          socialImage: await resolveMedia(req, row.seo.socialImage, cache),
         };
       }
     } else if (slug === "projects") {
-      row.heroMedia = await resolveStable(req, "media", "filename", row.heroMedia, cache);
+      row.heroMedia = await resolveMedia(req, row.heroMedia, cache);
       row.products = await resolveMany(req, "products", "slug", row.products, cache);
       row.article = await resolveStable(req, "posts", "slug", row.article, cache);
       if (Array.isArray(row.gallery)) {
         row.gallery = await Promise.all(row.gallery.map(async (item) => isRecord(item)
-          ? { ...item, image: await resolveStable(req, "media", "filename", item.image, cache) }
+          ? { ...item, image: await resolveMedia(req, item.image, cache) }
           : item));
       }
     }

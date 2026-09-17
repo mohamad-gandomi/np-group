@@ -103,7 +103,7 @@ export default async function Home() {
             <div className="grid gap-3 md:grid-cols-12 lg:gap-5">
               {categories.map((category) => (
                 <Link key={category.title} href={`/shop/${category.slug}`} className={`group relative min-h-80 overflow-hidden md:min-h-72 ${category.className}`}>
-                  <Image src={category.image} alt={`دسته‌بندی ${category.title}`} fill sizes="(max-width: 768px) 100vw, 58vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                  {category.image ? <Image src={category.image} alt={`دسته‌بندی ${category.title}`} fill sizes="(max-width: 768px) 100vw, 58vw" className="object-cover transition-transform duration-700 group-hover:scale-105" /> : null}
                   <div className="image-wash absolute inset-0" />
                   <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-6 text-white sm:p-8">
                     <div><p className="mb-2 text-xs text-white/65">{category.count}</p><h3 className="text-2xl font-medium sm:text-3xl">{category.title}</h3></div>
@@ -242,7 +242,7 @@ export default async function Home() {
                 <article key={post.title} className="group">
                   <Link href={`/blog/${post.slug}`}>
                     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                      <Image src={post.image} alt={post.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                      {post.image ? <Image src={post.image} alt={post.imageAlt} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" /> : null}
                     </div>
                     <div className="flex items-center justify-between pt-5 text-xs text-muted-foreground"><span className="text-wine">{post.categoryLabel}</span><time dateTime={post.publishedAt}>{formatJournalDate(post.publishedAt)}</time></div>
                     <h3 className="mt-3 text-xl font-medium leading-8 transition-colors group-hover:text-wine">{post.title}</h3>

@@ -10,7 +10,7 @@ export function PostCard({ post }: { post: JournalPost }) {
     <article className="journal-card">
       <Link href={`/blog/${post.slug}`} className="journal-card-link" aria-labelledby={`article-${post.slug}`}>
         <div className="journal-card-image">
-          <Image src={post.image} alt={post.imageAlt} fill sizes="(max-width: 700px) calc(100vw - 40px), (max-width: 1100px) 46vw, 580px" />
+          {post.image ? <Image src={post.image} alt={post.imageAlt} fill sizes="(max-width: 700px) calc(100vw - 40px), (max-width: 1100px) 46vw, 580px" /> : null}
           <span className="journal-card-arrow" aria-hidden="true"><ArrowUpLeft size={20} /></span>
         </div>
         <div className="journal-meta"><span className="journal-category">{post.categoryLabel}</span><span>{journalNumber.format(post.readingTimeMinutes)} دقیقه مطالعه</span></div>

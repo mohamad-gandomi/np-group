@@ -36,7 +36,6 @@ try {
       category: typeof blogCategory === "object" ? blogCategory.id : blogCategory,
       description: "این رکورد موقت فقط جداسازی پیش‌نویس از محتوای عمومی را بررسی می‌کند.",
       summary: "این مطلب نباید پیش از انتشار در سایت عمومی نمایش داده شود.",
-      heroImage: typeof heroImage === "object" ? heroImage.id : heroImage,
       content: { root: { type: "root", direction: "rtl", format: "", indent: 0, version: 1, children: [{ type: "heading", tag: "h2", direction: "rtl", format: "", indent: 0, version: 1, children: [{ type: "text", text: "عنوان آزمایشی", detail: 0, format: 0, mode: "normal", style: "", version: 1 }] }, { type: "paragraph", direction: "rtl", format: "", indent: 0, version: 1, children: [{ type: "text", text: "متن آزمایشی برای محاسبه زمان مطالعه", detail: 0, format: 0, mode: "normal", style: "", version: 1 }] }] } },
       takeaway: "پیش‌نویس خصوصی باقی می‌ماند.",
       callToAction: { label: "بازگشت", href: "/blog" },

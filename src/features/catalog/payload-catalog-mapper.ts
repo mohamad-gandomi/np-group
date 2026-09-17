@@ -106,11 +106,11 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
   const brand = isDocument<Brand>(product.brand) ? product.brand : undefined;
   const category = product.categories.find((value): value is Category => isDocument(value));
   const taxonomy = storefrontTaxonomyForPayloadCategory(category?.slug ?? "furniture", category?.title ?? "مبلمان خانگی");
-  const mainImage = mediaURL(product.mainImage) ?? "/placeholders/sofa.jpg";
+  const mainImage = mediaURL(product.mainImage) ?? "";
   const gallery = [
     mainImage,
     ...(product.gallery ?? []).map((item) => mediaURL(item.image)).filter((url): url is string => Boolean(url)),
-  ].filter((url, index, all) => all.indexOf(url) === index);
+  ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const groups = mapGroups(relations);
   const variants = mapVariants(relations.variants);
   const productPrice = product.priceInTMNEnabled === true && typeof product.priceInTMN === "number"

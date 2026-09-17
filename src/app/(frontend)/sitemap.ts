@@ -27,13 +27,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...routes.map((route) => ({ url: `${siteConfig.url}${route.path}`, changeFrequency: route.changeFrequency, priority: route.priority })),
     { url: absoluteJournalUrl("/blog"), lastModified: journalPosts.reduce<string | undefined>((latest, post) => !latest || post.updatedAt > latest ? post.updatedAt : latest, undefined), changeFrequency: "weekly", priority: 0.8 },
-    ...indexableJournalPosts.map((post) => ({ url: absoluteJournalUrl(`/blog/${post.slug}`), lastModified: post.updatedAt, changeFrequency: "monthly" as const, priority: 0.7, images: [absoluteJournalUrl(post.seo.socialImage || post.image)] })),
+    ...indexableJournalPosts.map((post) => { const image = post.seo.socialImage || post.image; return { url: absoluteJournalUrl(`/blog/${post.slug}`), lastModified: post.updatedAt, changeFrequency: "monthly" as const, priority: 0.7, ...(image ? { images: [absoluteJournalUrl(image)] } : {}) }; }),
     ...[{ kind: "projects", records: projects }, { kind: "brands", records: brands }].flatMap(({ kind, records }) => {
       const published = records.filter((record) => record.publication.status === "published");
       if (!published.length) return [];
       return [
         { url: absoluteShowcaseUrl(`/${kind}`), changeFrequency: "monthly" as const, priority: 0.7 },
-        ...published.flatMap((record) => record.publication.status === "published" ? [{ url: absoluteShowcaseUrl(`/${kind}/${record.slug}`), lastModified: record.publication.updatedAt, changeFrequency: "monthly" as const, priority: 0.6, images: [absoluteShowcaseUrl(record.image.src)] }] : []),
+        ...published.flatMap((record) => record.publication.status === "published" ? [{ url: absoluteShowcaseUrl(`/${kind}/${record.slug}`), lastModified: record.publication.updatedAt, changeFrequency: "monthly" as const, priority: 0.6, ...(record.image.src ? { images: [absoluteShowcaseUrl(record.image.src)] } : {}) }] : []),
       ];
     }),
   ];

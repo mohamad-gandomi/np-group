@@ -313,7 +313,7 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
               label: "گالری",
               labels: { singular: "تصویر", plural: "تصاویر" },
               fields: [
-                { name: "image", type: "upload", relationTo: "media", label: "تصویر", required: true },
+                { name: "image", type: "upload", relationTo: "media", label: "تصویر" },
                 { name: "captionFa", type: "text", label: "توضیح فارسی", admin: { rtl: true } },
               ],
             },

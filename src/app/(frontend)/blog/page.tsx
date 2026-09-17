@@ -24,7 +24,7 @@ export default async function BlogPage() {
         </header>
         {featured ? (
           <section aria-label="مطلب منتخب" className="journal-featured">
-            <Link className="journal-featured-image" href={`/blog/${featured.slug}`} aria-label={featured.title}><Image src={featured.image} alt={featured.imageAlt} fill sizes="(max-width: 800px) calc(100vw - 40px), (max-width: 1280px) 58vw, 740px" loading="eager" fetchPriority="high" /><span className="journal-image-label">انتخاب تحریریه <ArrowUpLeft size={16} aria-hidden="true" /></span></Link>
+            <Link className="journal-featured-image" href={`/blog/${featured.slug}`} aria-label={featured.title}>{featured.image ? <Image src={featured.image} alt={featured.imageAlt} fill sizes="(max-width: 800px) calc(100vw - 40px), (max-width: 1280px) 58vw, 740px" loading="eager" fetchPriority="high" /> : null}<span className="journal-image-label">انتخاب تحریریه <ArrowUpLeft size={16} aria-hidden="true" /></span></Link>
             <div className="journal-featured-copy"><p className="journal-eyebrow">۰۱ / {featured.categoryLabel}</p><h2><Link href={`/blog/${featured.slug}`}>{featured.title}</Link></h2><p className="journal-featured-description">{featured.description}</p><div className="journal-meta"><time dateTime={featured.publishedAt}>{formatJournalDate(featured.publishedAt)}</time><span>{journalNumber.format(featured.readingTimeMinutes)} دقیقه مطالعه</span></div><Link href={`/blog/${featured.slug}`} className="journal-text-link">خواندن این یادداشت <ArrowLeft size={18} aria-hidden="true" /></Link></div>
           </section>
         ) : null}

@@ -431,7 +431,7 @@ export interface Product {
   mainImage?: (number | null) | Media;
   gallery?:
     | {
-        image: number | Media;
+        image?: (number | null) | Media;
         captionFa?: string | null;
         id?: string | null;
       }[]
@@ -899,7 +899,10 @@ export interface Post {
    * پاسخ مستقیم و مستقل به پرسش اصلی مطلب؛ در صفحه نیز دیده می‌شود.
    */
   summary: string;
-  heroImage: number | Media;
+  /**
+   * اختیاری؛ در صورت خالی بودن، جای تصویر در سایت خالی می‌ماند تا بعداً اضافه شود.
+   */
+  heroImage?: (number | null) | Media;
   heroCaption?: string | null;
   /**
    * برای بخش‌های اصلی H2 بگذارید؛ فهرست خودکار از H2ها ساخته می‌شود. H3 و H4 برای زیربخش‌ها هستند.
@@ -973,13 +976,13 @@ export interface Project {
   sector: 'residential' | 'hospitality' | 'commercial' | 'workplace' | 'healthcare';
   descriptionFa: string;
   briefFa: string;
-  heroMedia: number | Media;
-  heroAlt: string;
+  heroMedia?: (number | null) | Media;
+  heroAlt?: string | null;
   heroCaption?: string | null;
   gallery?:
     | {
-        image: number | Media;
-        alt: string;
+        image?: (number | null) | Media;
+        alt?: string | null;
         caption?: string | null;
         id?: string | null;
       }[]

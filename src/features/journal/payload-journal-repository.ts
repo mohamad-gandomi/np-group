@@ -40,7 +40,7 @@ function mapPost(post: PayloadPost): JournalPost | null {
   const hero = mediaRecord(post.heroImage);
   const image = mediaPath(post.heroImage);
   const category = categoryRecord(post.category);
-  if (!image || !hero || !category || !post.publishedAt || !post.content) return null;
+  if (!category || !post.publishedAt || !post.content) return null;
 
   const socialImage = mediaPath(post.seo?.socialImage);
   const content = post.content as JournalRichText;
@@ -51,9 +51,9 @@ function mapPost(post: PayloadPost): JournalPost | null {
     categoryLabel: category.title,
     title: post.title,
     description: post.description,
-    image,
-    imageAlt: hero.alt,
-    imageCaption: post.heroCaption || hero.captionFa || "",
+    image: image || undefined,
+    imageAlt: hero?.alt || "",
+    imageCaption: post.heroCaption || hero?.captionFa || "",
     publishedAt: post.publishedAt,
     updatedAt: post.updatedAt,
     summary: post.summary,

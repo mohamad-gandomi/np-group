@@ -21,6 +21,6 @@ export function getProductPresentation(product: Product): ProductPresentation {
     warranty: "طبق شرایط رسمی نیلپر",
     assembly: product.technicalSpecs?.find((item) => item.key === "delivery")?.value ?? "پس از ثبت سفارش هماهنگ می‌شود",
     care: product.technicalSpecs?.find((item) => item.group === "care")?.value ?? "راهنمای نگهداری هنگام ثبت سفارش اعلام می‌شود",
-    gallery: product.gallery?.length ? product.gallery : [product.image],
+    gallery: product.gallery?.length ? product.gallery : product.image ? [product.image] : [],
   };
 }

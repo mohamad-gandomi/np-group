@@ -21,7 +21,7 @@ export type JournalPost = {
   categoryLabel: string;
   title: string;
   description: string;
-  image: string;
+  image?: string;
   imageAlt: string;
   imageCaption: string;
   publishedAt: string;

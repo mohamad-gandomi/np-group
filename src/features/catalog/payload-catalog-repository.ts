@@ -129,7 +129,7 @@ const accessoryCategory: CatalogCategory = {
   slug: "accessories",
   title: "اکسسوری",
   count: "۰ محصول",
-  image: "/placeholders/project.jpg",
+  image: "",
   className: "md:col-span-6",
 };
 
@@ -143,7 +143,7 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
         slug,
         title: first?.categoryTitle ?? slug,
         count: `${new Intl.NumberFormat("fa-IR").format(categoryProducts.length)} محصول`,
-        image: first?.image ?? "/placeholders/living.jpg",
+        image: first?.image ?? "",
         className: categoryClasses[index % categoryClasses.length],
       };
     });

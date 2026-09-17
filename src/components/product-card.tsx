@@ -11,7 +11,7 @@ export function ProductCard({ product, linkToDetail = true }: { product: Product
   const content = (
     <>
       <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
-        <Image src={product.image} alt={`${product.name} از برند ${product.brand}`} fill sizes="(max-width: 768px) 82vw, 25vw" className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]" />
+          {product.image ? <Image src={product.image} alt={`${product.name} از برند ${product.brand}`} fill sizes="(max-width: 768px) 82vw, 25vw" className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]" /> : null}
         {product.isNew ? <span className="absolute start-2.5 top-2.5 rounded-full bg-white/90 px-2.5 py-1 text-[0.6rem] font-medium shadow-sm backdrop-blur sm:start-3 sm:top-3">جدید</span> : null}
         {product.isSale ? <span className="absolute start-2.5 top-2.5 rounded-full bg-wine px-2.5 py-1 text-[0.6rem] font-medium text-white shadow-sm sm:start-3 sm:top-3">ویژه</span> : null}
       </div>

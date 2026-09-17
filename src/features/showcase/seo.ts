@@ -16,13 +16,13 @@ export function showcaseMetadata(kind: ShowcaseKind, record?: BrandProfile | Pro
   const title = record ? recordTitle(record) : `${sectionNames[kind]}؛ انتخاب از نگاه فضا`;
   const description = record?.description ?? descriptions[kind];
   const path = `/${kind}${record ? `/${record.slug}` : ""}`;
-  const source = record?.image ?? records[0]?.image ?? { src: "/placeholders/project.jpg", alt: descriptions[kind] };
-  const image = { url: source.src, alt: source.alt };
+  const source = record?.image.src ? record.image : records.find((item) => item.image.src)?.image;
+  const images = source ? [{ url: source.src, alt: source.alt }] : undefined;
   return {
     title, description, alternates: { canonical: path },
     robots: { index, follow: true, googleBot: { index, follow: true, "max-image-preview": "large" } },
-    openGraph: { title, description, url: path, siteName: `گروه ${siteConfig.nameFa}`, type: "website", locale: "fa_IR", images: [image] },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
+    openGraph: { title, description, url: path, siteName: `گروه ${siteConfig.nameFa}`, type: "website", locale: "fa_IR", ...(images ? { images } : {}) },
+    twitter: { card: images ? "summary_large_image" : "summary", title, description, ...(images ? { images } : {}) },
   };
 }
 
@@ -38,7 +38,7 @@ export function showcaseSchema(kind: ShowcaseKind, record?: BrandProfile | Proje
         name: record ? recordTitle(record) : sectionNames[kind], description: record?.description ?? descriptions[kind], inLanguage: "fa-IR",
         breadcrumb: { "@id": `${url}#breadcrumbs` },
         ...(record ? {
-          image: absoluteShowcaseUrl(record.image.src),
+          ...(record.image.src ? { image: absoluteShowcaseUrl(record.image.src) } : {}),
           ...(record.publication.status === "published" ? { dateModified: record.publication.updatedAt } : {}),
           ...(kind === "projects" ? { mainEntity: { "@type": "CreativeWork", name: record.title, description: record.description, url, inLanguage: "fa-IR" } } : record.publication.status === "published" && "name" in record ? { mainEntity: { "@type": "Brand", name: record.name, description: record.description, url } } : {}),
         } : {

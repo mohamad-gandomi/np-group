@@ -348,8 +348,8 @@ export const Projects: CollectionConfig = {
         {
           label: "تصاویر",
           fields: [
-            { name: "heroMedia", type: "upload", relationTo: "media", label: "تصویر اصلی", required: true },
-            rtlText("heroAlt", "متن جایگزین تصویر اصلی", true),
+            { name: "heroMedia", type: "upload", relationTo: "media", label: "تصویر اصلی" },
+            rtlText("heroAlt", "متن جایگزین تصویر اصلی"),
             rtlText("heroCaption", "توضیح تصویر اصلی"),
             {
               name: "gallery",
@@ -357,8 +357,8 @@ export const Projects: CollectionConfig = {
               label: "گالری",
               labels: { singular: "تصویر", plural: "تصاویر" },
               fields: [
-                { name: "image", type: "upload", relationTo: "media", label: "تصویر", required: true },
-                rtlText("alt", "متن جایگزین", true),
+                { name: "image", type: "upload", relationTo: "media", label: "تصویر" },
+                rtlText("alt", "متن جایگزین"),
                 rtlText("caption", "توضیح تصویر"),
               ],
             },

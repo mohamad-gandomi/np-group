@@ -15,12 +15,19 @@ Before implementation, read these files completely in order:
 - **Active phase:** Post-Phase 12 Payload administration and data operations.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
-- **Next implementation task:** Deploy the committed data-transfer migration, configure Plesk to fetch the secured Payload jobs endpoint every minute, and perform an authenticated production smoke test of import/export. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
+- **Next implementation task:** Deploy the pending data-transfer and optional-image migrations, configure Plesk to fetch the secured Payload jobs endpoint every minute, then retry the reviewed post import and perform an authenticated production smoke test. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
 - **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete. Workbook-specific Phase 6 automation remains deferred, while official Payload JSON transfer is available for routine small batches. Homepage editorial sections remain file-backed until the owner explicitly asks to migrate them.
 
 ## Latest Session Note
 
 - **Date:** 2026-09-17
+- [x] Made every media field available through the official JSON import workflow optional, including post hero/social images, product main/gallery images, project hero/gallery images, brand media, category images, series media and configuration swatches.
+- [x] Normalized omitted, `null`, empty-string and whitespace-only imported image references as empty media values. A non-empty filename that cannot be resolved still fails visibly instead of hiding a typo.
+- [x] Removed automatic storefront placeholder substitution for missing Payload product, project and brand media. Public cards, galleries, navigation, cart/order views, metadata, structured data and sitemap now preserve an empty image frame without passing an invalid source to `next/image`.
+- [x] Added migration `20260917_171851_optional_import_images` for nullable project hero/gallery columns and regenerated Payload types/import map.
+- [x] Added `payload:verify:optional-import-images`; the focused optional-image check, Phase 12 no-hero draft verification, TypeScript, lint and production build pass.
+- [!] The new migration file is ready, but the local migration runner correctly stopped at Payload's destructive dev-schema warning. Production must run migrations through the normal deployment process before the new release is served.
+- **Working-tree checkpoint:** Optional-image import support is implemented but intentionally not committed; latest repository commit remains `6be12b1` (`feat(ops): secure Payload jobs cron endpoint`).
 - [x] Added the official Payload import/export plugin for products, variants, posts, projects, brands, categories, series, configuration groups/options, variant types/options, and blog categories.
 - [x] Restricted transfer collections, endpoints, jobs access, and list-menu controls to the `admin` role; localized the workflow for the Persian admin and forced portable JSON exports.
 - [x] Added stable-reference conversion for slugs, `nilperCode`, configuration keys, variant type/option identities, and media filenames. Images are uploaded through Payload Media before the JSON batch.
