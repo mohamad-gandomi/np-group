@@ -6,15 +6,16 @@ import { getPayload } from "payload";
 import type { Where } from "payload";
 
 import config from "../../../payload.config";
-import type { ConfigurationGroup, ConfigurationOption, Product as PayloadProduct, Variant } from "@/payload-types";
+import type { Category, ConfigurationGroup, ConfigurationOption, Product as PayloadProduct, Variant } from "@/payload-types";
 
 import { PAGE_SIZE, parseCatalogQuery, type RawSearchParams } from "./catalog-query";
 import {
   payloadCategorySlugsForRooms,
   payloadCategorySlugsForStorefront,
+  storefrontTaxonomyForPayloadCategory,
 } from "./catalog-taxonomy";
 import type { CatalogCategory, CatalogFacets, Product } from "./catalog-types";
-import { mapPayloadProduct } from "./payload-catalog-mapper";
+import { mapPayloadProduct, payloadMediaURL } from "./payload-catalog-mapper";
 
 const CATALOG_REVALIDATE_SECONDS = 300;
 const getCatalogPayload = cache(() => getPayload({ config }));
@@ -117,6 +118,48 @@ const valueOptions = (values: readonly string[]) => [...new Set(values)]
   .sort((left, right) => left.localeCompare(right, "fa"))
   .map((value) => ({ label: value, value }));
 
+type CatalogCategorySource = {
+  description: string;
+  image: string;
+  payloadSlug: string;
+  sortOrder: number;
+  storefrontSlug: string;
+  title: string;
+};
+
+async function findAllCatalogCategorySources(): Promise<CatalogCategorySource[]> {
+  const payload = await getCatalogPayload();
+  const result = await payload.find({
+    collection: "categories",
+    depth: 1,
+    limit: 100,
+    overrideAccess: false,
+    pagination: false,
+    sort: "sortOrder",
+    where: { published: { equals: true } },
+  });
+
+  return (result.docs as Category[]).map((category) => {
+    const taxonomy = storefrontTaxonomyForPayloadCategory(category.slug, category.title);
+    return {
+      description: category.descriptionFa ?? "",
+      image: payloadMediaURL(category.image) ?? "",
+      payloadSlug: category.slug,
+      sortOrder: category.sortOrder ?? 0,
+      storefrontSlug: taxonomy.slug,
+      title: category.title,
+    };
+  });
+}
+
+const getCachedCatalogCategorySources = unstable_cache(
+  findAllCatalogCategorySources,
+  ["nilper-payload-catalog-categories"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: ["payload-catalog"] },
+);
+
+const getCatalogCategorySources = cache(() => getCachedCatalogCategorySources());
+
 const categoryClasses = [
   "md:col-span-4",
   "md:col-span-4",
@@ -128,28 +171,61 @@ const categoryClasses = [
 const accessoryCategory: CatalogCategory = {
   slug: "accessories",
   title: "اکسسوری",
+  description: "جزئیات و اکسسوری‌های تکمیل‌کننده فضای خانه.",
   count: "۰ محصول",
   image: "",
   className: "md:col-span-6",
 };
 
 export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
-  const products = await getCatalogProducts();
-  const productCategories = [...new Set(products.map((product) => product.category))]
-    .map((slug, index): CatalogCategory => {
-      const categoryProducts = products.filter((product) => product.category === slug);
-      const first = categoryProducts[0];
-      return {
-        slug,
-        title: first?.categoryTitle ?? slug,
-        count: `${new Intl.NumberFormat("fa-IR").format(categoryProducts.length)} محصول`,
-        image: first?.image ?? "",
-        className: categoryClasses[index % categoryClasses.length],
-      };
+  const [products, categorySources] = await Promise.all([
+    getCatalogProducts(),
+    getCatalogCategorySources(),
+  ]);
+  const storefrontSlugs = [...new Set([
+    ...categorySources.map((category) => category.storefrontSlug),
+    ...products.map((product) => product.category),
+  ])];
+  const categoryDrafts = storefrontSlugs.map((slug) => {
+    const categoryProducts = products.filter((product) => product.category === slug);
+    const matchingSources = categorySources
+      .filter((category) => category.storefrontSlug === slug)
+      .sort((left, right) => {
+        const rightUsage = categoryProducts.filter((product) => product.payloadCategorySlug === right.payloadSlug).length;
+        const leftUsage = categoryProducts.filter((product) => product.payloadCategorySlug === left.payloadSlug).length;
+        return rightUsage - leftUsage || left.sortOrder - right.sortOrder;
+      });
+    const selected = matchingSources[0];
+    const firstProduct = categoryProducts[0];
+    return {
+      slug,
+      title: selected?.title ?? firstProduct?.categoryTitle ?? slug,
+      description: selected?.description ?? "",
+      count: `${new Intl.NumberFormat("fa-IR").format(categoryProducts.length)} محصول`,
+      image: selected?.image || matchingSources.find((category) => category.image)?.image || firstProduct?.image || "",
+      sortOrder: selected?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+    };
+  });
+  if (!categoryDrafts.some((category) => category.slug === accessoryCategory.slug)) {
+    categoryDrafts.push({
+      slug: accessoryCategory.slug,
+      title: accessoryCategory.title,
+      description: accessoryCategory.description ?? "",
+      count: accessoryCategory.count,
+      image: accessoryCategory.image,
+      sortOrder: Number.MAX_SAFE_INTEGER,
     });
-  const categories = productCategories.some((category) => category.slug === accessoryCategory.slug)
-    ? productCategories
-    : [...productCategories, { ...accessoryCategory, className: categoryClasses[productCategories.length % categoryClasses.length] }];
+  }
+  const categories = categoryDrafts
+    .sort((left, right) => left.sortOrder - right.sortOrder || left.title.localeCompare(right.title, "fa"))
+    .map((category, index): CatalogCategory => ({
+      slug: category.slug,
+      title: category.title,
+      description: category.description,
+      count: category.count,
+      image: category.image,
+      className: categoryClasses[index % categoryClasses.length],
+    }));
 
   return {
     categories,

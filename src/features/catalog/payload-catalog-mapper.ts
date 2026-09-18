@@ -29,7 +29,7 @@ const isDocument = <T extends { id: number }>(value: number | T | null | undefin
 const relationshipIDs = <T extends { id: number }>(values: Array<number | T> | null | undefined) =>
   (values ?? []).map((value) => typeof value === "number" ? value : value.id);
 
-const mediaURL = (value: number | Media | null | undefined) => {
+export const payloadMediaURL = (value: number | Media | null | undefined) => {
   if (!isDocument(value)) return undefined;
   if (value.filename) return `/api/media/file/${encodeURIComponent(value.filename)}`;
   if (!value.url) return undefined;
@@ -106,10 +106,10 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
   const brand = isDocument<Brand>(product.brand) ? product.brand : undefined;
   const category = product.categories.find((value): value is Category => isDocument(value));
   const taxonomy = storefrontTaxonomyForPayloadCategory(category?.slug ?? "furniture", category?.title ?? "مبلمان خانگی");
-  const mainImage = mediaURL(product.mainImage) ?? "";
+  const mainImage = payloadMediaURL(product.mainImage) ?? "";
   const gallery = [
     mainImage,
-    ...(product.gallery ?? []).map((item) => mediaURL(item.image)).filter((url): url is string => Boolean(url)),
+    ...(product.gallery ?? []).map((item) => payloadMediaURL(item.image)).filter((url): url is string => Boolean(url)),
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
   const groups = mapGroups(relations);
   const variants = mapVariants(relations.variants);
@@ -133,6 +133,7 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     id: `payload-${product.id}`,
     payloadProductId: product.id,
     source: "payload",
+    ...(category?.slug ? { payloadCategorySlug: category.slug } : {}),
     slug: product.slug,
     name: product.title,
     brand: brand?.title ?? "نیلپر",

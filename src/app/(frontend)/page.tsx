@@ -102,7 +102,7 @@ export default async function Home() {
             <SectionHeading eyebrow="انتخاب بر اساس دسته‌بندی" title="هر آنچه یک فضا را کامل می‌کند" link="همه محصولات" />
             <div className="grid gap-3 md:grid-cols-12 lg:gap-5">
               {categories.map((category) => (
-                <Link key={category.title} href={`/shop/${category.slug}`} className={`group relative min-h-80 overflow-hidden md:min-h-72 ${category.className}`}>
+                <Link key={category.slug} href={`/shop/${category.slug}`} className={`group relative min-h-80 overflow-hidden md:min-h-72 ${category.className}`}>
                   {category.image ? <Image src={category.image} alt={`دسته‌بندی ${category.title}`} fill sizes="(max-width: 768px) 100vw, 58vw" className="object-cover transition-transform duration-700 group-hover:scale-105" /> : null}
                   <div className="image-wash absolute inset-0" />
                   <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-6 text-white sm:p-8">

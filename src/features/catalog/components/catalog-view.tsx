@@ -43,7 +43,7 @@ export async function CatalogView({ params, categorySlug }: { params: RawSearchP
           <nav className="mb-6 flex items-center gap-2 text-xs text-muted-foreground" aria-label="مسیر صفحه"><Link href="/">خانه</Link><span>/</span>{category ? <><Link href="/shop">فروشگاه</Link><span>/</span><span className="text-foreground">{category.title}</span></> : <span className="text-foreground">فروشگاه</span>}</nav>
           <div className="grid gap-5 lg:grid-cols-[1fr_0.65fr] lg:items-end">
             <div><p className="mb-3 text-xs font-semibold tracking-[0.16em] text-wine">مجموعه محصولات</p><h1 className="text-balance text-4xl font-medium leading-[1.2] sm:text-6xl">{category?.title ?? "فروشگاه ان‌پی"}</h1></div>
-            <p className="max-w-xl text-sm leading-7 text-muted-foreground lg:justify-self-end">محصولات منتخب را بر اساس فضا، متریال، رنگ و بودجه پیدا کنید؛ برای انتخاب دقیق‌تر نیز می‌توانید از مشاوره تخصصی استفاده کنید.</p>
+            <p className="max-w-xl text-sm leading-7 text-muted-foreground lg:justify-self-end">{category?.description || "محصولات منتخب را بر اساس فضا، متریال، رنگ و بودجه پیدا کنید؛ برای انتخاب دقیق‌تر نیز می‌توانید از مشاوره تخصصی استفاده کنید."}</p>
           </div>
         </div>
       </section>

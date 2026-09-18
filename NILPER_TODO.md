@@ -26,8 +26,11 @@ Before implementation, read these files completely in order:
 - [x] Draft-only post/product/variant edits do not invalidate public pages. Boolean publication/active fields are respected for the remaining collections, while media and variant taxonomy changes invalidate conservatively.
 - [x] Kept cache refresh server-side and hook-driven as requested. No WebSocket was added; an already-open browser page receives the fresh result on navigation or reload.
 - [x] Added `payload:verify:storefront-revalidation` covering visibility transitions, deduplicated invalidation plans, and hook presence across all affected collections.
+- [x] Added a final revalidation hook to the official background import lifecycle: when a non-empty import Job changes its history row to `completed`, the affected catalog, journal or showcase caches are invalidated once more. Partial, failed, empty and repeated completed updates are ignored.
+- [x] Fixed category edits that appeared stale despite cache invalidation: storefront and homepage categories now read Payload title, description, image, publication state and ordering directly; the taxonomy adapter retains only stable public route aliases and room mapping.
+- [x] Verified the live local category API, homepage and shop return `200` and render Payload category titles; TypeScript, clean lint, focused revalidation checks, production build, manual-catalog verification and all 13 showcase regressions pass.
 - [x] TypeScript, lint, the focused hook verification, production build, 6 journal tests and 13 showcase tests pass. No database migration is required.
-- **Working-tree checkpoint:** Storefront cache invalidation is implemented but not committed; latest repository commit remains `fadb487` (`fix(import): allow empty image fields`).
+- **Working-tree checkpoint:** Base storefront invalidation is committed as `4bc6940` (`feat(cms): revalidate storefront on content changes`); the final successful-import Job hook and Payload-owned category rendering fix are implemented but not committed.
 
 - **Date:** 2026-09-17
 - [x] Made every media field available through the official JSON import workflow optional, including post hero/social images, product main/gallery images, project hero/gallery images, brand media, category images, series media and configuration swatches.

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 
 import config from "../../payload.config";
+import { storefrontTaxonomyForPayloadCategory } from "../features/catalog/catalog-taxonomy";
+import {
+  isSuccessfulImportCompletion,
+  storefrontAreasForImportCollection,
+} from "./data-transfer";
 import {
   isPublicStorefrontRecord,
   shouldRevalidateStorefrontChange,
@@ -41,6 +46,42 @@ assert.equal(plan.paths.filter(({ path }) => path === "/sitemap.xml").length, 1)
 assert.ok(plan.paths.some(({ path, type }) => path === "/(frontend)" && type === "layout"));
 assert.ok(plan.paths.some(({ path }) => path === "/brands"));
 assert.ok(plan.paths.some(({ path }) => path === "/projects"));
+assert.deepEqual(
+  storefrontTaxonomyForPayloadCategory("home-furniture", "عنوان ویرایش‌شده"),
+  { slug: "furniture", title: "عنوان ویرایش‌شده", rooms: ["پذیرایی", "نشیمن"] },
+);
+
+assert.deepEqual(storefrontAreasForImportCollection("products"), ["catalog"]);
+assert.deepEqual(storefrontAreasForImportCollection("posts"), ["journal", "showcase"]);
+assert.deepEqual(storefrontAreasForImportCollection("unknown"), []);
+assert.equal(
+  isSuccessfulImportCompletion(
+    { status: "completed", summary: { imported: 2, updated: 1 } },
+    { status: "pending" },
+  ),
+  true,
+);
+assert.equal(
+  isSuccessfulImportCompletion(
+    { status: "partial", summary: { imported: 2, updated: 1 } },
+    { status: "pending" },
+  ),
+  false,
+);
+assert.equal(
+  isSuccessfulImportCompletion(
+    { status: "completed", summary: { imported: 0, updated: 0 } },
+    { status: "pending" },
+  ),
+  false,
+);
+assert.equal(
+  isSuccessfulImportCompletion(
+    { status: "completed", summary: { imported: 1, updated: 0 } },
+    { status: "completed" },
+  ),
+  false,
+);
 
 const expectedHookedCollections = [
   "users",
@@ -71,5 +112,8 @@ for (const slug of expectedHookedCollections) {
   assert.ok(collection.hooks?.afterChange?.length, `${slug} must invalidate after changes`);
   assert.ok(collection.hooks?.afterDelete?.length, `${slug} must invalidate after deletion`);
 }
+
+const importsCollection = collectionsBySlug.get("imports");
+assert.ok(importsCollection?.hooks?.afterChange?.length, "imports must invalidate after a completed job");
 
 console.info("Storefront revalidation hook verification passed.");

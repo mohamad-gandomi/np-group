@@ -18,7 +18,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const query = await searchParams;
   const path = `/shop/${slug}`;
   const hasFilters = Object.keys(query).some((key) => key !== "page");
-  return { title: category.title, description: `خرید ${category.title} منتخب برای خانه و پروژه‌های داخلی.`, alternates: { canonical: hasFilters ? path : shopHref(path, query, {}) }, robots: hasFilters ? { index: false, follow: true } : undefined };
+  return { title: category.title, description: category.description || `خرید ${category.title} منتخب برای خانه و پروژه‌های داخلی.`, alternates: { canonical: hasFilters ? path : shopHref(path, query, {}) }, robots: hasFilters ? { index: false, follow: true } : undefined };
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {

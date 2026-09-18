@@ -63,6 +63,7 @@ export type Product = {
   createdAt: string;
   source?: "fixture" | "payload";
   payloadProductId?: number;
+  payloadCategorySlug?: string;
   description?: string;
   gallery?: readonly string[];
   leadTime?: string;
@@ -77,6 +78,7 @@ export type Product = {
 export type CatalogCategory = {
   slug: string;
   title: string;
+  description?: string;
   count: string;
   image: string;
   className: string;

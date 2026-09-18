@@ -77,20 +77,22 @@ export const storefrontRevalidationPlan = (areas: readonly StorefrontCacheArea[]
   return { tags: [...tags], paths: [...paths.values()] };
 };
 
-const revalidateStorefront = (
+export const revalidateStorefront = (
   req: PayloadRequest,
   areas: readonly StorefrontCacheArea[],
 ) => {
-  if (req.context?.disableStorefrontRevalidation === true) return;
+  if (req.context?.disableStorefrontRevalidation === true) return false;
 
   const plan = storefrontRevalidationPlan(areas);
   try {
     for (const tag of plan.tags) revalidateTag(tag, { expire: 0 });
     for (const target of plan.paths) revalidatePath(target.path, target.type);
+    return true;
   } catch (error) {
     // Payload Local API and CLI tasks do not always run inside a Next request.
     // Never fail a successful CMS write solely because that optional context is absent.
     req.payload.logger.warn({ err: error, areas }, "Storefront cache revalidation was skipped outside a Next.js request context.");
+    return false;
   }
 };
 

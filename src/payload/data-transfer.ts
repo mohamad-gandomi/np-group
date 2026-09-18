@@ -11,6 +11,11 @@ import type {
   TaskConfig,
 } from "payload";
 
+import {
+  revalidateStorefront,
+  type StorefrontCacheArea,
+} from "./storefront-revalidation";
+
 type DataRecord = Record<string, unknown>;
 type TransferKind = "export" | "import";
 
@@ -43,8 +48,40 @@ const STABLE_MATCH_FIELDS: Partial<Record<typeof TRANSFER_COLLECTIONS[number], s
   projects: "slug",
 };
 
+const IMPORT_STOREFRONT_AREAS: Record<
+  typeof TRANSFER_COLLECTIONS[number],
+  readonly StorefrontCacheArea[]
+> = {
+  brands: ["catalog", "showcase"],
+  categories: ["catalog"],
+  "product-series": ["catalog"],
+  "configuration-groups": ["catalog"],
+  "configuration-options": ["catalog"],
+  variantTypes: ["catalog"],
+  variantOptions: ["catalog"],
+  products: ["catalog"],
+  variants: ["catalog"],
+  "blog-categories": ["journal"],
+  posts: ["journal", "showcase"],
+  projects: ["showcase"],
+};
+
 const isRecord = (value: unknown): value is DataRecord =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+export const storefrontAreasForImportCollection = (value: unknown) =>
+  typeof value === "string" && value in IMPORT_STOREFRONT_AREAS
+    ? IMPORT_STOREFRONT_AREAS[value as typeof TRANSFER_COLLECTIONS[number]]
+    : [];
+
+export const isSuccessfulImportCompletion = (doc: unknown, previousDoc: unknown) => {
+  if (!isRecord(doc) || doc.status !== "completed") return false;
+  if (isRecord(previousDoc) && previousDoc.status === "completed") return false;
+  const summary = isRecord(doc.summary) ? doc.summary : undefined;
+  const imported = typeof summary?.imported === "number" ? summary.imported : 0;
+  const updated = typeof summary?.updated === "number" ? summary.updated : 0;
+  return imported + updated > 0;
+};
 
 export const isStrictAdminUser = (user: unknown) =>
   isRecord(user) && user.collection === "users" && user.role === "admin";
@@ -200,6 +237,21 @@ const secureTransferCollection = (collection: CollectionConfig, kind: TransferKi
               return recommended && (!data.matchField || data.matchField === "id")
                 ? { ...data, matchField: recommended }
                 : data;
+            },
+          ],
+          afterChange: [
+            ...(collection.hooks?.afterChange ?? []),
+            ({ doc, previousDoc, req }) => {
+              if (!isSuccessfulImportCompletion(doc, previousDoc)) return doc;
+              const areas = storefrontAreasForImportCollection(doc.collectionSlug);
+              if (areas.length > 0 && revalidateStorefront(req, areas)) {
+                req.payload.logger.info({
+                  collectionSlug: doc.collectionSlug,
+                  imported: doc.summary?.imported ?? 0,
+                  updated: doc.summary?.updated ?? 0,
+                }, "Storefront cache invalidated after successful import job.");
+              }
+              return doc;
             },
           ],
         }
