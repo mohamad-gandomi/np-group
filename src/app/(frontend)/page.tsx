@@ -24,9 +24,21 @@ import { brandRegistry, brandPath } from "@/features/showcase/brand-registry";
 import { storeSchema } from "@/lib/store-schema";
 
 const spaces = [
-  { title: "نشیمن", image: "/placeholders/living.jpg" },
-  { title: "غذاخوری و آشپزخانه", image: "/placeholders/dining.jpg" },
-  { title: "اتاق خواب", image: "/placeholders/bedroom.jpg" },
+  {
+    title: "نشیمن",
+    image: "/images/spaces/living-room.webp",
+    alt: "نشیمن مینیمال با مبلمان روشن و میز جلو مبلی چوبی",
+  },
+  {
+    title: "غذاخوری و آشپزخانه",
+    image: "/images/spaces/kitchen.webp",
+    alt: "فضای غذاخوری روشن با میز چوبی و آشپزخانه مدرن",
+  },
+  {
+    title: "اتاق خواب",
+    image: "/images/spaces/bedroom.webp",
+    alt: "اتاق خواب گرم با تخت پارچه‌ای و پاتختی چوبی",
+  },
 ];
 
 const services = [
@@ -136,7 +148,7 @@ export default async function Home() {
               {spaces.map((space, index) => (
                 <Link key={space.title} href={`/shop?room=${encodeURIComponent(space.title.replace(" و آشپزخانه", ""))}`} className={`group relative overflow-hidden ${index === 1 ? "md:mt-14" : ""}`}>
                   <div className="relative aspect-[3/4] overflow-hidden">
-                    <Image src={space.image} alt={`محصولات مناسب ${space.title}`} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
+                    <Image src={space.image} alt={space.alt} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
                     <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between p-5 text-white sm:p-6">
                       <h3 className="text-xl font-semibold drop-shadow-sm sm:text-2xl">{space.title}</h3>

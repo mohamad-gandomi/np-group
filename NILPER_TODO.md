@@ -29,6 +29,7 @@ Before implementation, read these files completely in order:
 - [x] Added a final revalidation hook to the official background import lifecycle: when a non-empty import Job changes its history row to `completed`, the affected catalog, journal or showcase caches are invalidated once more. Partial, failed, empty and repeated completed updates are ignored.
 - [x] Fixed category edits that appeared stale despite cache invalidation: storefront and homepage categories now read Payload title, description, image, publication state and ordering directly; the taxonomy adapter retains only stable public route aliases and room mapping.
 - [x] Verified the live local category API, homepage and shop return `200` and render Payload category titles; TypeScript, clean lint, focused revalidation checks, production build, manual-catalog verification and all 13 showcase regressions pass.
+- [x] Replaced the three homepage room placeholders with the owner-supplied living-room, kitchen/dining and bedroom WebP assets, each with specific Persian alternative text; file hashes, TypeScript, clean lint, production build and live HTTP asset/markup checks pass.
 - [x] TypeScript, lint, the focused hook verification, production build, 6 journal tests and 13 showcase tests pass. No database migration is required.
 - **Working-tree checkpoint:** Base storefront invalidation is committed as `4bc6940` (`feat(cms): revalidate storefront on content changes`); the final successful-import Job hook and Payload-owned category rendering fix are implemented but not committed.
 
