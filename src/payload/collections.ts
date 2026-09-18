@@ -3,6 +3,7 @@ import type { Access, CollectionConfig, Field } from "payload";
 
 import { customerSessionStrategy } from "../features/auth/customer-session";
 import { Posts } from "./posts";
+import { withStorefrontRevalidation } from "./storefront-revalidation";
 
 const rtlText = (name: string, label: string, required = false): Field => ({
   name,
@@ -83,6 +84,7 @@ export const Users: CollectionConfig = {
     useAsTitle: "fullName",
     defaultColumns: ["fullName", "email", "role", "active"],
   },
+  hooks: withStorefrontRevalidation(undefined, ["sales-contacts"], "always"),
   fields: [
     rtlText("fullName", "نام و نام خانوادگی", true),
     rtlText("phone", "شماره همراه"),
@@ -244,6 +246,7 @@ export const Media: CollectionConfig = {
   access: editorialContentAccess,
   labels: { singular: "رسانه", plural: "رسانه‌ها" },
   admin: { group: "محتوا", useAsTitle: "alt", defaultColumns: ["alt", "filename", "updatedAt"] },
+  hooks: withStorefrontRevalidation(undefined, ["catalog", "journal", "showcase"], "always"),
   fields: [rtlText("alt", "متن جایگزین فارسی", true), { name: "captionFa", type: "textarea", label: "توضیح تصویر" }],
 };
 
@@ -258,6 +261,7 @@ export const BlogCategories: CollectionConfig = {
     description: "دسته‌بندی‌های تحریریه برای گروه‌بندی و فیلتر مطالب مجله.",
   },
   defaultSort: "sortOrder",
+  hooks: withStorefrontRevalidation(undefined, ["journal"], "published"),
   fields: [
     rtlText("title", "عنوان دسته‌بندی", true),
     {
@@ -294,6 +298,7 @@ export const Brands: CollectionConfig = {
   access: publishedContentAccess,
   labels: { singular: "برند", plural: "برندها" },
   admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "slug", "published"] },
+  hooks: withStorefrontRevalidation(undefined, ["catalog", "showcase"], "published"),
   fields: [
     rtlText("title", "نام فارسی برند", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
@@ -319,6 +324,7 @@ export const Projects: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "sector", "featured", "published", "updatedAt"],
   },
+  hooks: withStorefrontRevalidation(undefined, ["showcase"], "published"),
   fields: [
     {
       type: "tabs",
@@ -407,6 +413,7 @@ export const Categories: CollectionConfig = {
   access: publishedContentAccess,
   labels: { singular: "دسته‌بندی", plural: "دسته‌بندی‌ها" },
   admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "parent", "sortOrder", "published"] },
+  hooks: withStorefrontRevalidation(undefined, ["catalog"], "published"),
   fields: [
     rtlText("title", "عنوان فارسی", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
@@ -423,6 +430,7 @@ export const ProductSeries: CollectionConfig = {
   access: publishedContentAccess,
   labels: { singular: "سری محصول", plural: "سری‌های محصول" },
   admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "styleFa", "slug"] },
+  hooks: withStorefrontRevalidation(undefined, ["catalog"], "published"),
   fields: [
     rtlText("title", "نام فارسی سری", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
@@ -438,6 +446,7 @@ export const ConfigurationGroups: CollectionConfig = {
   access: activeContentAccess,
   labels: { singular: "گروه پیکربندی", plural: "گروه‌های پیکربندی" },
   admin: { group: "پیکربندی محصول", useAsTitle: "title", defaultColumns: ["title", "key", "inputType", "required"] },
+  hooks: withStorefrontRevalidation(undefined, ["catalog"], "active"),
   fields: [
     rtlText("title", "عنوان فارسی", true),
     { name: "key", type: "text", label: "کلید پایدار", required: true, unique: true },
@@ -471,6 +480,7 @@ export const ConfigurationOptions: CollectionConfig = {
   access: activeContentAccess,
   labels: { singular: "گزینه پیکربندی", plural: "گزینه‌های پیکربندی" },
   admin: { group: "پیکربندی محصول", useAsTitle: "title", defaultColumns: ["title", "group", "code", "active", "sortOrder"] },
+  hooks: withStorefrontRevalidation(undefined, ["catalog"], "active"),
   fields: [
     { name: "group", type: "relationship", relationTo: "configuration-groups", label: "گروه", required: true },
     rtlText("title", "عنوان فارسی / نام کالیته", true),

@@ -18,6 +18,7 @@ import {
 } from "./cart-configuration";
 import { measurementsField, technicalSpecsField } from "./domain-fields";
 import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
+import { withStorefrontRevalidation } from "./storefront-revalidation";
 import { zarinpalAdapter } from "@/features/payments/zarinpal/adapter";
 
 const fieldNamed = (field: Field, name: string) => "name" in field && field.name === name;
@@ -646,6 +647,7 @@ export const ecommerce = ecommercePlugin({
     productsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       labels: { singular: "محصول", plural: "محصولات" },
+      hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "status"),
       admin: {
         ...defaultCollection.admin,
         group: "فروشگاه",
@@ -659,6 +661,7 @@ export const ecommerce = ecommercePlugin({
       variantsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
         labels: { singular: "گونه / کد ثبت", plural: "گونه‌ها / کدهای ثبت" },
+        hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "status"),
         admin: {
           ...defaultCollection.admin,
           group: "فروشگاه",
@@ -671,10 +674,12 @@ export const ecommerce = ecommercePlugin({
       variantOptionsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
         labels: { singular: "گزینه گونه", plural: "گزینه‌های گونه" },
+        hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "always"),
       }),
       variantTypesCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
         labels: { singular: "نوع گونه", plural: "انواع گونه" },
+        hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "always"),
       }),
     },
   },

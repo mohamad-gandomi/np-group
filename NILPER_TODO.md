@@ -15,10 +15,19 @@ Before implementation, read these files completely in order:
 - **Active phase:** Post-Phase 12 Payload administration and data operations.
 - **Dashboard approval:** APPROVED. Do not repeat Phase 0, Phase 1, or the dashboard approval gate.
 - **Working foundation:** Existing Next.js storefront + Payload CMS/Ecommerce + PostgreSQL; Payload owns the reviewed catalog, secure phone OTP challenges, customer sessions, profiles, addresses, authenticated carts, payment transactions, orders, and order lifecycle. Kavenegar provides production OTP delivery and Zarinpal is the first server-side payment provider. Supabase has been removed.
-- **Next implementation task:** Deploy the pending data-transfer and optional-image migrations, configure Plesk to fetch the secured Payload jobs endpoint every minute, then retry the reviewed post import and perform an authenticated production smoke test. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
+- **Next implementation task:** Deploy the pending data-transfer and optional-image migrations plus the storefront cache-hook release, configure Plesk to fetch the secured Payload jobs endpoint every minute, then publish one reviewed record and confirm the production storefront and sitemap refresh on the next request. Live Tapin certification remains a separate operational task when credentials and the amount unit are supplied.
 - **Later phases:** Payload architecture is locked and Phases 0–5 and 7–12 are complete. Workbook-specific Phase 6 automation remains deferred, while official Payload JSON transfer is available for routine small batches. Homepage editorial sections remain file-backed until the owner explicitly asks to migrate them.
 
 ## Latest Session Note
+
+- **Date:** 2026-09-18
+- [x] Added Payload `afterChange` and `afterDelete` invalidation hooks for every CMS collection that supplies cached public catalog, journal, showcase or sales-contact data.
+- [x] Public publish/edit/unpublish/delete events now expire their Next.js cache tags immediately with `expire: 0` and revalidate the affected static routes and sitemap; the existing five-minute policy remains only as a fallback TTL.
+- [x] Draft-only post/product/variant edits do not invalidate public pages. Boolean publication/active fields are respected for the remaining collections, while media and variant taxonomy changes invalidate conservatively.
+- [x] Kept cache refresh server-side and hook-driven as requested. No WebSocket was added; an already-open browser page receives the fresh result on navigation or reload.
+- [x] Added `payload:verify:storefront-revalidation` covering visibility transitions, deduplicated invalidation plans, and hook presence across all affected collections.
+- [x] TypeScript, lint, the focused hook verification, production build, 6 journal tests and 13 showcase tests pass. No database migration is required.
+- **Working-tree checkpoint:** Storefront cache invalidation is implemented but not committed; latest repository commit remains `fadb487` (`fix(import): allow empty image fields`).
 
 - **Date:** 2026-09-17
 - [x] Made every media field available through the official JSON import workflow optional, including post hero/social images, product main/gallery images, project hero/gallery images, brand media, category images, series media and configuration swatches.

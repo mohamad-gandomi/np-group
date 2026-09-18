@@ -18,6 +18,7 @@
     "payload:jobs": "payload jobs:run --all-queues --handle-schedules --limit 10",
     "payload:verify:jobs-cron": "payload run src/payload/verify-jobs-cron.ts",
     "payload:verify:optional-import-images": "payload run src/payload/verify-optional-import-images.ts",
+    "payload:verify:storefront-revalidation": "payload run src/payload/verify-storefront-revalidation.ts",
     "payload:seed": "payload run src/payload/seed.ts",
     "payload:seed:admin-demo": "payload run src/payload/seed-admin-demo.ts",
     "payload:verify:phase3": "payload run src/payload/verify-phase3.ts",

@@ -10,6 +10,7 @@ import type { FeatureProviderServer } from "@payloadcms/richtext-lexical";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { adminOrPublishedStatus, isAdmin } from "./access";
+import { withStorefrontRevalidation } from "./storefront-revalidation";
 import { journalReadingStats } from "../features/journal/content";
 import type { JournalRichText } from "../features/journal/types";
 
@@ -64,7 +65,11 @@ export const Posts: CollectionConfig = {
     description: "عنوان صفحه از فیلد «عنوان» می‌آید؛ داخل متن از تیتر ۲ تا ۴ استفاده کنید. فهرست مطلب و زمان مطالعه خودکار ساخته می‌شوند.",
   },
   defaultSort: "-publishedAt",
-  hooks: { beforeChange: [calculateReadingStats] },
+  hooks: withStorefrontRevalidation(
+    { beforeChange: [calculateReadingStats] },
+    ["journal", "showcase"],
+    "status",
+  ),
   versions: {
     drafts: { autosave: true },
     maxPerDoc: 30,
