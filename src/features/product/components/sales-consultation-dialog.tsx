@@ -55,7 +55,9 @@ export function SalesConsultationDialog({ contacts }: { contacts: readonly Sales
                 </div>
               </div>
               <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-                <a href={siteConfig.phoneHref} className="flex min-h-11 items-center gap-3 border border-white/15 px-4 transition hover:border-white/45 hover:bg-white/5"><Phone className="size-4 text-wine" /><bdi dir="ltr">{siteConfig.phoneLabel}</bdi></a>
+                <div className="grid gap-2">
+                  {siteConfig.phones.map((phone) => <a key={phone.number} href={phone.href} className="flex min-h-11 items-center gap-3 border border-white/15 px-4 transition hover:border-white/45 hover:bg-white/5"><Phone className="size-4 text-wine" /><bdi dir="ltr">{phone.label}</bdi></a>)}
+                </div>
                 <a href={`mailto:${siteConfig.email}`} className="flex min-h-11 items-center gap-3 border border-white/15 px-4 transition hover:border-white/45 hover:bg-white/5"><Mail className="size-4 text-wine" /><bdi dir="ltr">{siteConfig.email}</bdi></a>
               </div>
               <div className="mt-4 grid gap-3 border-t border-white/12 pt-4 text-xs leading-6 text-white/65 sm:grid-cols-2">

@@ -41,7 +41,7 @@ export function journalSchema(post?: JournalPost, posts: JournalPost[] = []) {
   const url = absoluteJournalUrl(post ? `/blog/${post.slug}` : "/blog");
   const publisher = {
     "@type": "Organization", "@id": absoluteJournalUrl("/#organization"), name: `گروه ${siteConfig.nameFa}`,
-    url: absoluteJournalUrl("/"), logo: { "@type": "ImageObject", url: absoluteJournalUrl("/logos/np-mark.png") },
+    url: absoluteJournalUrl("/"), logo: { "@type": "ImageObject", url: absoluteJournalUrl("/logos/np-mark.webp") },
   };
   const breadcrumbs = [
     { name: "خانه", item: absoluteJournalUrl("/") },

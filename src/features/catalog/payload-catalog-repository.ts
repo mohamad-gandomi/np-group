@@ -164,18 +164,27 @@ const categoryClasses = [
   "md:col-span-4",
   "md:col-span-4",
   "md:col-span-4",
-  "md:col-span-6",
-  "md:col-span-6",
+  "md:col-span-4",
+  "md:col-span-4",
+  "md:col-span-4",
 ];
 
-const accessoryCategory: CatalogCategory = {
-  slug: "accessories",
-  title: "اکسسوری",
-  description: "جزئیات و اکسسوری‌های تکمیل‌کننده فضای خانه.",
-  count: "۰ محصول",
-  image: "",
-  className: "md:col-span-6",
-};
+const requiredCategories = [
+  {
+    slug: "accessories",
+    title: "اکسسوری",
+    description: "جزئیات و اکسسوری‌های تکمیل‌کننده فضای خانه.",
+    count: "۰ محصول",
+    image: "",
+  },
+  {
+    slug: "lighting",
+    title: "لوستر",
+    description: "لوسترها و روشنایی‌های دکوراتیو برای تکمیل فضای خانه.",
+    count: "۰ محصول",
+    image: "/placeholders/lighting.jpg",
+  },
+] as const;
 
 export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
   const [products, categorySources] = await Promise.all([
@@ -206,15 +215,13 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
       sortOrder: selected?.sortOrder ?? Number.MAX_SAFE_INTEGER,
     };
   });
-  if (!categoryDrafts.some((category) => category.slug === accessoryCategory.slug)) {
-    categoryDrafts.push({
-      slug: accessoryCategory.slug,
-      title: accessoryCategory.title,
-      description: accessoryCategory.description ?? "",
-      count: accessoryCategory.count,
-      image: accessoryCategory.image,
-      sortOrder: Number.MAX_SAFE_INTEGER,
-    });
+  for (const requiredCategory of requiredCategories) {
+    if (!categoryDrafts.some((category) => category.slug === requiredCategory.slug)) {
+      categoryDrafts.push({
+        ...requiredCategory,
+        sortOrder: Number.MAX_SAFE_INTEGER,
+      });
+    }
   }
   const categories = categoryDrafts
     .sort((left, right) => left.sortOrder - right.sortOrder || left.title.localeCompare(right.title, "fa"))

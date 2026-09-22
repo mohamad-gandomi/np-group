@@ -33,7 +33,7 @@ function useMenu() {
 
 function MenuHeader({ close, mobile = false }: { close: () => void; mobile?: boolean }) {
   return <div className="site-menu-header">
-    <Link href="/" onClick={close} aria-label="گروه ان‌پی، صفحه اصلی"><Image src="/logos/np-mark.png" alt="گروه ان‌پی" width={80} height={80} className="site-menu-logo" /></Link>
+    <Link href="/" onClick={close} aria-label="گروه ان‌پی، صفحه اصلی"><Image src="/logos/np-mark.webp" alt="گروه ان‌پی" width={80} height={80} className="site-menu-logo" /></Link>
     <span className="site-menu-header-note">{mobile ? "خانه، روایت شماست." : "مبلمان، نور و جزئیاتِ زندگی"}</span>
     <SheetClose asChild><button type="button" className="site-menu-close" aria-label="بستن منو"><span>بستن</span><X size={20} aria-hidden="true" /></button></SheetClose>
   </div>;
@@ -42,7 +42,7 @@ function MenuHeader({ close, mobile = false }: { close: () => void; mobile?: boo
 function MenuContact({ close }: { close: () => void }) {
   return <div className="site-menu-contact">
     <p>از یک گفت‌وگو شروع کنیم.</p>
-    <div><Link href="/contact#visit" onClick={close}><MapPin size={16} aria-hidden="true" /><span>{siteConfig.addressLabel}</span></Link><a href={siteConfig.phoneHref}><Phone size={16} aria-hidden="true" /><bdi dir="ltr">{siteConfig.phoneLabel}</bdi></a></div>
+    <div><Link href="/contact#visit" onClick={close}><MapPin size={16} aria-hidden="true" /><span>{siteConfig.addressLabel}</span></Link>{siteConfig.phones.map((phone) => <a key={phone.number} href={phone.href}><Phone size={16} aria-hidden="true" /><bdi dir="ltr">{phone.label}</bdi></a>)}</div>
     <span>{siteConfig.hoursLabel}</span>
     <a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="site-menu-directions">مسیریابی فروشگاه <ArrowUpLeft size={15} aria-hidden="true" /><span className="sr-only">(پنجره جدید)</span></a>
   </div>;
@@ -84,7 +84,7 @@ export function DesktopNavigation({ categories, products }: { categories: readon
             {!matching.length && <div className="site-menu-empty"><h3>محصولی پیدا نشد.</h3><p>نام کوتاه‌تری بنویسید یا همه دسته‌ها را ببینید.</p><button type="button" onClick={() => { reset(); searchRef.current?.focus(); }}>نمایش همه محصولات <ArrowLeft size={16} aria-hidden="true" /></button></div>}
           </div>
         </div>
-        <footer className="site-menu-desktop-footer"><span>انتخاب دقیق، برای فضاهای ماندگار.</span><nav aria-label="کشف بیشتر"><Link href="/brands" onClick={menu.close}>برندها</Link><Link href="/projects" onClick={menu.close}>پروژه‌ها</Link><Link href="/blog" onClick={menu.close}>مجله ان‌پی</Link></nav><a href={siteConfig.phoneHref}><Phone size={14} aria-hidden="true" /><bdi>{siteConfig.phoneLabel}</bdi></a></footer>
+        <footer className="site-menu-desktop-footer"><span>انتخاب دقیق، برای فضاهای ماندگار.</span><nav aria-label="کشف بیشتر"><Link href="/brands" onClick={menu.close}>برندها</Link><Link href="/projects" onClick={menu.close}>پروژه‌ها</Link><Link href="/blog" onClick={menu.close}>مجله ان‌پی</Link></nav><div className="flex gap-4">{siteConfig.phones.map((phone) => <a key={phone.number} href={phone.href}><Phone size={14} aria-hidden="true" /><bdi dir="ltr">{phone.label}</bdi></a>)}</div></footer>
       </SheetContent>
     </Sheet>
     {mainLinks.map(([label, href]) => <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined}>{label}</Link>)}

@@ -1,4 +1,8 @@
-const phoneNumber = "+985138438583";
+const phones = [
+  { number: "+985136021060", href: "tel:+985136021060", label: "۰۵۱ ۳۶۰۲ ۱۰۶۰" },
+  { number: "+985136021050", href: "tel:+985136021050", label: "۰۵۱ ۳۶۰۲ ۱۰۵۰" },
+] as const;
+const primaryPhone = phones[0];
 const coordinates = { latitude: 36.3208475, longitude: 59.5238668 };
 
 export const siteConfig = {
@@ -7,9 +11,11 @@ export const siteConfig = {
   description: "مبلمان، روشنایی و جزئیات انتخاب‌شده برای خانه‌ها و پروژه‌های ماندگار.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   email: "hello@npgroup.ir",
-  phoneNumber,
-  phoneHref: `tel:${phoneNumber}`,
-  phoneLabel: "۰۵۱ ۳۸۴۳ ۸۵۸۳",
+  phones,
+  phoneNumbers: phones.map((phone) => phone.number),
+  phoneNumber: primaryPhone.number,
+  phoneHref: primaryPhone.href,
+  phoneLabel: primaryPhone.label,
   storeName: "مبلمان نیلپر خانگی مشهد",
   addressLabel: "مشهد، بلوار وکیل‌آباد، بین وکیل‌آباد ۱۱ و ۱۳",
   streetAddress: "بلوار وکیل‌آباد، بین وکیل‌آباد ۱۱ و ۱۳",

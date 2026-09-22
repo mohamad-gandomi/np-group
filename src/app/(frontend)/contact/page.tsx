@@ -10,11 +10,11 @@ import { storeSchema } from "@/lib/store-schema";
 
 export const metadata: Metadata = {
   title: "تماس با ما",
-  description: `آدرس و تماس با گروه ان‌پی در مشهد؛ ${siteConfig.addressLabel}. تلفن ${siteConfig.phoneLabel}. مشاهده نقشه و مسیریابی فروشگاه.`,
+  description: `آدرس و تماس با گروه ان‌پی در مشهد؛ ${siteConfig.addressLabel}. تلفن ${siteConfig.phones.map((phone) => phone.label).join(" و ")}. مشاهده نقشه و مسیریابی فروشگاه.`,
   alternates: { canonical: "/contact" },
   openGraph: {
     title: "تماس با گروه ان‌پی",
-    description: `${siteConfig.addressLabel} · ${siteConfig.phoneLabel} · نقشه و راه‌های ارتباطی`,
+    description: `${siteConfig.addressLabel} · ${siteConfig.phones.map((phone) => phone.label).join(" · ")} · نقشه و راه‌های ارتباطی`,
     url: "/contact",
     images: [{ url: "/placeholders/living.jpg", width: 1400, height: 738 }],
   },
@@ -44,9 +44,9 @@ export default function ContactPage() {
         alternateName: siteConfig.nameEn,
         url: siteConfig.url,
         email: siteConfig.email,
-        telephone: siteConfig.phoneNumber,
+        telephone: siteConfig.phoneNumbers,
         location: { "@id": storeSchema["@id"] },
-        contactPoint: { "@type": "ContactPoint", telephone: siteConfig.phoneNumber, contactType: "customer service", availableLanguage: "Persian" },
+        contactPoint: siteConfig.phones.map((phone) => ({ "@type": "ContactPoint", telephone: phone.number, contactType: "customer service", availableLanguage: "Persian" })),
       },
       storeSchema,
       {
@@ -82,7 +82,7 @@ export default function ContactPage() {
       <section className="bg-secondary/25 py-16 sm:py-20">
         <div className="container-shell">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <a href={siteConfig.phoneHref} className="group border border-black/10 bg-white p-5 transition-colors hover:border-wine"><Phone className="size-5 text-wine" /><p className="mt-6 text-xs text-muted-foreground">شماره تماس</p><p className="mt-2 font-medium group-hover:text-wine" dir="ltr">{siteConfig.phoneLabel}</p></a>
+            <div className="group border border-black/10 bg-white p-5 transition-colors hover:border-wine"><Phone className="size-5 text-wine" /><p className="mt-6 text-xs text-muted-foreground">شماره‌های تماس</p><div className="mt-2 grid gap-1 font-medium group-hover:text-wine" dir="ltr">{siteConfig.phones.map((phone) => <a key={phone.number} href={phone.href}>{phone.label}</a>)}</div></div>
             <a href={emailHref} className="group min-w-0 border border-black/10 bg-white p-5 transition-colors hover:border-wine"><Mail className="size-5 text-wine" /><p className="mt-6 text-xs text-muted-foreground">ایمیل</p><p className="mt-2 truncate font-medium group-hover:text-wine" dir="ltr">{siteConfig.email}</p></a>
             <a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="group border border-black/10 bg-white p-5 transition-colors hover:border-wine"><MapPin className="size-5 text-wine" /><p className="mt-6 text-xs text-muted-foreground">آدرس فروشگاه</p><p className="mt-2 text-sm font-medium leading-7 group-hover:text-wine">{siteConfig.addressLabel}</p><span className="mt-3 inline-flex items-center gap-2 text-xs text-wine">مسیریابی <ArrowUpLeft size={14} aria-hidden="true" /><span className="sr-only">(پنجره جدید)</span></span></a>
             <div className="border border-black/10 bg-white p-5"><Clock3 className="size-5 text-wine" /><p className="mt-6 text-xs text-muted-foreground">ساعات کاری فروشگاه</p><p className="mt-2 font-medium">{siteConfig.hoursLabel}</p></div>
@@ -94,7 +94,7 @@ export default function ContactPage() {
       <section id="visit" className="scroll-mt-40 border-b border-black/10 bg-[#f6f5f0] py-16 sm:py-20" aria-labelledby="visit-title">
         <div className="container-shell grid items-center gap-9 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div><p className="text-xs font-medium text-wine">برای دیدن، لمس کردن و انتخاب</p><h2 id="visit-title" className="mt-4 text-3xl font-medium leading-relaxed sm:text-4xl">در فروشگاه ملاقات کنیم.</h2><p className="mt-5 text-base font-medium">{siteConfig.storeName}</p><address className="mt-4 max-w-md text-base not-italic leading-8 text-muted-foreground">{siteConfig.addressLabel}</address>
-            <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3 border-y border-black/10 py-5 text-sm"><span className="inline-flex items-center gap-2"><Clock3 size={16} aria-hidden="true" />{siteConfig.hoursLabel}</span><a className="inline-flex min-h-9 items-center gap-2 text-wine" href={siteConfig.phoneHref}><Phone size={16} aria-hidden="true" /><bdi dir="ltr">{siteConfig.phoneLabel}</bdi></a></div>
+            <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3 border-y border-black/10 py-5 text-sm"><span className="inline-flex items-center gap-2"><Clock3 size={16} aria-hidden="true" />{siteConfig.hoursLabel}</span>{siteConfig.phones.map((phone) => <a key={phone.number} className="inline-flex min-h-9 items-center gap-2 text-wine" href={phone.href}><Phone size={16} aria-hidden="true" /><bdi dir="ltr">{phone.label}</bdi></a>)}</div>
             <p className="mt-4 max-w-md text-xs leading-7 text-muted-foreground">{siteConfig.hoursNote}</p>
             <div className="mt-7 flex flex-wrap gap-3"><Button asChild className="h-12 rounded-none bg-wine px-5 hover:bg-ink"><a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer"><Navigation size={17} aria-hidden="true" />مسیریابی تا فروشگاه<span className="sr-only">(پنجره جدید)</span></a></Button><Button asChild variant="outline" className="h-12 rounded-none px-5"><a href={siteConfig.mapsUrl} target="_blank" rel="noopener noreferrer">مشاهده در گوگل مپ<ArrowUpLeft size={17} aria-hidden="true" /><span className="sr-only">(پنجره جدید)</span></a></Button></div>
             <p className="mt-4 text-[0.68rem] leading-6 text-muted-foreground">اگر نقشه بارگذاری نشد، از لینک مسیریابی یا تماس تلفنی استفاده کنید.</p>

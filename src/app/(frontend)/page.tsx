@@ -58,7 +58,7 @@ export default async function Home() {
     alternateName: siteConfig.nameEn,
     description: "عرضه مبلمان، روشنایی، پارچه و اکسسوری و تجهیز فضاهای مسکونی و تجاری",
     areaServed: "IR",
-    telephone: siteConfig.phoneNumber,
+    telephone: siteConfig.phoneNumbers,
     location: storeSchema,
   };
 
@@ -89,7 +89,7 @@ export default async function Home() {
                   خانه، روایتِ <span className="text-wine">شماست.</span>
                 </h1>
               </div>
-              <div className="border-t border-white/30 pt-6 lg:border-t-0 lg:border-r lg:pe-8 lg:pt-0">
+              <div className="border-t border-white/30 pt-6 lg:border-t-0 lg:border-r lg:ps-8 lg:pt-0">
                 <p className="max-w-md text-sm leading-7 text-white/76 sm:text-base">
                   مجموعه‌ای از مبلمان، نور و جزئیات که برای ماندن انتخاب شده‌اند؛ برای خانه و هر فضایی که باید معنا داشته باشد.
                 </p>

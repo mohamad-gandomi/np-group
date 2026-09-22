@@ -41,7 +41,7 @@ export default function AboutPage() {
       alternateName: siteConfig.nameEn,
       url: siteConfig.url,
       email: siteConfig.email,
-      telephone: siteConfig.phoneNumber,
+      telephone: siteConfig.phoneNumbers,
       location: storeSchema,
     },
   };

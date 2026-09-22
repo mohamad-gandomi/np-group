@@ -5,7 +5,7 @@ export const storeSchema = {
   "@id": new URL("/#store", siteConfig.url).href,
   name: siteConfig.storeName,
   url: new URL("/contact", siteConfig.url).href,
-  telephone: siteConfig.phoneNumber,
+  telephone: siteConfig.phoneNumbers,
   address: { "@type": "PostalAddress", streetAddress: siteConfig.streetAddress, addressLocality: siteConfig.city, addressRegion: siteConfig.region, addressCountry: "IR" },
   geo: { "@type": "GeoCoordinates", ...siteConfig.coordinates },
   hasMap: siteConfig.mapsUrl,

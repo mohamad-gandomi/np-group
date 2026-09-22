@@ -43,7 +43,7 @@ export function SiteFooter() {
           <FooterLinks title="گروه ان‌پی" links={companyLinks} />
           <div>
             <p className="mb-5 text-sm font-semibold text-white">ارتباط</p>
-            <address className="text-sm not-italic leading-7 text-white/65"><a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white" aria-label={`${siteConfig.addressLabel}؛ مسیریابی در پنجره جدید`}>{siteConfig.addressLabel}</a><br /><a href={siteConfig.phoneHref}><bdi dir="ltr">{siteConfig.phoneLabel}</bdi></a><br /><a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a></address>
+            <address className="text-sm not-italic leading-7 text-white/65"><a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white" aria-label={`${siteConfig.addressLabel}؛ مسیریابی در پنجره جدید`}>{siteConfig.addressLabel}</a><br />{siteConfig.phones.map((phone) => <span key={phone.number} className="block"><a href={phone.href}><bdi dir="ltr">{phone.label}</bdi></a></span>)}<a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a></address>
             <p className="mt-3 text-xs leading-6 text-white/55">{siteConfig.hoursLabel}</p>
             <a href={siteConfig.directionsUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block py-2 text-xs text-white underline underline-offset-4">مسیریابی فروشگاه <span className="sr-only">(پنجره جدید)</span></a>
           </div>
@@ -58,8 +58,8 @@ export function SiteFooter() {
         </div>
         <Separator className="bg-white/12" />
         <div className="flex flex-col gap-3 pt-7 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
-          <p>© ۱۴۰۵ گروه {siteConfig.nameFa}. همه حقوق محفوظ است.</p>
-          <p dir="ltr">{siteConfig.nameEn}</p>
+          <p>گروه {siteConfig.nameFa}. همه حقوق محفوظ است.</p>
+          <p>طراحی، توسعه و پشتیبانی وب‌سایت توسط <a href="https://hadesboard.com/" className="underline hover:no-underline" target="_blank" rel="noopener noreferrer">هادس بورد</a></p>
         </div>
       </div>
     </footer>
