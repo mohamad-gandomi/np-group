@@ -14,24 +14,28 @@ export type ProductSpecification = {
   group: string;
 };
 
-export type ProductConfigurationOption = {
+export type ProductAttributeOption = {
   id: number;
   label: string;
   code?: string;
   swatchColor?: string;
+  groupLabel?: string;
+  image?: string;
 };
 
-export type ProductConfigurationGroup = {
+export type ProductAttribute = {
   id: number;
   key: string;
   label: string;
   inputType: "swatch" | "select" | "radio";
   required: boolean;
   helpText?: string;
-  options: readonly ProductConfigurationOption[];
+  options: readonly ProductAttributeOption[];
 };
 
 export type ProductVariant = {
+  image?: string;
+  availability?: "orderable" | "in_stock" | "unavailable";
   id: number;
   code: string;
   label: string;
@@ -42,12 +46,14 @@ export type ProductVariant = {
 };
 
 export type Product = {
+  productType?: "simple" | "variable";
   id: string;
   slug: string;
   name: string;
   brand: string;
   brandSlug?: string;
   category: string;
+  categorySlugs?: readonly string[];
   categoryTitle?: string;
   room: readonly string[];
   material: readonly string[];
@@ -71,7 +77,7 @@ export type Product = {
   measurements?: readonly ProductMeasurement[];
   technicalSpecs?: readonly ProductSpecification[];
   variants?: readonly ProductVariant[];
-  configurationGroups?: readonly ProductConfigurationGroup[];
+  attributes?: readonly ProductAttribute[];
   relatedPayloadProductIds?: readonly number[];
 };
 

@@ -9,6 +9,7 @@ import type {
 import { ValidationError } from "payload";
 
 import { NILPER_COMMERCE_CURRENCY, assertTomanAmount, validateTomanAmount } from "./money";
+import { relationIDs, resolveCommerce, validateVariantDefinition } from "./catalog-domain";
 
 type CommerceDocumentKind = "cart" | "order" | "transaction";
 type RecordValue = Record<string, unknown>;
@@ -48,31 +49,31 @@ const nilperItemFields: Field[] = [
   {
     name: "configuration",
     type: "array",
-    label: "پیکربندی انتخاب‌شده",
+    label: "ویژگی‌های انتخاب‌شده",
     labels: { singular: "انتخاب", plural: "انتخاب‌ها" },
     admin: {
-      description: "ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.",
+      description: "ورودی پایدار ویژگی و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.",
     },
     fields: [
-      { name: "groupKey", type: "text", label: "کلید گروه", required: true },
+      { name: "groupKey", type: "text", label: "کلید ویژگی", required: true },
       {
         name: "group",
         type: "relationship",
-        relationTo: "configuration-groups",
-        label: "گروه",
+        relationTo: "variantTypes",
+        label: "ویژگی",
         admin: snapshotFieldAdmin,
       },
       {
         name: "groupLabelFaSnapshot",
         type: "text",
-        label: "عنوان گروه هنگام ثبت",
+        label: "عنوان ویژگی هنگام ثبت",
         required: true,
         admin: snapshotFieldAdmin,
       },
       {
         name: "option",
         type: "relationship",
-        relationTo: "configuration-options",
+        relationTo: "variantOptions",
         label: "گزینه",
       },
       {
@@ -93,7 +94,7 @@ const nilperItemFields: Field[] = [
   {
     name: "configurationKey",
     type: "text",
-    label: "کلید نرمال پیکربندی",
+    label: "کلید نرمال انتخاب ویژگی‌ها",
     required: true,
     admin: { hidden: true, readOnly: true },
   },
@@ -107,7 +108,13 @@ const nilperItemFields: Field[] = [
   {
     name: "variantCodeSnapshot",
     type: "text",
-    label: "کد ثبت گونه هنگام ثبت",
+    label: "کد ثبت مدل هنگام ثبت",
+    admin: snapshotFieldAdmin,
+  },
+  {
+    name: "variantTitleSnapshot",
+    type: "text",
+    label: "عنوان مدل هنگام ثبت",
     admin: snapshotFieldAdmin,
   },
   {
@@ -224,7 +231,7 @@ const validationError = (req: PayloadRequest, message: string, path = "items"): 
 
 const findByID = async (
   req: PayloadRequest,
-  collection: "configuration-groups" | "configuration-options" | "products" | "variants",
+  collection: "variantTypes" | "variantOptions" | "products" | "variants",
   id: DefaultDocumentIDType,
   path: string,
 ): Promise<RecordValue> => {
@@ -233,8 +240,9 @@ const findByID = async (
       collection,
       id,
       depth: 0,
-      draft: collection === "products" || collection === "variants",
+      draft: false,
       overrideAccess: true,
+      req,
     }) as unknown as RecordValue;
   } catch {
     return validationError(req, `رکورد معتبر ${collection} یافت نشد.`, path);
@@ -270,35 +278,31 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     if (product._status !== "published") {
       validationError(req, "محصول باید منتشرشده باشد.", `${path}.product`);
     }
-    if (product.availabilityMode === "unavailable") {
-      validationError(req, "محصول در حال حاضر قابل سفارش نیست.", `${path}.product`);
-    }
 
     const productTitle = requiredString(product.title, req, "نام محصول معتبر نیست.", `${path}.product`);
     const variantID = relationshipID(item.variant);
-    let variantCode: string | undefined;
-    let unitPrice = product.priceInTMN;
-    let priceEnabled = product.priceInTMNEnabled;
-    let shippingMode = product.shippingMode === "parcel" ? "parcel" : "freight";
-    let parcelWeightInGrams = product.parcelWeightInGrams;
-    let tapinBoxID = product.tapinBoxID;
+    let variantCode: string | undefined = typeof product.catalogCode === 'string' ? product.catalogCode : undefined;
+    let variantTitle: string | undefined;
+    let resolved = resolveCommerce(product);
+    if (product.productType === 'variable' && variantID === undefined) validationError(req, 'انتخاب مدل محصول الزامی است.', `${path}.variant`);
+    if (product.productType === 'simple' && variantID !== undefined) validationError(req, 'محصول ساده مدل ندارد.', `${path}.variant`);
 
     if (variantID !== undefined) {
       const variant = await findByID(req, "variants", variantID, `${path}.variant`);
       if (variant._status !== "published") {
-        validationError(req, "گونه باید منتشرشده باشد.", `${path}.variant`);
+        validationError(req, "مدل باید منتشرشده باشد.", `${path}.variant`);
       }
       if (!sameID(relationshipID(variant.product), productID)) {
-        validationError(req, "گونه انتخاب‌شده متعلق به این محصول نیست.", `${path}.variant`);
+        validationError(req, "مدل انتخاب‌شده متعلق به این محصول نیست.", `${path}.variant`);
       }
 
-      variantCode = requiredString(variant.nilperCode, req, "کد ثبت گونه معتبر نیست.", `${path}.variant`);
-      unitPrice = variant.priceInTMN;
-      priceEnabled = variant.priceInTMNEnabled;
-      shippingMode = variant.shippingMode === "parcel" ? "parcel" : "freight";
-      parcelWeightInGrams = variant.parcelWeightInGrams;
-      tapinBoxID = variant.tapinBoxID;
+      variantCode = requiredString(variant.nilperCode, req, "کد ثبت مدل معتبر نیست.", `${path}.variant`);
+      variantTitle = typeof variant.title === 'string' ? variant.title : variantCode;
+      await validateVariantDefinition(product, variant.options, req);
+      resolved = resolveCommerce(product, variant);
     }
+    const { priceInTMN: unitPrice, priceInTMNEnabled: priceEnabled, shippingMode, parcelWeightInGrams, tapinBoxID } = resolved;
+    if (resolved.availabilityMode === 'unavailable') validationError(req, 'محصول در حال حاضر قابل سفارش نیست.', `${path}.product`);
 
     if (shippingMode === "parcel") {
       if (typeof parcelWeightInGrams !== "number" || !Number.isSafeInteger(parcelWeightInGrams) || parcelWeightInGrams <= 0) {
@@ -310,7 +314,7 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     }
 
     if (priceEnabled !== true || typeof unitPrice !== "number") {
-      validationError(req, "قیمت قابل فروش برای محصول یا گونه ثبت نشده است.", path);
+      validationError(req, "قیمت قابل فروش برای محصول یا مدل ثبت نشده است.", path);
     }
     const trustedUnitPrice = unitPrice as number;
 
@@ -326,51 +330,55 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     }
     const trustedQuantity = quantity as number;
 
-    const allowedGroupIDs = Array.isArray(product.configurationGroups)
-      ? product.configurationGroups.map(relationshipID).filter((id): id is DefaultDocumentIDType => id !== undefined)
-      : [];
-    const allowedGroups = await Promise.all(
-      allowedGroupIDs.map((id) => findByID(req, "configuration-groups", id, `${path}.configuration`)),
-    );
+    const variantAttributes = relationIDs(product.variantAttributes);
+    const assignments = (Array.isArray(product.attributes) ? product.attributes : []) as RecordValue[];
+    const customerAssignments = assignments.filter((row) => !variantAttributes.includes(Number(relationshipID(row.attribute))));
+    const allowedGroupIDs = customerAssignments.map((row) => relationshipID(row.attribute)).filter((id): id is DefaultDocumentIDType => id !== undefined);
+    const allowedGroups: RecordValue[] = [];
+    for (const id of allowedGroupIDs) {
+      allowedGroups.push(await findByID(req, "variantTypes", id, `${path}.configuration`));
+    }
     const allowedGroupsByKey = new Map(
-      allowedGroups.map((group) => [requiredString(group.key, req, "کلید گروه معتبر نیست.", `${path}.configuration`), group]),
+      allowedGroups.map((group) => [requiredString(group.name, req, "کلید ویژگی معتبر نیست.", `${path}.configuration`), group]),
     );
 
     const requestedConfigurationValue = item.configuration ?? [];
     const requestedConfiguration = Array.isArray(requestedConfigurationValue)
       ? requestedConfigurationValue
-      : validationError(req, "پیکربندی باید یک فهرست باشد.", `${path}.configuration`);
+      : validationError(req, "انتخاب ویژگی‌ها باید یک فهرست باشد.", `${path}.configuration`);
 
     const seenGroups = new Set<string>();
     const configuration: RecordValue[] = [];
     for (const [selectionIndex, rawSelection] of requestedConfiguration.entries()) {
       const selectionPath = `${path}.configuration.${selectionIndex}`;
-      if (!isRecord(rawSelection)) validationError(req, "انتخاب پیکربندی معتبر نیست.", selectionPath);
+      if (!isRecord(rawSelection)) validationError(req, "انتخاب ویژگی معتبر نیست.", selectionPath);
 
       const requestedGroupKey = requiredString(
         rawSelection.groupKey,
         req,
-        "کلید گروه پیکربندی الزامی است.",
+        "کلید ویژگی الزامی است.",
         `${selectionPath}.groupKey`,
       );
       if (seenGroups.has(requestedGroupKey)) {
-        validationError(req, "از هر گروه پیکربندی فقط یک گزینه قابل انتخاب است.", selectionPath);
+        validationError(req, "از هر ویژگی فقط یک گزینه قابل انتخاب است.", selectionPath);
       }
 
       const group = allowedGroupsByKey.get(requestedGroupKey) ??
-        validationError(req, "گروه پیکربندی برای این محصول مجاز نیست.", `${selectionPath}.groupKey`);
+        validationError(req, "این ویژگی برای محصول مجاز نیست.", `${selectionPath}.groupKey`);
       if (group.active !== true) {
-        validationError(req, "گروه پیکربندی غیرفعال است.", `${selectionPath}.groupKey`);
+        validationError(req, "ویژگی غیرفعال است.", `${selectionPath}.groupKey`);
       }
 
       const optionID = relationshipID(rawSelection.option) ??
-        validationError(req, "گزینه پیکربندی الزامی است.", `${selectionPath}.option`);
-      const option = await findByID(req, "configuration-options", optionID, `${selectionPath}.option`);
-      if (!sameID(relationshipID(option.group), relationshipID(group))) {
-        validationError(req, "گزینه انتخاب‌شده متعلق به این گروه نیست.", `${selectionPath}.option`);
+        validationError(req, "گزینه ویژگی الزامی است.", `${selectionPath}.option`);
+      const option = await findByID(req, "variantOptions", optionID, `${selectionPath}.option`);
+      const assignment = customerAssignments.find((row) => sameID(relationshipID(row.attribute), relationshipID(group)));
+      if (!relationIDs(assignment?.allowedOptions).includes(Number(optionID))) validationError(req, 'گزینه برای این محصول مجاز نیست.', selectionPath);
+      if (!sameID(relationshipID(option.variantType), relationshipID(group))) {
+        validationError(req, "گزینه انتخاب‌شده متعلق به این ویژگی نیست.", `${selectionPath}.option`);
       }
       if (option.active !== true) {
-        validationError(req, "گزینه پیکربندی غیرفعال است.", `${selectionPath}.option`);
+        validationError(req, "گزینه ویژگی غیرفعال است.", `${selectionPath}.option`);
       }
 
       seenGroups.add(requestedGroupKey);
@@ -378,16 +386,17 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
         ...(typeof rawSelection.id === "string" ? { id: rawSelection.id } : {}),
         groupKey: requestedGroupKey,
         group: relationshipID(group),
-        groupLabelFaSnapshot: requiredString(group.title, req, "عنوان گروه معتبر نیست.", selectionPath),
+        groupLabelFaSnapshot: requiredString(group.label, req, "عنوان ویژگی معتبر نیست.", selectionPath),
         option: optionID,
         ...(typeof option.code === "string" && option.code.trim() ? { optionCodeSnapshot: option.code.trim() } : {}),
-        labelFaSnapshot: requiredString(option.title, req, "عنوان گزینه معتبر نیست.", selectionPath),
+        labelFaSnapshot: requiredString(option.label, req, "عنوان گزینه معتبر نیست.", selectionPath),
       });
     }
 
     for (const group of allowedGroups) {
-      if (group.active === true && group.required === true && !seenGroups.has(String(group.key))) {
-        validationError(req, `انتخاب گروه «${String(group.title)}» الزامی است.`, `${path}.configuration`);
+      const assignment = customerAssignments.find((row) => sameID(relationshipID(row.attribute), relationshipID(group)));
+      if (group.active === true && assignment?.required === true && !seenGroups.has(String(group.name))) {
+        validationError(req, `انتخاب ویژگی «${String(group.label)}» الزامی است.`, `${path}.configuration`);
       }
     }
 
@@ -396,11 +405,11 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
       String(relationshipID(left.option)).localeCompare(String(relationshipID(right.option)), "en"),
     );
     const configurationKey = buildConfigurationKey(configuration) ??
-      validationError(req, "کلید پیکربندی قابل محاسبه نیست.", `${path}.configuration`);
+      validationError(req, "کلید انتخاب ویژگی‌ها قابل محاسبه نیست.", `${path}.configuration`);
 
     const identityKey = itemIdentityKey(productID, variantID, configurationKey);
     if (itemKeys.has(identityKey)) {
-      validationError(req, "ردیف تکراری با محصول، گونه و پیکربندی یکسان مجاز نیست.", path);
+      validationError(req, "ردیف تکراری با محصول، مدل و ویژگی‌های یکسان مجاز نیست.", path);
     }
     itemKeys.add(identityKey);
 
@@ -422,6 +431,7 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
       configurationKey,
       productTitleSnapshot: productTitle,
       ...(variantCode ? { variantCodeSnapshot: variantCode } : { variantCodeSnapshot: null }),
+      variantTitleSnapshot: variantTitle ?? null,
       unitPriceInTMN: trustedUnitPrice,
       shippingModeSnapshot: shippingMode,
       ...(shippingMode === "parcel"
@@ -449,6 +459,12 @@ export const nilperCommerceItemsHook = (
   if (!isRecord(data)) return data;
 
   const amountField = kind === "cart" ? "subtotal" : "amount";
+  // A persisted order/transaction's line snapshots are immutable, even on explicit item updates.
+  if (kind !== 'cart' && operation === 'update' && isRecord(originalDoc)) {
+    data.items = originalDoc.items;
+    data[amountField] = originalDoc[amountField];
+    return data;
+  }
   if (req.context[trustedItemsContextKey(kind)] === true) {
     const trustedItems = Array.isArray(data.items)
       ? data.items

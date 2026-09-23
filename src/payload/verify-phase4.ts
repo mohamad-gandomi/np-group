@@ -87,52 +87,52 @@ try {
   remember("variantOptions", variantOption.id);
 
   const woodGroup = await payload.create({
-    collection: "configuration-groups",
-    data: { title: "رنگ چوب", key: `wood-${shortID}`, inputType: "swatch", required: true, active: true },
+    collection: "variantTypes",
+    data: { label: "رنگ چوب", name: `wood-${shortID}`, active: true },
   });
-  remember("configuration-groups", woodGroup.id);
+  remember("variantTypes", woodGroup.id);
 
   const fabricGroup = await payload.create({
-    collection: "configuration-groups",
-    data: { title: "پارچه", key: `fabric-${shortID}`, inputType: "select", required: true, active: true },
+    collection: "variantTypes",
+    data: { label: "پارچه", name: `fabric-${shortID}`, active: true },
   });
-  remember("configuration-groups", fabricGroup.id);
+  remember("variantTypes", fabricGroup.id);
 
   const unauthorizedGroup = await payload.create({
-    collection: "configuration-groups",
-    data: { title: "گروه غیرمجاز", key: `other-${shortID}`, inputType: "select", required: false, active: true },
+    collection: "variantTypes",
+    data: { label: "ویژگی غیرمجاز", name: `other-${shortID}`, active: true },
   });
-  remember("configuration-groups", unauthorizedGroup.id);
+  remember("variantTypes", unauthorizedGroup.id);
 
   const walnut = await payload.create({
-    collection: "configuration-options",
-    data: { group: woodGroup.id, title: "گردویی", code: "WALNUT", active: true },
+    collection: "variantOptions",
+    data: { variantType: woodGroup.id, label: "گردویی", value: `walnut-${shortID}`, code: "WALNUT", active: true },
   });
-  remember("configuration-options", walnut.id);
+  remember("variantOptions", walnut.id);
 
   const oak = await payload.create({
-    collection: "configuration-options",
-    data: { group: woodGroup.id, title: "بلوطی", code: "OAK", active: true },
+    collection: "variantOptions",
+    data: { variantType: woodGroup.id, label: "بلوطی", value: `oak-${shortID}`, code: "OAK", active: true },
   });
-  remember("configuration-options", oak.id);
+  remember("variantOptions", oak.id);
 
   const lavender = await payload.create({
-    collection: "configuration-options",
-    data: { group: fabricGroup.id, title: "LAVENDAR", code: "LAVENDAR", active: true },
+    collection: "variantOptions",
+    data: { variantType: fabricGroup.id, label: "LAVENDAR", value: `lavender-${shortID}`, code: "LAVENDAR", active: true },
   });
-  remember("configuration-options", lavender.id);
+  remember("variantOptions", lavender.id);
 
   const inactiveFabric = await payload.create({
-    collection: "configuration-options",
-    data: { group: fabricGroup.id, title: "پارچه غیرفعال", code: "INACTIVE", active: false },
+    collection: "variantOptions",
+    data: { variantType: fabricGroup.id, label: "پارچه غیرفعال", value: `inactive-${shortID}`, code: "INACTIVE", active: false },
   });
-  remember("configuration-options", inactiveFabric.id);
+  remember("variantOptions", inactiveFabric.id);
 
   const unauthorizedOption = await payload.create({
-    collection: "configuration-options",
-    data: { group: unauthorizedGroup.id, title: "گزینه غیرمجاز", code: "OTHER", active: true },
+    collection: "variantOptions",
+    data: { variantType: unauthorizedGroup.id, label: "گزینه غیرمجاز", value: `other-${shortID}`, code: "OTHER", active: true },
   });
-  remember("configuration-options", unauthorizedOption.id);
+  remember("variantOptions", unauthorizedOption.id);
 
   const product = await payload.create({
     collection: "products",
@@ -145,9 +145,13 @@ try {
       availabilityMode: "in_stock",
       priceInTMNEnabled: false,
       descriptionFa: richText("محصول آزمون پیکربندی سبد."),
-      configurationGroups: [woodGroup.id, fabricGroup.id],
-      enableVariants: true,
-      variantTypes: [variantType.id],
+      productType: "variable",
+      attributes: [
+        { attribute: variantType.id, allowedOptions: [variantOption.id] },
+        { attribute: woodGroup.id, allowedOptions: [walnut.id, oak.id], required: true },
+        { attribute: fabricGroup.id, allowedOptions: [lavender.id, inactiveFabric.id], required: true },
+      ],
+      variantAttributes: [variantType.id],
       _status: "published",
     },
   });
@@ -164,8 +168,9 @@ try {
       availabilityMode: "in_stock",
       priceInTMNEnabled: false,
       descriptionFa: richText("محصول دیگر برای آزمون تعلق گونه."),
-      enableVariants: true,
-      variantTypes: [variantType.id],
+      productType: "variable",
+      attributes: [{ attribute: variantType.id, allowedOptions: [variantOption.id] }],
+      variantAttributes: [variantType.id],
       _status: "published",
     },
   });
@@ -183,7 +188,7 @@ try {
       priceInTMNEnabled: true,
       priceInTMN: 100_000,
       descriptionFa: richText("محصول منتشرنشده."),
-      enableVariants: false,
+      productType: "simple",
       _status: "draft",
     },
     draft: true,
@@ -224,8 +229,8 @@ try {
   assert.equal(cart.subtotal, 0, "An empty cart subtotal must be server-owned.");
 
   const walnutFabric = [
-    { groupKey: woodGroup.key, option: walnut.id, labelFaSnapshot: "spoofed" },
-    { groupKey: fabricGroup.key, option: lavender.id, labelFaSnapshot: "spoofed" },
+    { groupKey: woodGroup.name, option: walnut.id, labelFaSnapshot: "spoofed" },
+    { groupKey: fabricGroup.name, option: lavender.id, labelFaSnapshot: "spoofed" },
   ];
   const firstAdd = await addItem({
     payload,
@@ -268,8 +273,8 @@ try {
   assert.equal(combinedCart.items?.[0]?.quantity, 3);
 
   const oakFabric = [
-    { groupKey: woodGroup.key, option: oak.id },
-    { groupKey: fabricGroup.key, option: lavender.id },
+    { groupKey: woodGroup.name, option: oak.id },
+    { groupKey: fabricGroup.name, option: lavender.id },
   ];
   const separate = await addItem({
     payload,
@@ -307,31 +312,31 @@ try {
   await expectInvalidItem({
     product: product.id,
     variant: variant.id,
-    configuration: [{ groupKey: woodGroup.key, option: walnut.id }],
+    configuration: [{ groupKey: woodGroup.name, option: walnut.id }],
   });
   await expectInvalidItem({
     product: product.id,
     variant: variant.id,
     configuration: [
-      { groupKey: woodGroup.key, option: walnut.id },
-      { groupKey: fabricGroup.key, option: inactiveFabric.id },
+      { groupKey: woodGroup.name, option: walnut.id },
+      { groupKey: fabricGroup.name, option: inactiveFabric.id },
     ],
   });
   await expectInvalidItem({
     product: product.id,
     variant: variant.id,
     configuration: [
-      { groupKey: woodGroup.key, option: walnut.id },
-      { groupKey: fabricGroup.key, option: unauthorizedOption.id },
+      { groupKey: woodGroup.name, option: walnut.id },
+      { groupKey: fabricGroup.name, option: unauthorizedOption.id },
     ],
   });
   await expectInvalidItem({
     product: product.id,
     variant: variant.id,
     configuration: [
-      { groupKey: woodGroup.key, option: walnut.id },
-      { groupKey: fabricGroup.key, option: lavender.id },
-      { groupKey: unauthorizedGroup.key, option: unauthorizedOption.id },
+      { groupKey: woodGroup.name, option: walnut.id },
+      { groupKey: fabricGroup.name, option: lavender.id },
+      { groupKey: unauthorizedGroup.name, option: unauthorizedOption.id },
     ],
   });
   await expectInvalidItem({
@@ -375,8 +380,8 @@ try {
 
   await payload.update({ collection: "products", id: product.id, data: { title: `نام جدید ${shortID}` } });
   await payload.update({ collection: "variants", id: variant.id, data: { nilperCode: `UPDATED-${shortID}`, priceInTMN: 999_999 } });
-  await payload.update({ collection: "configuration-groups", id: woodGroup.id, data: { title: "عنوان جدید چوب" } });
-  await payload.update({ collection: "configuration-options", id: walnut.id, data: { title: "عنوان جدید گردویی" } });
+  await payload.update({ collection: "variantTypes", id: woodGroup.id, data: { label: "عنوان جدید چوب" } });
+  await payload.update({ collection: "variantOptions", id: walnut.id, data: { label: "عنوان جدید گردویی" } });
 
   const preservedOrder = await payload.update({
     collection: "orders",
@@ -387,7 +392,7 @@ try {
   assert.equal(preservedOrder.items?.[0]?.productTitleSnapshot, product.title);
   assert.equal(preservedOrder.items?.[0]?.variantCodeSnapshot, variant.nilperCode);
   assert.equal(preservedOrder.items?.[0]?.unitPriceInTMN, 250_000);
-  assert.equal(preservedOrder.items?.[0]?.configuration?.find((selection) => selection.groupKey === woodGroup.key)?.labelFaSnapshot, "گردویی");
+  assert.equal(preservedOrder.items?.[0]?.configuration?.find((selection) => selection.groupKey === woodGroup.name)?.labelFaSnapshot, "گردویی");
 
   payload.logger.info("Phase 4 verification passed: trusted configuration, normalized matching, server validation, totals, and snapshots.");
 } finally {
@@ -397,8 +402,8 @@ try {
     "carts",
     "variants",
     "products",
-    "configuration-options",
-    "configuration-groups",
+    "variantOptions",
+    "variantTypes",
     "variantOptions",
     "variantTypes",
     "categories",

@@ -12,7 +12,7 @@ import { quoteCartShipping, totalWithShipping } from "../features/shipping/shipp
 import { TapinAPIError } from "../features/shipping/tapin/client";
 import { refreshTapinTracking } from "../features/shipping/tapin/shipment";
 import type { TapinClient } from "../features/shipping/types";
-import type { ConfigurationGroup, ConfigurationOption, Product, Transaction, Variant } from "../payload-types";
+import type { VariantType, VariantOption, Product, Transaction, Variant } from "../payload-types";
 
 const payload = await getPayload({ config });
 const parcelPrice = 8_000_000;
@@ -142,17 +142,17 @@ try {
     data: { shippingMode: "freight", parcelWeightInGrams: null, tapinBoxID: null, priceInTMNEnabled: true, priceInTMN: freightPrice },
   });
 
-  const groupIDs = (product.configurationGroups ?? []).map((value) => typeof value === "number" ? value : value.id);
+  const groupIDs = (product.attributes ?? []).filter((row) => row.required).map((row) => typeof row.attribute === "number" ? row.attribute : row.attribute.id);
   const [groupsResult, optionsResult] = await Promise.all([
-    payload.find({ collection: "configuration-groups", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
-    payload.find({ collection: "configuration-options", depth: 0, pagination: false, limit: 100, where: { group: { in: groupIDs } } }),
+    payload.find({ collection: "variantTypes", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
+    payload.find({ collection: "variantOptions", depth: 0, pagination: false, limit: 100, where: { variantType: { in: groupIDs } } }),
   ]);
-  const groups = groupsResult.docs as ConfigurationGroup[];
-  const options = optionsResult.docs as ConfigurationOption[];
+  const groups = groupsResult.docs as VariantType[];
+  const options = optionsResult.docs as VariantOption[];
   const configuration = groups.map((group) => {
-    const option = options.find((candidate) => (typeof candidate.group === "number" ? candidate.group : candidate.group.id) === group.id);
+    const option = options.find((candidate) => (typeof candidate.variantType === "number" ? candidate.variantType : candidate.variantType.id) === group.id);
     assert(option);
-    return { groupKey: group.key, optionId: option.id };
+    return { groupKey: group.name, optionId: option.id };
   });
   const line = (variantID: number, quantity = 1) => ({ productId: product.id, variantId: variantID, quantity, configuration });
 

@@ -47,7 +47,7 @@ export function parseCartLineReferences(value: unknown): CartLineReference[] {
     const rawConfiguration = rawLine.configuration ?? [];
 
     if (!productId || (rawLine.variantId != null && !variantId)) {
-      throw new CartRequestError("شناسه محصول یا گونه معتبر نیست.");
+      throw new CartRequestError("شناسه محصول یا مدل معتبر نیست.");
     }
     if (typeof quantity !== "number" || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > MAX_ITEM_QUANTITY) {
       throw new CartRequestError(`تعداد هر کالا باید بین ۱ تا ${MAX_ITEM_QUANTITY} باشد.`);
@@ -170,8 +170,8 @@ async function cartResponse(
     const payloadProduct = productID ? productsByID.get(productID) : undefined;
     if (!payloadProduct) return [];
     const product = mapPayloadProduct(payloadProduct, {
-      configurationGroups: [],
-      configurationOptions: [],
+      attributes: [],
+      attributeOptions: [],
       variants: [],
     });
     const variant = typeof item.variant === "object" ? item.variant as Variant : undefined;

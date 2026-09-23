@@ -14,6 +14,11 @@ import * as migration_20260915_153600_address_display_label from './20260915_153
 import * as migration_20260916_084808_storefront_showcase_and_sales_contacts from './20260916_084808_storefront_showcase_and_sales_contacts';
 import * as migration_20260917_101243_nilper_data_transfer from './20260917_101243_nilper_data_transfer';
 import * as migration_20260917_171851_optional_import_images from './20260917_171851_optional_import_images';
+import * as migration_20260922_083135_unified_catalog_expand from './20260922_083135_unified_catalog_expand';
+import * as migration_20260922_090000_unified_catalog_backfill from './20260922_090000_unified_catalog_backfill';
+import * as migration_20260922_123418_unified_catalog_contract from './20260922_123418_unified_catalog_contract';
+import * as migration_20260922_124433_variant_title_snapshots from './20260922_124433_variant_title_snapshots';
+import * as migration_20260923_105612_category_storefront_selection from './20260923_105612_category_storefront_selection';
 
 export const migrations = [
   {
@@ -94,6 +99,31 @@ export const migrations = [
   {
     up: migration_20260917_171851_optional_import_images.up,
     down: migration_20260917_171851_optional_import_images.down,
-    name: '20260917_171851_optional_import_images'
+    name: '20260917_171851_optional_import_images',
+  },
+  {
+    up: migration_20260922_083135_unified_catalog_expand.up,
+    down: migration_20260922_083135_unified_catalog_expand.down,
+    name: '20260922_083135_unified_catalog_expand',
+  },
+  {
+    up: migration_20260922_090000_unified_catalog_backfill.up,
+    down: migration_20260922_090000_unified_catalog_backfill.down,
+    name: '20260922_090000_unified_catalog_backfill',
+  },
+  {
+    up: migration_20260922_123418_unified_catalog_contract.up,
+    down: migration_20260922_123418_unified_catalog_contract.down,
+    name: '20260922_123418_unified_catalog_contract',
+  },
+  {
+    up: migration_20260922_124433_variant_title_snapshots.up,
+    down: migration_20260922_124433_variant_title_snapshots.down,
+    name: '20260922_124433_variant_title_snapshots',
+  },
+  {
+    up: migration_20260923_105612_category_storefront_selection.up,
+    down: migration_20260923_105612_category_storefront_selection.down,
+    name: '20260923_105612_category_storefront_selection'
   },
 ];

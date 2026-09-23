@@ -7,8 +7,7 @@ import { normalizeMediaImportValue } from "./data-transfer";
 const transferCollections = new Set([
   "brands",
   "categories",
-  "product-series",
-  "configuration-options",
+  "variantOptions",
   "products",
   "posts",
   "projects",

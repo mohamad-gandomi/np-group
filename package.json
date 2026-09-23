@@ -30,6 +30,7 @@
     "payload:verify:phase11": "payload run src/payload/verify-phase11.ts",
     "payload:verify:phase12": "payload run src/payload/verify-phase12.ts",
     "payload:verify:manual-catalog": "payload run src/payload/verify-manual-catalog.ts",
+    "payload:verify:catalog": "payload run src/payload/verify-unified-catalog.ts",
     "payload:db:start": "docker compose --env-file .env.local -f payload.compose.yaml up -d",
     "payload:db:stop": "docker compose --env-file .env.local -f payload.compose.yaml down",
     "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps"

@@ -89,10 +89,10 @@ try {
   remember("categories", category.id);
 
   const series = await payload.create({
-    collection: "product-series",
-    data: { title: `سری آزمون ${shortID}`, slug: `phase3-series-${shortID}`, published: true },
+    collection: "categories",
+    data: { title: `خانواده آزمون ${shortID}`, slug: `phase3-family-${shortID}`, parent: category.id, published: true },
   });
-  remember("product-series", series.id);
+  remember("categories", series.id);
 
   const companion = await payload.create({
     collection: "products",
@@ -100,13 +100,12 @@ try {
       title: `محصول هماهنگ ${shortID}`,
       slug: `phase3-companion-${shortID}`,
       brand: brand.id,
-      categories: [category.id],
-      series: series.id,
+      categories: [category.id, series.id],
       salesMode: "inquiry",
       availabilityMode: "orderable",
       priceInTMNEnabled: false,
       descriptionFa: richText("محصول هماهنگ برای آزمون رابطه صریح."),
-      enableVariants: false,
+      productType: "simple",
       _status: "published",
     },
   });
@@ -130,8 +129,7 @@ try {
       title: `محصول آزمون ${shortID}`,
       slug: `phase3-product-${shortID}`,
       brand: brand.id,
-      categories: [category.id],
-      series: series.id,
+      categories: [category.id, series.id],
       salesMode: "direct",
       availabilityMode: "in_stock",
       priceInTMNEnabled: true,
@@ -140,8 +138,9 @@ try {
       measurements: [{ key: "total-height", labelFa: "ارتفاع کلی", value: 90, unit: "cm", sortOrder: 10 }],
       technicalSpecs: [{ key: "frame", labelFa: "جنس اسکلت", valueFa: "چوب راش", group: "construction", sortOrder: 10 }],
       matchingProducts: [companion.id],
-      enableVariants: true,
-      variantTypes: [variantType.id],
+      productType: "variable",
+      attributes: [{ attribute: variantType.id, allowedOptions: [variantOption.id] }],
+      variantAttributes: [variantType.id],
       _status: "published",
     },
   });
@@ -229,7 +228,7 @@ try {
 
   payload.logger.info("Phase 3 domain verification passed: schema, access, stable catalog identifiers, TMN flow, and payment boundary.");
 } finally {
-  for (const collection of ["transactions", "orders", "carts", "variants", "products", "variantOptions", "variantTypes", "product-series", "categories", "brands"]) {
+  for (const collection of ["transactions", "orders", "carts", "variants", "products", "variantOptions", "variantTypes", "categories", "brands"]) {
     for (const id of [...(created[collection] ?? [])].reverse()) {
       await payload.delete({ collection: collection as never, id }).catch(() => undefined);
     }

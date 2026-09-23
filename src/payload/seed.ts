@@ -94,7 +94,7 @@ function journalRichText(post: LegacyJournalPost): Post["content"] {
   } as Post["content"];
 }
 
-async function ensureBySlug(collection: "brands" | "categories" | "product-series" | "products" | "projects", slug: string, data: Record<string, unknown>): Promise<Identified> {
+async function ensureBySlug(collection: "brands" | "categories" | "products" | "projects", slug: string, data: Record<string, unknown>): Promise<Identified> {
   const existing = await payload.find({ collection, where: { slug: { equals: slug } }, limit: 1 });
   if (existing.docs[0]) return await payload.update({ collection, id: existing.docs[0].id, data } as never) as unknown as Identified;
   return await payload.create({ collection, data } as never) as unknown as Identified;
@@ -112,20 +112,27 @@ async function ensureProduct(slug: string, data: Record<string, unknown>): Promi
 }
 
 async function ensureByKey(key: string, data: Record<string, unknown>): Promise<Identified> {
-  const existing = await payload.find({ collection: "configuration-groups", where: { key: { equals: key } }, limit: 1 });
-  if (existing.docs[0]) return await payload.update({ collection: "configuration-groups", id: existing.docs[0].id, data } as never) as unknown as Identified;
-  return await payload.create({ collection: "configuration-groups", data } as never) as unknown as Identified;
+  const existing = await payload.find({ collection: "variantTypes", where: { name: { equals: key } }, limit: 1 });
+  if (existing.docs[0]) return await payload.update({ collection: "variantTypes", id: existing.docs[0].id, data } as never) as unknown as Identified;
+  return await payload.create({ collection: "variantTypes", data: { ...data, name: key } } as never) as unknown as Identified;
 }
 
 async function ensureConfigurationOption(group: number, title: string, data: Record<string, unknown>): Promise<Identified> {
   const existing = await payload.find({
-    collection: "configuration-options",
-    where: { and: [{ group: { equals: group } }, { title: { equals: title } }] },
+    collection: "variantOptions",
+    where: { and: [{ variantType: { equals: group } }, { label: { equals: title } }] },
     limit: 1,
   });
-  const optionData = { group, title, active: true, ...data };
-  if (existing.docs[0]) return await payload.update({ collection: "configuration-options", id: existing.docs[0].id, data: optionData } as never) as unknown as Identified;
-  return await payload.create({ collection: "configuration-options", data: optionData } as never) as unknown as Identified;
+  const attribute = await payload.findByID({ collection: 'variantTypes', id: group });
+  const optionData = { variantType: group, label: title, value: existing.docs[0]?.value ?? `${attribute.name}-${String(data.code ?? title)}`, active: true, ...data };
+  if (existing.docs[0]) return await payload.update({ collection: "variantOptions", id: existing.docs[0].id, data: optionData } as never) as unknown as Identified;
+  return await payload.create({ collection: "variantOptions", data: optionData } as never) as unknown as Identified;
+}
+
+async function attributeAssignments(ids: number[], required = false) {
+  return Promise.all(ids.map(async (attribute) => ({ attribute, required,
+    allowedOptions: (await payload.find({ collection: 'variantOptions', where: { variantType: { equals: attribute } }, pagination: false, depth: 0 })).docs.map((option) => option.id),
+  })));
 }
 
 async function ensureVariantType(name: string, label: string): Promise<Identified> {
@@ -193,7 +200,7 @@ const tables = await ensureBySlug("categories", "coffee-side-tables", {
   sortOrder: 20,
   published: true,
 });
-await ensureBySlug("categories", "dining", {
+const dining = await ensureBySlug("categories", "dining", {
   title: "میز و صندلی ناهارخوری",
   slug: "dining",
   descriptionFa: "محصولات ناهارخوری هماهنگ با خانواده‌های نیلپر.",
@@ -201,7 +208,7 @@ await ensureBySlug("categories", "dining", {
   sortOrder: 30,
   published: true,
 });
-await ensureBySlug("categories", "accessories", {
+const accessories = await ensureBySlug("categories", "accessories", {
   title: "اکسسوری",
   slug: "accessories",
   descriptionFa: "جزئیات و اکسسوری‌های تکمیل‌کننده فضای خانه.",
@@ -210,28 +217,21 @@ await ensureBySlug("categories", "accessories", {
   published: true,
 });
 
-const series = await ensureBySlug("product-series", "delan", {
+const familyCategory = await ensureBySlug("categories", "delan", {
   title: "دلان",
   slug: "delan",
-  styleFa: "نئوکلاسیک",
   descriptionFa: "سری دلان شامل مبل، جلومبلی، عسلی و ست ناهارخوری هماهنگ است.",
-  heroMedia: livingImage.id,
+  image: livingImage.id,
   published: true,
 });
 
 const woodGroup = await ensureByKey("wood-finish", {
-  title: "رنگ چوب پایه و بدنه",
-  key: "wood-finish",
-  inputType: "swatch",
-  required: true,
+  label: "رنگ چوب پایه و بدنه",
   active: true,
-  helpTextFa: "این انتخاب پیکربندی است و به‌تنهایی گونه / SKU جدید تولید نمی‌کند.",
+  helpTextFa: "این انتخاب مشتری است و به‌تنهایی مدل / SKU جدید تولید نمی‌کند.",
 });
 const fabricGroup = await ensureByKey("upholstery-palette", {
-  title: "کالیته پارچه و روکش",
-  key: "upholstery-palette",
-  inputType: "select",
-  required: true,
+  label: "کالیته پارچه و روکش",
   active: true,
   helpTextFa: "نام کالیته‌ها عیناً از بخش فارسی برگه HSS 994 نگهداری شده‌اند.",
 });
@@ -243,7 +243,7 @@ await Promise.all([
   ["خود رنگ", "#c9a777"],
   ["فندقی", "#7b4e2e"],
   ["رنگ پوششی سفید/طوسی", "#d7d5d1"],
-].map(([title, swatchColor], index) => ensureConfigurationOption(woodGroup.id, title, { swatchColor, sortOrder: index + 1 })));
+].map(([title, colorHex], index) => ensureConfigurationOption(woodGroup.id, title, { colorHex, sortOrder: index + 1 })));
 
 await Promise.all(
   ["LAVENDAR", "LEROY", "MONALISA", "TANGO", "ROMA", "MILAN"].map((title, index) =>
@@ -260,8 +260,7 @@ const relatedTable = await ensureProduct("delan-coffee-side-table", {
   slug: "delan-coffee-side-table",
   catalogCode: "HFC 594 / HFS 394",
   brand: brand.id,
-  categories: [tables.id],
-  series: series.id,
+  categories: [tables.id, familyCategory.id],
   salesMode: "inquiry",
   availabilityMode: "orderable",
   priceInTMNEnabled: false,
@@ -273,8 +272,8 @@ const relatedTable = await ensureProduct("delan-coffee-side-table", {
     { key: "leg", labelFa: "جنس پایه", valueFa: "چوب راش", group: "construction", sortOrder: 20 },
   ],
   orderNotesFa: "رکورد سبک برای ارزیابی رابطه محصول؛ مدل‌سازی کامل این محصول عمداً به مرحله بعد موکول شده است.",
-  configurationGroups: [woodGroup.id],
-  enableVariants: false,
+  attributes: await attributeAssignments([woodGroup.id], true),
+  productType: "simple",
   _status: "published",
 });
 
@@ -283,8 +282,7 @@ const delan = await ensureProduct("delan-sofa", {
   slug: "delan-sofa",
   catalogCode: "NHSS 994",
   brand: brand.id,
-  categories: [furniture.id],
-  series: series.id,
+  categories: [furniture.id, familyCategory.id],
   salesMode: "made_to_order",
   availabilityMode: "orderable",
   priceInTMNEnabled: false,
@@ -304,10 +302,10 @@ const delan = await ensureProduct("delan-sofa", {
     { key: "delivery", labelFa: "شرایط تحویل محصول", valueFa: "مونتاژ شده", group: "delivery", sortOrder: 70 },
   ],
   orderNotesFa: "با توجه به عمق نشیمن باید با کوسن استفاده شود. نوع پارچه مناسب: مخمل، شنل، ساده.",
-  configurationGroups: [woodGroup.id, fabricGroup.id],
+  attributes: [...await attributeAssignments([woodGroup.id, fabricGroup.id], true), ...await attributeAssignments([variantType.id])],
   matchingProducts: [relatedTable.id],
-  enableVariants: true,
-  variantTypes: [variantType.id],
+  productType: "variable",
+  variantAttributes: [variantType.id],
   _status: "published",
 });
 
@@ -351,6 +349,29 @@ const diningSeating = await ensureBySlug("categories", "dining-seating", {
   published: true,
 });
 
+const storefrontCategoryIDs = new Set([
+  furniture.id,
+  tables.id,
+  dining.id,
+  accessories.id,
+  bedroom.id,
+  diningSeating.id,
+]);
+const previouslySelectedCategories = await payload.find({
+  collection: "categories",
+  depth: 0,
+  pagination: false,
+  where: { showOnStorefront: { equals: true } },
+});
+for (const category of previouslySelectedCategories.docs) {
+  if (!storefrontCategoryIDs.has(category.id)) {
+    await payload.update({ collection: "categories", id: category.id, data: { showOnStorefront: false } });
+  }
+}
+for (const categoryID of storefrontCategoryIDs) {
+  await payload.update({ collection: "categories", id: categoryID, data: { showOnStorefront: true } });
+}
+
 const categoryIDs = {
   bedroom: bedroom.id,
   "dining-seating": diningSeating.id,
@@ -363,18 +384,18 @@ const configurationGroupIDs = {
 
 for (const sourceProduct of manualCatalogProducts) {
   const image = await ensureMedia(sourceProduct.image.filename, sourceProduct.image.source, sourceProduct.image.alt);
-  const productSeries = await ensureBySlug("product-series", sourceProduct.series.slug, {
-    title: sourceProduct.series.title,
-    slug: sourceProduct.series.slug,
-    styleFa: sourceProduct.series.styleFa,
-    descriptionFa: sourceProduct.series.descriptionFa,
-    heroMedia: image.id,
+  const productCategory = await ensureBySlug("categories", sourceProduct.familyCategory.slug, {
+    title: sourceProduct.familyCategory.title,
+    slug: sourceProduct.familyCategory.slug,
+    descriptionFa: sourceProduct.familyCategory.descriptionFa,
+    image: image.id,
+    parent: categoryIDs[sourceProduct.category],
     published: true,
   });
 
   const optionIDs = new Map<string, number>();
   const variantTypeIDs: number[] = [];
-  for (const type of sourceProduct.variantTypes) {
+  for (const type of sourceProduct.variantAttributes) {
     const ensuredType = await ensureVariantType(type.name, type.label);
     variantTypeIDs.push(ensuredType.id);
     for (const option of type.options) {
@@ -387,8 +408,7 @@ for (const sourceProduct of manualCatalogProducts) {
     title: sourceProduct.title,
     catalogCode: sourceProduct.catalogCode,
     brand: brand.id,
-    categories: [categoryIDs[sourceProduct.category]],
-    series: productSeries.id,
+    categories: [categoryIDs[sourceProduct.category], productCategory.id],
     salesMode: "made_to_order",
     availabilityMode: "orderable",
     priceInTMNEnabled: false,
@@ -398,9 +418,9 @@ for (const sourceProduct of manualCatalogProducts) {
     measurements: sourceProduct.measurements ?? [],
     technicalSpecs: sourceProduct.technicalSpecs,
     orderNotesFa: sourceProduct.orderNotesFa,
-    configurationGroups: (sourceProduct.configurationGroupKeys ?? []).map((key) => configurationGroupIDs[key]),
-    enableVariants: sourceProduct.variants.length > 0,
-    variantTypes: variantTypeIDs,
+    attributes: [...await attributeAssignments((sourceProduct.customerAttributeKeys ?? []).map((key) => configurationGroupIDs[key]), true), ...await attributeAssignments(variantTypeIDs)],
+    productType: sourceProduct.variants.length > 0 ? "variable" : "simple",
+    variantAttributes: variantTypeIDs,
     _status: "published",
   });
 

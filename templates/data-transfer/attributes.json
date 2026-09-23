@@ -1,0 +1,5 @@
+[
+  { "name": "seat-size", "label": "اندازه نشیمن", "active": true, "sortOrder": 0 },
+  { "name": "wood-finish", "label": "رنگ چوب", "active": true, "sortOrder": 1 },
+  { "name": "fabric", "label": "پارچه", "active": true, "sortOrder": 2 }
+]

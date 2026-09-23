@@ -201,19 +201,21 @@ export async function getPayloadAccountOrders(user: AuthUser): Promise<AccountOr
       .join("، "),
     items: (order.items ?? []).flatMap((item, index) => {
       const payloadProduct = typeof item.product === "object" ? item.product as PayloadProduct : undefined;
-      if (!payloadProduct) return [];
-      const mapped = mapPayloadProduct(payloadProduct, {
-        configurationGroups: [],
-        configurationOptions: [],
+      const mapped = payloadProduct ? mapPayloadProduct(payloadProduct, {
+        attributes: [],
+        attributeOptions: [],
         variants: [],
-      });
+      }) : undefined;
       const color = item.configuration?.find((selection) => selection.groupKey === "wood-finish")?.labelFaSnapshot
         ?? item.configuration?.[0]?.labelFaSnapshot
         ?? "سفارشی";
       return [{
         id: `payload-${order.id}-${item.id ?? index}`,
         productName: item.productTitleSnapshot,
-        image: mapped.image,
+        selectionSummary: [item.variantTitleSnapshot, item.variantCodeSnapshot,
+          ...(item.configuration ?? []).map((choice) => `${choice.groupLabelFaSnapshot}: ${choice.labelFaSnapshot}`),
+        ].filter(Boolean).join(' · '),
+        image: mapped?.image ?? "",
         color,
         quantity: item.quantity,
         unitPrice: item.unitPriceInTMN,

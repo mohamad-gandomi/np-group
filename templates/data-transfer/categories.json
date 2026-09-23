@@ -5,6 +5,7 @@
     "parent": null,
     "image": "chairs-category.webp",
     "descriptionFa": "انواع صندلی برای خانه و محیط کار.",
+    "showOnStorefront": true,
     "sortOrder": 10,
     "published": true
   }

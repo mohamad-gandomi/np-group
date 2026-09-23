@@ -191,7 +191,7 @@ The approved Admin includes:
 - rich text.
 - media.
 - variants.
-- configuration groups/options.
+- reusable attributes and allowed options.
 - save/publish/reopen workflow.
 
 Known non-blocking Admin limitations:
@@ -206,209 +206,54 @@ Do not spend a new phase redesigning the approved dashboard without a concrete u
 
 ## 6. Current Payload implementation
 
-### `payload.config.ts`
+The stack remains Next.js 16.3.4 + Payload 3.88 + the official ecommerce and import/export plugins + PostgreSQL. Authentication, customer sessions, Kavenegar, Zarinpal and Tapin remain in their existing modules.
 
-Current important behavior:
+Editor catalog collections: Products, Categories, Brands, Attributes, Attribute Options, and Product Variants. Categories are hierarchical and include product families. A product relates to a brand and categories; there is no separate family collection in the active application.
 
-- PostgreSQL adapter.
-- Payload migrations under `src/payload/migrations`.
-- Persian Payload translations.
-- Admin user collection: `users`.
-- timezone: `Asia/Tehran`.
-- Payload Admin metadata configured for Nilper.
-- Payload Ecommerce plugin enabled.
-- generated types written to `src/payload-types.ts`.
+Each category has `showOnStorefront`. At most six categories may enable it; selected categories, ordered by `sortOrder`, are the only category cards and category filters shown on the homepage and shop index. Unselected published categories retain their data and direct storefront routes. Migration `20260923_105612_category_storefront_selection` deterministically selects the first six existing published categories for continuity.
 
-### Base collections already implemented
+Attribute storage reuses the ecommerce plugin's `variantTypes` (label, unique name, active, sortOrder, helpTextFa) and `variantOptions` (variantType, label, globally unique value, code, groupLabel, image, colorHex, active, sortOrder). These internal API names are compatibility details, presented in Persian as «ویژگی» and «گزینه ویژگی». Palette/family grouping is plain `groupLabel` metadata.
 
-Current non-commerce collections include:
+## 7. Product and commerce model
 
 ```text
-users
-media
-brands
-categories
-product-series
-configuration-groups
-configuration-options
+Product
+├── productType: simple | variable
+├── Brand
+├── Categories[]
+├── attributes[{ attribute, allowedOptions[], required }]
+├── variantAttributes[]
+└── Manual Variants[]
 ```
 
-Current concepts already represented:
+Simple products have no variants. Variable products select a subset of assigned attributes as their variant identity. Every complete model must contain exactly one allowed option from each defining attribute, with a unique SKU and unique unordered combination. **Attributes do NOT automatically generate Variants.** Non-defining attributes remain selectable customer choices without multiplying SKUs.
 
-#### Users
+The product editor uses Basic Information, Sales, Media, Product Information, Attributes, and a conditional Models tab with Payload's manual join/create/edit interface. The hidden plugin fields `enableVariants` and `variantTypes` are derived compatibility fields. Product changes cannot orphan existing variants; attributes/options in live definitions cannot be deleted or reassigned until dependencies are cleaned up. Empty incomplete drafts may be saved, but cannot be purchased or published as complete models.
 
-Currently optimized for the Admin/editor preview:
+Products retain catalogCode, media/gallery, descriptions, flexible measurements and technicalSpecs, lead times, order notes, relatedProducts and matchingProducts. Measurement/specification keys are stable and automatic; row ordering follows the editor's row order. Existing keys remain intact.
 
-```text
-admin
-editor
-```
+`src/payload/catalog-domain.ts` defines domain validation and the canonical `resolveCommerce` resolver. A variant with `priceInTMNEnabled: true` uses its own plugin price; otherwise it inherits the product price. Null shipping, availability and image overrides inherit product values. Existing explicit shipping values remain explicit during migration. No duplicate price storage or inventory counts are introduced.
 
-Storefront customers use a separate Payload `customers` auth collection and never share the Admin/editor `users` collection. Phone OTP challenges and revocable sessions are private Payload collections; Kavenegar Verify Lookup delivers production SMS while Payload/PostgreSQL owns OTP state.
+Cart identity is product + optional real variant + sorted non-variant attribute selections. Existing `configuration` and snapshot field names remain internal compatibility names. The server resolves all prices, SKUs, labels and membership; client prices and labels never become authoritative. The plugin cart save hook is followed by a subtotal calculation from validated snapshot prices, including inheritance.
 
-Payload customers are the canonical storefront identities. Profiles, addresses, carts, and orders link directly to the authenticated customer record; no legacy identity bridge or secondary account datastore remains.
+Persisted order/transaction line snapshots are immutable even if an update explicitly submits replacement items. Historical text and prices do not depend on current catalog records. New items also store `variantTitleSnapshot`; old historical titles are not guessed. Account order pages retain items whose products were deleted and display all saved customer choices. Active carts are revalidated against published records.
 
-#### Media
+Payload draft/publish behavior and storefront cache hooks remain enabled. The storefront presents only real manually created models. Unavailable combinations cannot create a model. Customer choices support grouped palettes, images, and color swatches; model image overrides update the product gallery. Family category routes coexist with existing canonical product URLs.
 
-Payload upload collection with Persian alt/caption support.
+### Migration and recovery (2026-09-22)
 
-#### Brands
+1. `20260922_083135_unified_catalog_expand`: adds attributes, product type, overrides and combination uniqueness storage.
+2. `20260922_090000_unified_catalog_backfill`: preserves plugin IDs; maps legacy customer-choice IDs into the shared storage; backfills product assignments and versions; derives product type from actual variants; converts family records to categories; migrates commerce relationship IDs without changing historical wording.
+3. `20260922_123418_unified_catalog_contract`: verifies mapping completeness, archives retired source tables and references under `catalog_legacy`, then removes obsolete active fields/relationships.
+4. `20260922_124433_variant_title_snapshots`: adds optional immutable model wording for newly placed orders.
 
-Includes Persian title, slug, description, logo and publication status.
+Back up PostgreSQL and stop application writes during deployment. Automatic schema push is disabled in `payload.config.ts`. Retained audit tables are `catalog_migration_map` (including original source JSON) and `catalog_migration_report`. Ambiguous family parents remain unparented; existing product category memberships are preserved. Conflicting category slugs get deterministic family suffixes rather than overwriting unrelated categories. Incomplete legacy drafts are preserved and reported.
 
-#### Categories
+The local baseline had 11 products, 25 variants (including an incomplete draft), 2 customer-choice attributes, 12 customer-choice options, 9 families, 34 orders and 24 transactions. A pre-refactor backup is retained in the local PostgreSQL container at `/tmp/catalog-before-unification.dump`. A restored verification database independently replayed the migrations and checked exact historical snapshots, SKU preservation, category links, active-cart remapping and a no-op rerun. Archive data is not an active second catalog model.
 
-Includes:
+The baseline database had dev-pushed schema changes but three missing migration ledger entries. `scripts/reconcile-catalog-baseline.mjs` verifies columns, nullability, types, indexes, foreign-key names and enums against the last pre-refactor snapshot before recording those entries with `--apply`. Do not run it on a normally migrated database.
 
-- Persian title.
-- slug.
-- parent relationship.
-- image.
-- description.
-- sort order.
-- publication status.
-
-The hierarchy is important because the real Nilper catalog will be deeper than the five current storefront demo categories.
-
-#### Product Series
-
-Represents product families such as:
-
-```text
-دلان
-داران
-ویونا
-```
-
-#### Configuration Groups / Options
-
-Already separated from commerce variants.
-
-Examples:
-
-```text
-wood-finish
-upholstery-palette
-```
-
-This separation is a core domain rule and must be preserved.
-
----
-
-## 7. Current Payload Ecommerce implementation
-
-`src/payload/commerce.ts` currently overrides the official Payload Ecommerce collections rather than replacing the plugin.
-
-### Product fields already represented
-
-Current Product Admin has tabs for:
-
-- identity.
-- sales.
-- media.
-- product information.
-- variants/configuration.
-- source data.
-
-Important existing fields/concepts include:
-
-```text
-title
-slug
-catalogCode
-brand
-categories
-series
-
-salesMode
-availabilityMode
-
-mainImage
-gallery
-
-descriptionFa
-measurements
-technicalSpecs
-orderNotesFa
-leadTimeFa
-
-configurationGroups
-relatedProducts
-matchingProducts
-```
-
-Sales modes currently include:
-
-```text
-direct
-inquiry
-made_to_order
-```
-
-Availability modes currently include:
-
-```text
-orderable
-in_stock
-unavailable
-```
-
-### Variant fields already represented
-
-Variants currently support:
-
-```text
-product
-nilperCode / SKU
-title
-options
-price fields from Payload Ecommerce
-variant measurements
-manufacturing notes
-```
-
-A Nilper SKU/registration code is intentionally separate from fabric/wood/customization choices.
-
-Shared specifications and measurements belong on Product. Measurements that differ by operational registration code belong on Variant. Both use flexible key/label/value structures so furniture, bedroom and dining records do not require hundreds of nullable category-specific columns.
-
-`matchingProducts` records explicit set/coordination relationships from Nilper source material. `relatedProducts` remains available for general merchandising recommendations; the two meanings must not be merged.
-
-Portable catalog operations use the public product `slug` and the unique variant `nilperCode`. Workbook provenance and data-quality-note fields are intentionally not part of the production product/variant domain.
-
-### Commerce features currently configured
-
-Payload Ecommerce currently has foundations for:
-
-- Products.
-- Variants.
-- Carts.
-- Addresses.
-- Orders.
-- Transactions.
-- Payments through provider adapters (Zarinpal first).
-
-Current preview choices:
-
-- carts are hidden from Admin.
-- addresses, orders, and transactions are visible in Admin with Nilper-oriented labels and columns.
-- guest carts are disabled.
-- inventory is intentionally disabled until an authoritative stock-quantity source exists.
-- Stripe is not implemented.
-- Zarinpal is the first Iranian payment provider; future gateways must be added as separate adapters without changing the canonical Toman model.
-
-Configuration-aware commerce behavior is implemented in `src/payload/cart-configuration.ts`:
-
-- every cart, order, and transaction item stores normalized configuration selections plus readable Persian snapshots.
-- one cart-line identity is product + optional variant + normalized `(groupKey, option ID)` selections; input order does not affect matching.
-- the server verifies publication state, product/variant ownership, allowed and active groups, option membership/activity, required selections, positive integer quantity, and the current server price.
-- client-provided title, code, configuration labels, identity keys, subtotals, amounts, and unit prices are overwritten or ignored.
-- cart totals are recalculated against current trusted records; order and transaction snapshots remain historical during updates that do not explicitly replace their items.
-- configuration relationship columns are nullable with readable snapshots retained, so later deletion of a source option/group does not erase historical order wording.
-- inventory quantities are not checked because inventory is intentionally disabled until an authoritative stock source exists.
-
-Guest carts remain disabled. Therefore Payload's guest-cart merge path is outside the current supported boundary; it must be re-evaluated if guest carts are enabled later.
-
-The supplied spreadsheets describe orderability and manufacturing choices, not stock counts. Until a real stock source is connected, use `salesMode` and `availabilityMode`; do not manufacture numeric inventory. Payload inventory can be reconsidered later only for direct/in-stock SKUs with authoritative quantities.
+Catalog migrations are forward-only; restore the full pre-migration backup for rollback. Do not drop the recovery archive until its retention period and external backups have been reviewed.
 
 ---
 
@@ -439,59 +284,9 @@ Rules:
 
 ## 9. Product domain rules
 
-Nilper is not a simple `product + price + stock` store.
+A model represents a real operational SKU, price, physical form, or manufacturing identity. Fabric, wood finish and palette choices use the same reusable attribute system, but remain outside variant identity unless explicitly selected in `variantAttributes`. Never generate Cartesian combinations. A variable product may have dozens of customer choices and only a handful of real models.
 
-Real source files show:
-
-- product families / series.
-- separately sellable products within a series.
-- registration/order codes.
-- product-specific specifications.
-- dimensions.
-- wood finishes.
-- upholstery/fabric palettes.
-- made-to-order behavior.
-- order-taking notes.
-- related/matching products.
-- different data shapes for furniture, bedroom, dining and other categories.
-
-### Most important rule
-
-```text
-Variant != every customer choice
-```
-
-Create a **Variant** only when a sellable form has a real operational identity such as:
-
-- distinct Nilper registration/order code.
-- distinct SKU.
-- distinct price.
-- distinct inventory identity.
-- materially distinct physical dimensions.
-- independently handled manufacturing/order identity.
-
-Use **Configuration Groups / Options** for choices such as:
-
-- fabric.
-- upholstery palette.
-- wood finish.
-- decorative finish.
-- other customization that does not create a real operational SKU.
-
-Avoid:
-
-```text
-Product × 20 fabrics × 8 wood finishes × ...
-```
-
-Prefer:
-
-```text
-Product
-  -> small number of real Variants
-  -> Configuration Groups
-       -> Configuration Options
-```
+Shared specifications and measurements belong on Product; physical differences belong on Variant. Keep explicit matching/coordinated products distinct from general related-product recommendations. Preserve integer Toman pricing, published visibility, historical snapshots and existing integration boundaries.
 
 ---
 
@@ -527,7 +322,7 @@ This supports separating real variants from configurable finishes/upholstery.
 Evidence includes a bedroom family with multiple separately sellable pieces, e.g.:
 
 ```text
-Series: Daran
+Category: Daran
   -> Bed
   -> Dresser / Mirror
   -> Bedside table
@@ -552,17 +347,17 @@ Evidence includes:
 
 This validates:
 
-- Product Series.
+- hierarchical family categories.
 - multiple Products.
 - real Variants.
-- separate Configuration Groups.
+- non-variant customer attributes.
 - related/matching relationships.
 
 ### Data entry and transfer status
 
 The owner deferred workbook-specific Excel automation because the files require different extraction rules and manual decisions. The workbooks remain outside the repository and must not be copied into `public/` or committed. Do not add an Excel parser or workbook-specific automation unless the owner explicitly reopens that work with approved mapping rules.
 
-Routine reviewed data transfer uses Payload's official import/export plugin with one JSON array per collection. Administrators may export the current selection/filter or all records, and may create, update, or upsert a small batch. Media files are bulk-uploaded to Payload first; JSON refers to them by filename. Product/post/project relations use `slug`, variants use `nilperCode`, configuration groups use `key`, and variant types use `name` where those stable fields are available.
+Routine reviewed data transfer uses Payload's official import/export plugin with one JSON array per collection. Administrators may export the current selection/filter or all records, and may create, update, or upsert a small batch. Media files are bulk-uploaded to Payload first; JSON refers to them by filename. Product/post/project relations use `slug`, variants use `nilperCode`, attributes use `name`, and attribute options use globally unique `value` where those stable fields are available.
 
 All media references exposed by this JSON workflow are optional. An omitted value, `null`, an empty string, or whitespace-only text means “leave the image empty”; a non-empty filename must still resolve to exactly one existing Payload Media record. The public storefront preserves the relevant image frame without substituting a misleading placeholder and never passes an empty source to `next/image`. Editors can attach the real media later in Payload.
 
@@ -578,7 +373,7 @@ It creates representative preview data for:
 
 - Nilper brand.
 - relevant categories.
-- Delan series.
+- Delan family category.
 - Delan sofa.
 - a lightweight related Delan table record.
 - wood-finish configuration.
@@ -610,7 +405,7 @@ Eight additional products were manually reviewed from the supplied workbook/medi
 مبل دایان          NHSS871
 ```
 
-These records include optimized supplied photography, Persian descriptions and specifications, confirmed dimensions, configuration relationships, source traceability, and 22 distinct operational registration-code variants. No price was present, so every addition remains made-to-order with pricing disabled.
+These records include optimized supplied photography, Persian descriptions and specifications, confirmed dimensions, attribute assignments, source traceability, and 22 distinct operational registration-code variants. No price was present, so every addition remains made-to-order with pricing disabled.
 
 Known inconsistencies remain explicit: the 852 worksheet/width values, 506/507 registration-code mismatch, absent 850 width-180 codes, and duplicate Dayan code `NHSS871002`. Ambiguous records were omitted rather than corrected or duplicated.
 
@@ -673,7 +468,7 @@ guest browser cart (stable IDs only)
     -> Payload Admin lifecycle management
 ```
 
-Guest local storage contains only stable product/variant IDs, quantity, and configuration group/option IDs. It is never authoritative for product metadata or prices. Signing in merges those references into the user's Payload cart after server validation.
+Guest local storage contains only stable product/variant IDs, quantity, and attribute/option IDs. It is never authoritative for product metadata or prices. Signing in merges those references into the user's Payload cart after server validation.
 
 Storefront sessions authenticate a Payload customer through an opaque random cookie whose keyed hash is stored in PostgreSQL. Customers link directly to profiles, addresses, carts, and orders through Payload relationships.
 

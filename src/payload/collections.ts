@@ -1,5 +1,6 @@
 import path from "node:path";
-import type { Access, CollectionConfig, Field } from "payload";
+import { ValidationError } from "payload";
+import type { Access, CollectionBeforeValidateHook, CollectionConfig, Field } from "payload";
 
 import { customerSessionStrategy } from "../features/auth/customer-session";
 import { Posts } from "./posts";
@@ -60,11 +61,6 @@ const editorialContentAccess: CollectionConfig["access"] = {
 const publishedContentAccess: CollectionConfig["access"] = {
   ...editorialContentAccess,
   read: ({ req }) => hasEditorialRole(req.user) || { published: { equals: true } },
-};
-
-const activeContentAccess: CollectionConfig["access"] = {
-  ...editorialContentAccess,
-  read: ({ req }) => hasEditorialRole(req.user) || { active: { equals: true } },
 };
 
 export const Users: CollectionConfig = {
@@ -408,87 +404,61 @@ export const Projects: CollectionConfig = {
   ],
 };
 
+const validateCategoryStorefrontSelection: CollectionBeforeValidateHook = async ({ data, originalDoc, req }) => {
+  const selected = data?.showOnStorefront ?? originalDoc?.showOnStorefront;
+  if (selected !== true) return data;
+
+  const selectedCategories = await req.payload.find({
+    collection: "categories",
+    depth: 0,
+    limit: 0,
+    overrideAccess: true,
+    req,
+    where: {
+      and: [
+        { showOnStorefront: { equals: true } },
+        ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : []),
+      ],
+    },
+  });
+
+  if (selectedCategories.totalDocs >= 6) {
+    throw new ValidationError({
+      req,
+      errors: [{
+        path: "showOnStorefront",
+        message: "حداکثر ۶ دسته‌بندی را می‌توان برای صفحه اصلی و فروشگاه انتخاب کرد.",
+      }],
+    });
+  }
+
+  return data;
+};
+
 export const Categories: CollectionConfig = {
   slug: "categories",
   access: publishedContentAccess,
   labels: { singular: "دسته‌بندی", plural: "دسته‌بندی‌ها" },
-  admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "parent", "sortOrder", "published"] },
-  hooks: withStorefrontRevalidation(undefined, ["catalog"], "published"),
+  admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "parent", "showOnStorefront", "sortOrder", "published"] },
+  hooks: withStorefrontRevalidation({ beforeValidate: [validateCategoryStorefrontSelection] }, ["catalog"], "published"),
   fields: [
     rtlText("title", "عنوان فارسی", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
     { name: "parent", type: "relationship", relationTo: "categories", label: "دسته والد" },
     { name: "image", type: "upload", relationTo: "media", label: "تصویر" },
     { name: "descriptionFa", type: "textarea", label: "توضیح فارسی" },
+    {
+      name: "showOnStorefront",
+      type: "checkbox",
+      label: "نمایش در صفحه اصلی و فروشگاه",
+      defaultValue: false,
+      index: true,
+      admin: {
+        description: "حداکثر ۶ دسته‌بندی انتخاب می‌شود. ترتیب نمایش آن‌ها با فیلد «ترتیب نمایش» تعیین می‌شود.",
+      },
+    },
     { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
     { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
-  ],
-};
-
-export const ProductSeries: CollectionConfig = {
-  slug: "product-series",
-  access: publishedContentAccess,
-  labels: { singular: "سری محصول", plural: "سری‌های محصول" },
-  admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "styleFa", "slug"] },
-  hooks: withStorefrontRevalidation(undefined, ["catalog"], "published"),
-  fields: [
-    rtlText("title", "نام فارسی سری", true),
-    { name: "slug", type: "text", label: "نامک", required: true, unique: true },
-    rtlText("styleFa", "سبک طراحی"),
-    { name: "descriptionFa", type: "textarea", label: "توضیح فارسی" },
-    { name: "heroMedia", type: "upload", relationTo: "media", label: "تصویر اصلی" },
-    { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
-  ],
-};
-
-export const ConfigurationGroups: CollectionConfig = {
-  slug: "configuration-groups",
-  access: activeContentAccess,
-  labels: { singular: "گروه پیکربندی", plural: "گروه‌های پیکربندی" },
-  admin: { group: "پیکربندی محصول", useAsTitle: "title", defaultColumns: ["title", "key", "inputType", "required"] },
-  hooks: withStorefrontRevalidation(undefined, ["catalog"], "active"),
-  fields: [
-    rtlText("title", "عنوان فارسی", true),
-    { name: "key", type: "text", label: "کلید پایدار", required: true, unique: true },
-    {
-      name: "inputType",
-      type: "select",
-      label: "نوع کنترل",
-      required: true,
-      options: [
-        { label: "نمونه رنگ", value: "swatch" },
-        { label: "فهرست انتخاب", value: "select" },
-        { label: "گزینه‌ای", value: "radio" },
-      ],
-    },
-    { name: "required", type: "checkbox", label: "انتخاب اجباری", defaultValue: true },
-    { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
-    { name: "helpTextFa", type: "textarea", label: "راهنمای فارسی" },
-    {
-      name: "options",
-      type: "join",
-      collection: "configuration-options",
-      on: "group",
-      label: "گزینه‌ها",
-      orderable: true,
-    },
-  ],
-};
-
-export const ConfigurationOptions: CollectionConfig = {
-  slug: "configuration-options",
-  access: activeContentAccess,
-  labels: { singular: "گزینه پیکربندی", plural: "گزینه‌های پیکربندی" },
-  admin: { group: "پیکربندی محصول", useAsTitle: "title", defaultColumns: ["title", "group", "code", "active", "sortOrder"] },
-  hooks: withStorefrontRevalidation(undefined, ["catalog"], "active"),
-  fields: [
-    { name: "group", type: "relationship", relationTo: "configuration-groups", label: "گروه", required: true },
-    rtlText("title", "عنوان فارسی / نام کالیته", true),
-    { name: "code", type: "text", label: "کد داخلی" },
-    { name: "swatchColor", type: "text", label: "رنگ نمونه (HEX)" },
-    { name: "swatchMedia", type: "upload", relationTo: "media", label: "تصویر نمونه" },
-    { name: "active", type: "checkbox", label: "فعال", defaultValue: true },
-    { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
   ],
 };
 
@@ -503,7 +473,4 @@ export const collections: CollectionConfig[] = [
   Brands,
   Projects,
   Categories,
-  ProductSeries,
-  ConfigurationGroups,
-  ConfigurationOptions,
 ];

@@ -86,28 +86,29 @@ async function ensureCustomers() {
 async function getConfiguration(product: Product) {
   const selections: DemoProduct["configuration"] = [];
 
-  for (const relation of product.configurationGroups ?? []) {
-    const groupID = relationID(relation);
+  for (const assignment of product.attributes ?? []) {
+    if (!assignment.required) continue;
+    const groupID = relationID(assignment.attribute);
     if (!groupID) continue;
     const group = await payload.findByID({
-      collection: "configuration-groups",
+      collection: "variantTypes",
       depth: 0,
       id: groupID,
       overrideAccess: true,
     });
-    if (group.active !== true || group.required !== true) continue;
+    if (group.active !== true) continue;
 
     const options = await payload.find({
-      collection: "configuration-options",
+      collection: "variantOptions",
       depth: 0,
       limit: 1,
       overrideAccess: true,
       sort: "sortOrder",
-      where: { and: [{ group: { equals: groupID } }, { active: { equals: true } }] },
+      where: { and: [{ id: { in: (assignment.allowedOptions ?? []).map(relationID) } }, { active: { equals: true } }] },
     });
     const option = options.docs[0];
     if (!option) throw new Error(`No active configuration option found for demo product ${product.title}.`);
-    selections.push({ groupKey: group.key, option: option.id });
+    selections.push({ groupKey: group.name, option: option.id });
   }
 
   return selections;

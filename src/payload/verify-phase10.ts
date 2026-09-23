@@ -8,7 +8,7 @@ import { parseCartLineReferences, replaceStorefrontCart } from "../features/cart
 import type { AuthUser } from "../features/auth/session";
 import { confirmZarinpalTransaction, zarinpalAdapter } from "../features/payments/zarinpal/adapter";
 import type { ZarinpalClient } from "../features/payments/zarinpal/client";
-import type { ConfigurationGroup, ConfigurationOption, Product, Transaction, Variant } from "../payload-types";
+import type { VariantType, VariantOption, Product, Transaction, Variant } from "../payload-types";
 import { toPaymentGatewayAmount } from "./money";
 
 const payload = await getPayload({ config });
@@ -58,14 +58,14 @@ try {
   });
   const product = products.docs[0] as Product | undefined;
   assert(product, "Run `npm run payload:seed` before Phase 10 verification.");
-  const groupIDs = (product.configurationGroups ?? []).map((value) => typeof value === "number" ? value : value.id);
+  const groupIDs = (product.attributes ?? []).filter((row) => row.required).map((row) => typeof row.attribute === "number" ? row.attribute : row.attribute.id);
   const [groupsResult, optionsResult, variantsResult] = await Promise.all([
-    payload.find({ collection: "configuration-groups", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
-    payload.find({ collection: "configuration-options", depth: 0, pagination: false, limit: 100, where: { group: { in: groupIDs } } }),
+    payload.find({ collection: "variantTypes", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
+    payload.find({ collection: "variantOptions", depth: 0, pagination: false, limit: 100, where: { variantType: { in: groupIDs } } }),
     payload.find({ collection: "variants", depth: 0, pagination: false, limit: 1, where: { and: [{ product: { equals: product.id } }, { _status: { equals: "published" } }] } }),
   ]);
-  const groups = groupsResult.docs as ConfigurationGroup[];
-  const options = optionsResult.docs as ConfigurationOption[];
+  const groups = groupsResult.docs as VariantType[];
+  const options = optionsResult.docs as VariantOption[];
   variant = variantsResult.docs[0] as Variant | undefined;
   assert(variant && groups.length && options.length);
   originalVariantPrice = variant.priceInTMN;
@@ -73,9 +73,9 @@ try {
   await payload.update({ collection: "variants", id: variant.id, data: { priceInTMNEnabled: true, priceInTMN: testPrice } });
 
   const configuration = groups.map((group) => {
-    const option = options.find((candidate) => (typeof candidate.group === "number" ? candidate.group : candidate.group.id) === group.id);
+    const option = options.find((candidate) => (typeof candidate.variantType === "number" ? candidate.variantType : candidate.variantType.id) === group.id);
     assert(option);
-    return { groupKey: group.key, optionId: option.id };
+    return { groupKey: group.name, optionId: option.id };
   });
   const references = parseCartLineReferences([{ productId: product.id, variantId: variant.id, quantity: 1, configuration }]);
   const cartResponse = await replaceStorefrontCart(user, references);

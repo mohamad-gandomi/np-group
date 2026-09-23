@@ -4,7 +4,7 @@ import { addItem } from "@payloadcms/plugin-ecommerce";
 import { createLocalReq, getPayload } from "payload";
 
 import config from "../../payload.config";
-import type { Cart, ConfigurationGroup, ConfigurationOption, Product, Variant } from "../payload-types";
+import type { Cart, VariantType, VariantOption, Product, Variant } from "../payload-types";
 import { nilperCartItemMatcher } from "./cart-configuration";
 import { mapPayloadProduct } from "../features/catalog/payload-catalog-mapper";
 
@@ -15,8 +15,8 @@ const testPrice = 12_345_678;
 
 let product: Product | undefined;
 let variant: Variant | undefined;
-let group: ConfigurationGroup | undefined;
-let option: ConfigurationOption | undefined;
+let group: VariantType | undefined;
+let option: VariantOption | undefined;
 let originalProductTitle: string | undefined;
 let originalVariantCode: string | undefined;
 let originalVariantPrice: number | null | undefined;
@@ -58,10 +58,10 @@ try {
   assert.equal(product.slug, "delan-sofa");
   assert.equal(product.catalogCode, "NHSS 994");
 
-  const groupIDs = (product.configurationGroups ?? []).map((value) => typeof value === "number" ? value : value.id);
+  const groupIDs = (product.attributes ?? []).filter((row) => row.required).map((row) => typeof row.attribute === "number" ? row.attribute : row.attribute.id);
   const [groupsResult, optionsResult, variantsResult] = await Promise.all([
-    payload.find({ collection: "configuration-groups", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
-    payload.find({ collection: "configuration-options", depth: 0, pagination: false, limit: 100, where: { group: { in: groupIDs } } }),
+    payload.find({ collection: "variantTypes", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
+    payload.find({ collection: "variantOptions", depth: 0, pagination: false, limit: 100, where: { variantType: { in: groupIDs } } }),
     payload.find({ collection: "variants", depth: 2, pagination: false, limit: 100, where: { and: [{ product: { equals: product.id } }, { _status: { equals: "published" } }] } }),
   ]);
   const groups = groupsResult.docs;
@@ -71,8 +71,8 @@ try {
   assert(variants.length >= 2);
 
   const mapped = mapPayloadProduct(product, {
-    configurationGroups: groups,
-    configurationOptions: options,
+    attributes: groups,
+    attributeOptions: options,
     variants,
   });
   assert.equal(mapped.source, "payload");
@@ -80,20 +80,20 @@ try {
   assert.match(mapped.image, /^\/api\/media\/file\//, "Same-app Payload media must use a local image path.");
   assert(!mapped.image.includes("localhost"), "Storefront image URLs must not capture Payload's local server URL.");
   assert(mapped.description?.includes("نئوکلاسیک"));
-  assert.equal(mapped.configurationGroups?.length, 2);
-  assert(mapped.configurationGroups?.every((item) => item.options.length > 1));
+  assert.equal(mapped.attributes?.length, 2);
+  assert(mapped.attributes?.every((item) => item.options.length > 1));
   assert(mapped.variants?.some((item) => item.code === "NHSS94012"));
 
   variant = variants[0];
   group = groups[0];
-  option = options.find((item) => (typeof item.group === "number" ? item.group : item.group.id) === group!.id);
+  option = options.find((item) => (typeof item.variantType === "number" ? item.variantType : item.variantType.id) === group!.id);
   assert(variant && group && option);
   originalProductTitle = product.title;
   originalVariantCode = variant.nilperCode;
   originalVariantPrice = variant.priceInTMN;
   originalVariantPriceEnabled = variant.priceInTMNEnabled;
-  originalGroupTitle = group.title;
-  originalOptionTitle = option.title;
+  originalGroupTitle = group.label;
+  originalOptionTitle = option.label;
 
   await payload.update({
     collection: "variants",
@@ -102,13 +102,13 @@ try {
   });
 
   const configuration = groups.map((item) => {
-    const selected = options.find((candidate) => (typeof candidate.group === "number" ? candidate.group : candidate.group.id) === item.id);
+    const selected = options.find((candidate) => (typeof candidate.variantType === "number" ? candidate.variantType : candidate.variantType.id) === item.id);
     assert(selected);
-    return { groupKey: item.key, option: selected.id };
+    return { groupKey: item.name, option: selected.id };
   });
-  const alternateGroup = groups.find((item) => options.filter((candidate) => (typeof candidate.group === "number" ? candidate.group : candidate.group.id) === item.id).length > 1)!;
-  const alternateOptions = options.filter((candidate) => (typeof candidate.group === "number" ? candidate.group : candidate.group.id) === alternateGroup.id);
-  const alternateConfiguration = configuration.map((selection) => selection.groupKey === alternateGroup.key
+  const alternateGroup = groups.find((item) => options.filter((candidate) => (typeof candidate.variantType === "number" ? candidate.variantType : candidate.variantType.id) === item.id).length > 1)!;
+  const alternateOptions = options.filter((candidate) => (typeof candidate.variantType === "number" ? candidate.variantType : candidate.variantType.id) === alternateGroup.id);
+  const alternateConfiguration = configuration.map((selection) => selection.groupKey === alternateGroup.name
     ? { groupKey: selection.groupKey, option: alternateOptions[1]!.id }
     : selection);
 
@@ -145,8 +145,8 @@ try {
 
   await payload.update({ collection: "products", id: product.id, data: { title: `نام موقت ${runID}` } });
   await payload.update({ collection: "variants", id: variant.id, data: { nilperCode: `TEMP-${runID}`, priceInTMN: testPrice + 1 } });
-  await payload.update({ collection: "configuration-groups", id: group.id, data: { title: `گروه موقت ${runID}` } });
-  await payload.update({ collection: "configuration-options", id: option.id, data: { title: `گزینه موقت ${runID}` } });
+  await payload.update({ collection: "variantTypes", id: group.id, data: { label: `گروه موقت ${runID}` } });
+  await payload.update({ collection: "variantOptions", id: option.id, data: { label: `گزینه موقت ${runID}` } });
 
   const preserved = await payload.update({ collection: "orders", id: order.id, data: { status: "confirmed" } });
   assert.equal(preserved.amount, testPrice * 3);
@@ -162,8 +162,8 @@ try {
   for (const id of created.carts.reverse()) await payload.delete({ collection: "carts", id }).catch(() => undefined);
   if (product && originalProductTitle) await payload.update({ collection: "products", id: product.id, data: { title: originalProductTitle } }).catch(() => undefined);
   if (variant && originalVariantCode) await payload.update({ collection: "variants", id: variant.id, data: { nilperCode: originalVariantCode, priceInTMNEnabled: originalVariantPriceEnabled, priceInTMN: originalVariantPrice } }).catch(() => undefined);
-  if (group && originalGroupTitle) await payload.update({ collection: "configuration-groups", id: group.id, data: { title: originalGroupTitle } }).catch(() => undefined);
-  if (option && originalOptionTitle) await payload.update({ collection: "configuration-options", id: option.id, data: { title: originalOptionTitle } }).catch(() => undefined);
+  if (group && originalGroupTitle) await payload.update({ collection: "variantTypes", id: group.id, data: { label: originalGroupTitle } }).catch(() => undefined);
+  if (option && originalOptionTitle) await payload.update({ collection: "variantOptions", id: option.id, data: { label: originalOptionTitle } }).catch(() => undefined);
   for (const id of created.customers.reverse()) await payload.delete({ collection: "customers", id, overrideAccess: true }).catch(() => undefined);
   for (const id of created.users.reverse()) await payload.delete({ collection: "users", id }).catch(() => undefined);
   await payload.destroy();

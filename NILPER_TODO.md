@@ -20,6 +20,16 @@ Before implementation, read these files completely in order:
 
 ## Latest Session Note
 
+- **Date:** 2026-09-23 — Unified catalog refactor.
+- [x] Inspect plugin dependencies, current catalog, cart snapshots, migrations and live local schema.
+- [x] Reuse plugin attribute storage; implement explicit simple/variable products, allowed options, manual models, inheritance and deletion validation.
+- [x] Expand, backfill and contract the local database; retain source tables in `catalog_legacy` and persistent mappings/reports.
+- [x] Replay migrations on an isolated pre-refactor restore and verify historical snapshots, SKUs, category links and active cart IDs.
+- [x] Update seeds, manual catalog, storefront, cart/order handling, portable import/export and templates.
+- [x] Add the unified catalog regression suite; regenerate Payload types and import map.
+- [x] Complete final production build, all affected verification suites, journal/showcase tests and browser review.
+
+
 - **Date:** 2026-09-18
 - [x] Added Payload `afterChange` and `afterDelete` invalidation hooks for every CMS collection that supplies cached public catalog, journal, showcase or sales-contact data.
 - [x] Public publish/edit/unpublish/delete events now expire their Next.js cache tags immediately with `expire: 0` and revalidate the affected static routes and sitemap; the existing five-minute policy remains only as a fallback TTL.

@@ -1,8 +1,7 @@
 import type {
   Brand,
   Category,
-  ConfigurationGroup,
-  ConfigurationOption,
+  VariantType,
   Media,
   Product as PayloadProduct,
   Variant,
@@ -11,15 +10,16 @@ import type {
 
 import type {
   Product,
-  ProductConfigurationGroup,
+  ProductAttribute,
   ProductMeasurement,
   ProductVariant,
 } from "./catalog-types";
 import { storefrontTaxonomyForPayloadCategory } from "./catalog-taxonomy";
+import { relationID, relationIDs, resolveCommerce } from "@/payload/catalog-domain";
 
 export type PayloadCatalogRelations = {
-  configurationGroups: readonly ConfigurationGroup[];
-  configurationOptions: readonly ConfigurationOption[];
+  attributes: readonly VariantType[];
+  attributeOptions: readonly VariantOption[];
   variants: readonly Variant[];
 };
 
@@ -68,35 +68,40 @@ const mapMeasurements = (measurements: PayloadProduct["measurements"] | Variant[
     }))
     .sort((left, right) => left.label.localeCompare(right.label, "fa"));
 
-const mapGroups = ({ configurationGroups, configurationOptions }: PayloadCatalogRelations): ProductConfigurationGroup[] =>
-  configurationGroups.map((group) => ({
+const mapGroups = (product: PayloadProduct, { attributes, attributeOptions }: PayloadCatalogRelations): ProductAttribute[] =>
+  attributes.filter((group) => group.active !== false && !relationIDs(product.variantAttributes).includes(group.id)).map((group) => ({
     id: group.id,
-    key: group.key,
-    label: group.title,
-    inputType: group.inputType,
-    required: group.required === true,
+    key: group.name,
+    label: group.label,
+    inputType: attributeOptions.some((option) => relationID(option.variantType) === group.id && option.colorHex) ? 'swatch' : 'select',
+    required: product.attributes?.find((row) => relationID(row.attribute) === group.id)?.required === true,
     ...(group.helpTextFa ? { helpText: group.helpTextFa } : {}),
-    options: configurationOptions
-      .filter((option) => (typeof option.group === "number" ? option.group : option.group.id) === group.id)
+    options: attributeOptions
+      .filter((option) => option.active !== false && relationID(option.variantType) === group.id && relationIDs(product.attributes?.find((row) => relationID(row.attribute) === group.id)?.allowedOptions).includes(option.id))
       .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0))
       .map((option) => ({
         id: option.id,
-        label: option.title,
+        label: option.label,
         ...(option.code ? { code: option.code } : {}),
-        ...(option.swatchColor ? { swatchColor: option.swatchColor } : {}),
+        ...(option.colorHex ? { swatchColor: option.colorHex } : {}),
+        ...(option.groupLabel ? { groupLabel: option.groupLabel } : {}),
+        ...(payloadMediaURL(option.image) ? { image: payloadMediaURL(option.image) } : {}),
       })),
   }));
 
-const mapVariants = (variants: readonly Variant[]): ProductVariant[] => variants.map((variant) => {
+const mapVariants = (product: PayloadProduct, variants: readonly Variant[]): ProductVariant[] => variants.map((variant) => {
+  const resolved = resolveCommerce(product as unknown as Record<string, unknown>, variant as unknown as Record<string, unknown>);
   const optionLabels = variant.options
     .filter((option): option is VariantOption => isDocument(option))
     .map((option) => option.label);
   return {
     id: variant.id,
+    image: payloadMediaURL(resolved.mainImage as number | Media | null | undefined),
+    availability: resolved.availabilityMode as ProductVariant['availability'],
     code: variant.nilperCode,
     label: optionLabels.join(" · ") || variant.title || variant.nilperCode,
-    price: variant.priceInTMNEnabled === true && typeof variant.priceInTMN === "number" ? variant.priceInTMN : null,
-    shippingMode: variant.shippingMode === "parcel" ? "parcel" : "freight",
+    price: resolved.availabilityMode !== 'unavailable' && resolved.priceInTMNEnabled === true && typeof resolved.priceInTMN === "number" ? resolved.priceInTMN : null,
+    shippingMode: resolved.shippingMode === "parcel" ? "parcel" : "freight",
     measurements: mapMeasurements(variant.measurements),
     ...(variant.manufacturingNotesFa ? { manufacturingNotes: variant.manufacturingNotesFa } : {}),
   };
@@ -111,8 +116,8 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     mainImage,
     ...(product.gallery ?? []).map((item) => payloadMediaURL(item.image)).filter((url): url is string => Boolean(url)),
   ].filter((url, index, all) => Boolean(url) && all.indexOf(url) === index);
-  const groups = mapGroups(relations);
-  const variants = mapVariants(relations.variants);
+  const groups = mapGroups(product, relations);
+  const variants = product.productType === 'variable' ? mapVariants(product, relations.variants) : [];
   const productPrice = product.priceInTMNEnabled === true && typeof product.priceInTMN === "number"
     ? product.priceInTMN
     : null;
@@ -133,12 +138,14 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     id: `payload-${product.id}`,
     payloadProductId: product.id,
     source: "payload",
+    productType: product.productType,
     ...(category?.slug ? { payloadCategorySlug: category.slug } : {}),
     slug: product.slug,
     name: product.title,
     brand: brand?.title ?? "نیلپر",
     ...(brand?.slug ? { brandSlug: brand.slug } : {}),
     category: taxonomy.slug,
+    categorySlugs: product.categories.filter((value): value is Category => isDocument(value)).map((value) => storefrontTaxonomyForPayloadCategory(value.slug, value.title).slug),
     categoryTitle: taxonomy.title,
     room: taxonomy.rooms,
     material,
@@ -158,7 +165,7 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     measurements,
     technicalSpecs,
     variants,
-    configurationGroups: groups,
+    attributes: groups,
     relatedPayloadProductIds: [...new Set([
       ...relationshipIDs(product.matchingProducts),
       ...relationshipIDs(product.relatedProducts),

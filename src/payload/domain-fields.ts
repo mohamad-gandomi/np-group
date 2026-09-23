@@ -1,4 +1,9 @@
-import type { ArrayField } from "payload";
+import type { ArrayField, FieldHook } from "payload";
+import { randomUUID } from "node:crypto";
+
+const normalizeRows: FieldHook = ({ value }) => Array.isArray(value)
+  ? value.map((row, index) => ({ ...row, key: row.key || row.id || randomUUID(), sortOrder: index }))
+  : value;
 
 export const technicalSpecGroupOptions = [
   { label: "هویت و کاربرد", value: "identity" },
@@ -21,16 +26,17 @@ export const measurementUnitOptions = [
 export function measurementsField(description: string): ArrayField {
   return {
     name: "measurements",
+    hooks: { beforeValidate: [normalizeRows] },
     type: "array",
     label: "اندازه‌ها و مقادیر فیزیکی",
     labels: { singular: "اندازه", plural: "اندازه‌ها" },
     admin: { description },
     fields: [
-      { name: "key", type: "text", label: "کلید پایدار", required: true },
+      { name: "key", type: "text", required: true, admin: { hidden: true } },
       { name: "labelFa", type: "text", label: "عنوان فارسی", required: true, admin: { rtl: true } },
       { name: "value", type: "number", label: "مقدار", required: true, min: 0 },
       { name: "unit", type: "select", label: "واحد", required: true, options: [...measurementUnitOptions] },
-      { name: "sortOrder", type: "number", label: "ترتیب", defaultValue: 0 },
+      { name: "sortOrder", type: "number", defaultValue: 0, admin: { hidden: true } },
     ],
   };
 }
@@ -38,16 +44,17 @@ export function measurementsField(description: string): ArrayField {
 export function technicalSpecsField(): ArrayField {
   return {
     name: "technicalSpecs",
+    hooks: { beforeValidate: [normalizeRows] },
     type: "array",
     label: "مشخصات فنی مشترک",
     labels: { singular: "مشخصه", plural: "مشخصات" },
-    admin: { description: "مشخصاتی که برای همه گونه‌های این محصول یکسان‌اند." },
+    admin: { description: "مشخصاتی که برای همه مدل‌های این محصول یکسان‌اند." },
     fields: [
-      { name: "key", type: "text", label: "کلید پایدار", required: true },
+      { name: "key", type: "text", required: true, admin: { hidden: true } },
       { name: "labelFa", type: "text", label: "عنوان فارسی", required: true, admin: { rtl: true } },
       { name: "valueFa", type: "textarea", label: "مقدار فارسی", required: true },
       { name: "group", type: "select", label: "گروه", required: true, options: [...technicalSpecGroupOptions] },
-      { name: "sortOrder", type: "number", label: "ترتیب", defaultValue: 0 },
+      { name: "sortOrder", type: "number", defaultValue: 0, admin: { hidden: true } },
     ],
   };
 }

@@ -15,14 +15,14 @@ export function generateStaticParams() {
 
 async function resolveProduct(category: string, slug: string) {
   const payloadProduct = await getProductBySlug(slug);
-  return payloadProduct?.category === category ? payloadProduct : null;
+  return payloadProduct && (payloadProduct.category === category || payloadProduct.categorySlugs?.includes(category)) ? payloadProduct : null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category, product: slug } = await params;
   const product = await resolveProduct(category, slug);
   if (!product) return {};
-  const path = `/shop/${category}/${slug}`;
+  const path = `/shop/${product.category}/${slug}`;
   return {
     title: product.name,
     description: `خرید و سفارش ${product.name} از برند ${product.brand}؛ مشاهده مشخصات، متریال، رنگ‌ها و ابعاد محصول.`,

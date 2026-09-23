@@ -69,34 +69,31 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
     customers: CustomerAuthOperations;
+    users: UserAuthOperations;
   };
   blocks: {};
   collections: {
-    users: User;
     customers: Customer;
-    'customer-otp-challenges': CustomerOtpChallenge;
-    'customer-sessions': CustomerSession;
-    media: Media;
-    'blog-categories': BlogCategory;
-    posts: Post;
-    brands: Brand;
-    projects: Project;
-    categories: Category;
-    'product-series': ProductSery;
-    'configuration-groups': ConfigurationGroup;
-    'configuration-options': ConfigurationOption;
-    addresses: Address;
     variants: Variant;
-    variantTypes: VariantType;
-    variantOptions: VariantOption;
     products: Product;
-    carts: Cart;
     orders: Order;
     transactions: Transaction;
+    brands: Brand;
+    categories: Category;
+    variantTypes: VariantType;
+    variantOptions: VariantOption;
+    media: Media;
+    projects: Project;
+    'blog-categories': BlogCategory;
+    posts: Post;
+    users: User;
     exports: Export;
     imports: Import;
+    'customer-otp-challenges': CustomerOtpChallenge;
+    'customer-sessions': CustomerSession;
+    addresses: Address;
+    carts: Cart;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -108,43 +105,37 @@ export interface Config {
       addresses: 'addresses';
       orders: 'orders';
     };
-    'blog-categories': {
-      posts: 'posts';
-    };
-    'configuration-groups': {
-      options: 'configuration-options';
+    products: {
+      variants: 'variants';
     };
     variantTypes: {
       options: 'variantOptions';
     };
-    products: {
-      variants: 'variants';
+    'blog-categories': {
+      posts: 'posts';
     };
   };
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
-    'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
-    'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
-    'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
-    posts: PostsSelect<false> | PostsSelect<true>;
-    brands: BrandsSelect<false> | BrandsSelect<true>;
-    projects: ProjectsSelect<false> | ProjectsSelect<true>;
-    categories: CategoriesSelect<false> | CategoriesSelect<true>;
-    'product-series': ProductSeriesSelect<false> | ProductSeriesSelect<true>;
-    'configuration-groups': ConfigurationGroupsSelect<false> | ConfigurationGroupsSelect<true>;
-    'configuration-options': ConfigurationOptionsSelect<false> | ConfigurationOptionsSelect<true>;
-    addresses: AddressesSelect<false> | AddressesSelect<true>;
     variants: VariantsSelect<false> | VariantsSelect<true>;
-    variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
-    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
-    carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
+    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
+    'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
+    'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
+    addresses: AddressesSelect<false> | AddressesSelect<true>;
+    carts: CartsSelect<false> | CartsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -165,7 +156,7 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User | Customer;
+  user: Customer | User;
   jobs: {
     tasks: {
       cleanupDataTransferFiles: TaskCleanupDataTransferFiles;
@@ -195,24 +186,6 @@ export interface Config {
     };
   };
 }
-export interface UserAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
-  registerFirstUser: {
-    email: string;
-    password: string;
-  };
-  unlock: {
-    email: string;
-    password: string;
-  };
-}
 export interface CustomerAuthOperations {
   forgotPassword: {
     email: string;
@@ -231,37 +204,23 @@ export interface CustomerAuthOperations {
     password: string;
   };
 }
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  fullName: string;
-  phone?: string | null;
-  role: 'admin' | 'editor' | 'seller';
-  contactTitle?: string | null;
-  contactDescription?: string | null;
-  whatsappPhone?: string | null;
-  active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
+export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -321,14 +280,14 @@ export interface Order {
         variant?: (number | null) | Variant;
         quantity: number;
         /**
-         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         * ورودی پایدار ویژگی و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
          */
         configuration?:
           | {
               groupKey: string;
-              group?: (number | null) | ConfigurationGroup;
+              group?: (number | null) | VariantType;
               groupLabelFaSnapshot: string;
-              option?: (number | null) | ConfigurationOption;
+              option?: (number | null) | VariantOption;
               optionCodeSnapshot?: string | null;
               labelFaSnapshot: string;
               id?: string | null;
@@ -337,6 +296,7 @@ export interface Order {
         configurationKey: string;
         productTitleSnapshot: string;
         variantCodeSnapshot?: string | null;
+        variantTitleSnapshot?: string | null;
         unitPriceInTMN: number;
         shippingModeSnapshot?: ('parcel' | 'freight') | null;
         parcelWeightInGramsSnapshot?: number | null;
@@ -405,7 +365,7 @@ export interface Order {
   createdAt: string;
 }
 /**
- * پیش‌نمایش مدیریت محصول نیلپر؛ گونه‌های SKU از انتخاب‌های پارچه و رنگ چوب جدا هستند.
+ * محصول ساده یا متغیر، ویژگی‌های قابل انتخاب و مدل‌های دستی.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -415,9 +375,9 @@ export interface Product {
   title: string;
   slug: string;
   catalogCode?: string | null;
+  productType: 'simple' | 'variable';
   brand: number | Brand;
   categories: (number | Category)[];
-  series?: (number | null) | ProductSery;
   salesMode: 'direct' | 'inquiry' | 'made_to_order';
   availabilityMode: 'orderable' | 'in_stock' | 'unavailable';
   shippingMode?: ('parcel' | 'freight') | null;
@@ -452,7 +412,7 @@ export interface Product {
     [k: string]: unknown;
   };
   /**
-   * فقط اندازه‌های مشترک همه گونه‌ها؛ اندازه متفاوت هر کد ثبت در خود گونه نگهداری می‌شود.
+   * فقط اندازه‌های مشترک همه مدل‌ها؛ اندازه متفاوت هر کد ثبت در خود مدل نگهداری می‌شود.
    */
   measurements?:
     | {
@@ -465,7 +425,7 @@ export interface Product {
       }[]
     | null;
   /**
-   * مشخصاتی که برای همه گونه‌های این محصول یکسان‌اند.
+   * مشخصاتی که برای همه مدل‌های این محصول یکسان‌اند.
    */
   technicalSpecs?:
     | {
@@ -479,14 +439,25 @@ export interface Product {
     | null;
   orderNotesFa?: string | null;
   leadTimeFa?: string | null;
-  configurationGroups?: (number | ConfigurationGroup)[] | null;
+  attributes?:
+    | {
+        attribute: number | VariantType;
+        allowedOptions?: (number | VariantOption)[] | null;
+        required?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
   relatedProducts?: (number | Product)[] | null;
   /**
    * رابطه صریح برای محصولات یک ست یا خانواده؛ از پیشنهاد عمومی «محصولات مرتبط» جدا است.
    */
   matchingProducts?: (number | Product)[] | null;
+  variantAttributes?: (number | VariantType)[] | null;
   enableVariants?: boolean | null;
   variantTypes?: (number | VariantType)[] | null;
+  /**
+   * مدل‌های واقعی را همین‌جا ببینید، ویرایش کنید یا با «افزودن مورد جدید» بسازید؛ محصول فعلی خودکار انتخاب می‌شود.
+   */
   variants?: {
     docs?: (number | Variant)[];
     hasNextPage?: boolean;
@@ -559,64 +530,18 @@ export interface Category {
   parent?: (number | null) | Category;
   image?: (number | null) | Media;
   descriptionFa?: string | null;
+  /**
+   * حداکثر ۶ دسته‌بندی انتخاب می‌شود. ترتیب نمایش آن‌ها با فیلد «ترتیب نمایش» تعیین می‌شود.
+   */
+  showOnStorefront?: boolean | null;
   sortOrder?: number | null;
   published?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "product-series".
- */
-export interface ProductSery {
-  id: number;
-  title: string;
-  slug: string;
-  styleFa?: string | null;
-  descriptionFa?: string | null;
-  heroMedia?: (number | null) | Media;
-  published?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "configuration-groups".
- */
-export interface ConfigurationGroup {
-  id: number;
-  title: string;
-  key: string;
-  inputType: 'swatch' | 'select' | 'radio';
-  required?: boolean | null;
-  active?: boolean | null;
-  helpTextFa?: string | null;
-  options?: {
-    docs?: (number | ConfigurationOption)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "configuration-options".
- */
-export interface ConfigurationOption {
-  id: number;
-  '_configuration-options_options_order'?: string | null;
-  group: number | ConfigurationGroup;
-  title: string;
-  code?: string | null;
-  swatchColor?: string | null;
-  swatchMedia?: (number | null) | Media;
-  active?: boolean | null;
-  sortOrder?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
+ * ویژگی‌ها به‌صورت خودکار مدل ایجاد نمی‌کنند.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variantTypes".
  */
@@ -624,16 +549,23 @@ export interface VariantType {
   id: number;
   label: string;
   name: string;
+  /**
+   * گزینه‌های این ویژگی را همین‌جا ببینید، ویرایش کنید یا با «افزودن مورد جدید» بسازید؛ ویژگی فعلی خودکار انتخاب می‌شود.
+   */
   options?: {
     docs?: (number | VariantOption)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  active?: boolean | null;
+  sortOrder?: number | null;
+  helpTextFa?: string | null;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
 }
 /**
+ * ویژگی‌ها به‌صورت خودکار مدل ایجاد نمی‌کنند.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variantOptions".
  */
@@ -642,16 +574,18 @@ export interface VariantOption {
   _variantOptions_options_order?: string | null;
   variantType: number | VariantType;
   label: string;
-  /**
-   * should be defaulted or dynamic based on label
-   */
   value: string;
+  active?: boolean | null;
+  sortOrder?: number | null;
+  code?: string | null;
+  groupLabel?: string | null;
+  image?: (number | null) | Media;
+  colorHex?: string | null;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
 }
 /**
- * هر گونه باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.
+ * هر مدل باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variants".
@@ -659,7 +593,7 @@ export interface VariantOption {
 export interface Variant {
   id: number;
   /**
-   * محصول مادر را پیش از انتخاب گزینه‌های گونه مشخص کنید.
+   * محصول مادر را پیش از انتخاب گزینه‌های مدل مشخص کنید.
    */
   product: number | Product;
   nilperCode: string;
@@ -668,10 +602,22 @@ export interface Variant {
    */
   title?: string | null;
   /**
-   * گزینه‌هایی را انتخاب کنید که در محصول مادر فعال شده‌اند.
+   * از هر ویژگی سازنده مدل یک گزینه انتخاب کنید.
    */
   options: (number | VariantOption)[];
+  combinationKey?: string | null;
+  /**
+   * خالی: استفاده از شیوه ارسال محصول
+   */
   shippingMode?: ('parcel' | 'freight') | null;
+  /**
+   * خالی: استفاده از وضعیت محصول
+   */
+  availabilityMode?: ('orderable' | 'in_stock' | 'unavailable') | null;
+  /**
+   * خالی: استفاده از تصویر محصول
+   */
+  mainImage?: (number | null) | Media;
   /**
    * وزن واقعی خود کالا؛ وزن بسته‌بندی عمومی از تنظیمات محرمانه تاپین افزوده می‌شود.
    */
@@ -713,14 +659,14 @@ export interface Transaction {
         variant?: (number | null) | Variant;
         quantity: number;
         /**
-         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         * ورودی پایدار ویژگی و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
          */
         configuration?:
           | {
               groupKey: string;
-              group?: (number | null) | ConfigurationGroup;
+              group?: (number | null) | VariantType;
               groupLabelFaSnapshot: string;
-              option?: (number | null) | ConfigurationOption;
+              option?: (number | null) | VariantOption;
               optionCodeSnapshot?: string | null;
               labelFaSnapshot: string;
               id?: string | null;
@@ -729,6 +675,7 @@ export interface Transaction {
         configurationKey: string;
         productTitleSnapshot: string;
         variantCodeSnapshot?: string | null;
+        variantTitleSnapshot?: string | null;
         unitPriceInTMN: number;
         shippingModeSnapshot?: ('parcel' | 'freight') | null;
         parcelWeightInGramsSnapshot?: number | null;
@@ -795,14 +742,14 @@ export interface Cart {
         variant?: (number | null) | Variant;
         quantity: number;
         /**
-         * ورودی پایدار گروه و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         * ورودی پایدار ویژگی و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
          */
         configuration?:
           | {
               groupKey: string;
-              group?: (number | null) | ConfigurationGroup;
+              group?: (number | null) | VariantType;
               groupLabelFaSnapshot: string;
-              option?: (number | null) | ConfigurationOption;
+              option?: (number | null) | VariantOption;
               optionCodeSnapshot?: string | null;
               labelFaSnapshot: string;
               id?: string | null;
@@ -811,6 +758,7 @@ export interface Cart {
         configurationKey: string;
         productTitleSnapshot: string;
         variantCodeSnapshot?: string | null;
+        variantTitleSnapshot?: string | null;
         unitPriceInTMN: number;
         shippingModeSnapshot?: ('parcel' | 'freight') | null;
         parcelWeightInGramsSnapshot?: number | null;
@@ -829,54 +777,45 @@ export interface Cart {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customer-otp-challenges".
+ * via the `definition` "projects".
  */
-export interface CustomerOtpChallenge {
-  id: number;
-  phoneKey: string;
-  requestIpKey: string;
-  codeHash: string;
-  codeSalt: string;
-  expiresAt: string;
-  attempts: number;
-  deliveryState: 'pending' | 'delivered' | 'failed';
-  providerMessageId?: string | null;
-  consumedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customer-sessions".
- */
-export interface CustomerSession {
-  id: number;
-  customer: number | Customer;
-  tokenHash: string;
-  challengeKey: string;
-  expiresAt: string;
-  revokedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * دسته‌بندی‌های تحریریه برای گروه‌بندی و فیلتر مطالب مجله.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "blog-categories".
- */
-export interface BlogCategory {
+export interface Project {
   id: number;
   title: string;
   slug: string;
-  description?: string | null;
+  sector: 'residential' | 'hospitality' | 'commercial' | 'workplace' | 'healthcare';
+  descriptionFa: string;
+  briefFa: string;
+  heroMedia?: (number | null) | Media;
+  heroAlt?: string | null;
+  heroCaption?: string | null;
+  gallery?:
+    | {
+        image?: (number | null) | Media;
+        alt?: string | null;
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  approach?:
+    | {
+        title: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  palette?:
+    | {
+        name: string;
+        color: string;
+        id?: string | null;
+      }[]
+    | null;
+  products?: (number | Product)[] | null;
+  article?: (number | null) | Post;
+  featured?: boolean | null;
   sortOrder?: number | null;
   published?: boolean | null;
-  posts?: {
-    docs?: (number | Post)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   updatedAt: string;
   createdAt: string;
 }
@@ -966,48 +905,57 @@ export interface Post {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * دسته‌بندی‌های تحریریه برای گروه‌بندی و فیلتر مطالب مجله.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "projects".
+ * via the `definition` "blog-categories".
  */
-export interface Project {
+export interface BlogCategory {
   id: number;
   title: string;
   slug: string;
-  sector: 'residential' | 'hospitality' | 'commercial' | 'workplace' | 'healthcare';
-  descriptionFa: string;
-  briefFa: string;
-  heroMedia?: (number | null) | Media;
-  heroAlt?: string | null;
-  heroCaption?: string | null;
-  gallery?:
-    | {
-        image?: (number | null) | Media;
-        alt?: string | null;
-        caption?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  approach?:
-    | {
-        title: string;
-        text: string;
-        id?: string | null;
-      }[]
-    | null;
-  palette?:
-    | {
-        name: string;
-        color: string;
-        id?: string | null;
-      }[]
-    | null;
-  products?: (number | Product)[] | null;
-  article?: (number | null) | Post;
-  featured?: boolean | null;
+  description?: string | null;
   sortOrder?: number | null;
   published?: boolean | null;
+  posts?: {
+    docs?: (number | Post)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  fullName: string;
+  phone?: string | null;
+  role: 'admin' | 'editor' | 'seller';
+  contactTitle?: string | null;
+  contactDescription?: string | null;
+  whatsappPhone?: string | null;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * هر ردیف، سابقه یک عملیات خروجی و فایل قابل دانلود آن است. می‌توانید از رکوردهای انتخاب‌شده، فیلتر فعلی یا همه رکوردهای همان بخش JSON بگیرید؛ سوابق پس از ۷ روز خودکار حذف می‌شوند.
@@ -1086,6 +1034,38 @@ export interface Import {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-otp-challenges".
+ */
+export interface CustomerOtpChallenge {
+  id: number;
+  phoneKey: string;
+  requestIpKey: string;
+  codeHash: string;
+  codeSalt: string;
+  expiresAt: string;
+  attempts: number;
+  deliveryState: 'pending' | 'delivered' | 'failed';
+  providerMessageId?: string | null;
+  consumedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-sessions".
+ */
+export interface CustomerSession {
+  id: number;
+  customer: number | Customer;
+  tokenHash: string;
+  challengeKey: string;
+  expiresAt: string;
+  revokedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1213,64 +1193,32 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
         relationTo: 'customers';
         value: number | Customer;
       } | null)
     | ({
-        relationTo: 'customer-otp-challenges';
-        value: number | CustomerOtpChallenge;
+        relationTo: 'variants';
+        value: number | Variant;
       } | null)
     | ({
-        relationTo: 'customer-sessions';
-        value: number | CustomerSession;
+        relationTo: 'products';
+        value: number | Product;
       } | null)
     | ({
-        relationTo: 'media';
-        value: number | Media;
+        relationTo: 'orders';
+        value: number | Order;
       } | null)
     | ({
-        relationTo: 'blog-categories';
-        value: number | BlogCategory;
-      } | null)
-    | ({
-        relationTo: 'posts';
-        value: number | Post;
+        relationTo: 'transactions';
+        value: number | Transaction;
       } | null)
     | ({
         relationTo: 'brands';
         value: number | Brand;
       } | null)
     | ({
-        relationTo: 'projects';
-        value: number | Project;
-      } | null)
-    | ({
         relationTo: 'categories';
         value: number | Category;
-      } | null)
-    | ({
-        relationTo: 'product-series';
-        value: number | ProductSery;
-      } | null)
-    | ({
-        relationTo: 'configuration-groups';
-        value: number | ConfigurationGroup;
-      } | null)
-    | ({
-        relationTo: 'configuration-options';
-        value: number | ConfigurationOption;
-      } | null)
-    | ({
-        relationTo: 'addresses';
-        value: number | Address;
-      } | null)
-    | ({
-        relationTo: 'variants';
-        value: number | Variant;
       } | null)
     | ({
         relationTo: 'variantTypes';
@@ -1281,30 +1229,50 @@ export interface PayloadLockedDocument {
         value: number | VariantOption;
       } | null)
     | ({
-        relationTo: 'products';
-        value: number | Product;
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'projects';
+        value: number | Project;
+      } | null)
+    | ({
+        relationTo: 'blog-categories';
+        value: number | BlogCategory;
+      } | null)
+    | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'customer-otp-challenges';
+        value: number | CustomerOtpChallenge;
+      } | null)
+    | ({
+        relationTo: 'customer-sessions';
+        value: number | CustomerSession;
+      } | null)
+    | ({
+        relationTo: 'addresses';
+        value: number | Address;
       } | null)
     | ({
         relationTo: 'carts';
         value: number | Cart;
-      } | null)
-    | ({
-        relationTo: 'orders';
-        value: number | Order;
-      } | null)
-    | ({
-        relationTo: 'transactions';
-        value: number | Transaction;
       } | null);
   globalSlug?: string | null;
   user:
     | {
-        relationTo: 'users';
-        value: number | User;
-      }
-    | {
         relationTo: 'customers';
         value: number | Customer;
+      }
+    | {
+        relationTo: 'users';
+        value: number | User;
       };
   updatedAt: string;
   createdAt: string;
@@ -1317,12 +1285,12 @@ export interface PayloadPreference {
   id: number;
   user:
     | {
-        relationTo: 'users';
-        value: number | User;
-      }
-    | {
         relationTo: 'customers';
         value: number | Customer;
+      }
+    | {
+        relationTo: 'users';
+        value: number | User;
       };
   key?: string | null;
   value?:
@@ -1350,35 +1318,6 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  fullName?: T;
-  phone?: T;
-  role?: T;
-  contactTitle?: T;
-  contactDescription?: T;
-  whatsappPhone?: T;
-  active?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers_select".
  */
 export interface CustomersSelect<T extends boolean = true> {
@@ -1392,270 +1331,6 @@ export interface CustomersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customer-otp-challenges_select".
- */
-export interface CustomerOtpChallengesSelect<T extends boolean = true> {
-  phoneKey?: T;
-  requestIpKey?: T;
-  codeHash?: T;
-  codeSalt?: T;
-  expiresAt?: T;
-  attempts?: T;
-  deliveryState?: T;
-  providerMessageId?: T;
-  consumedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customer-sessions_select".
- */
-export interface CustomerSessionsSelect<T extends boolean = true> {
-  customer?: T;
-  tokenHash?: T;
-  challengeKey?: T;
-  expiresAt?: T;
-  revokedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
- */
-export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  captionFa?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-  sizes?:
-    | T
-    | {
-        adminThumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "blog-categories_select".
- */
-export interface BlogCategoriesSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  description?: T;
-  sortOrder?: T;
-  published?: T;
-  posts?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts_select".
- */
-export interface PostsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  category?: T;
-  description?: T;
-  summary?: T;
-  heroImage?: T;
-  heroCaption?: T;
-  content?: T;
-  takeaway?: T;
-  callToAction?:
-    | T
-    | {
-        label?: T;
-        href?: T;
-      };
-  relatedPosts?: T;
-  authorName?: T;
-  authorUrl?: T;
-  authorBio?: T;
-  seo?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        socialImage?: T;
-        primaryTopic?: T;
-        noIndex?: T;
-      };
-  publishedAt?: T;
-  featured?: T;
-  sortOrder?: T;
-  wordCount?: T;
-  readingTimeMinutes?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "brands_select".
- */
-export interface BrandsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  descriptionFa?: T;
-  taglineFa?: T;
-  storyFa?: T;
-  logo?: T;
-  heroMedia?: T;
-  heroAlt?: T;
-  heroCaption?: T;
-  featured?: T;
-  sortOrder?: T;
-  published?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "projects_select".
- */
-export interface ProjectsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  sector?: T;
-  descriptionFa?: T;
-  briefFa?: T;
-  heroMedia?: T;
-  heroAlt?: T;
-  heroCaption?: T;
-  gallery?:
-    | T
-    | {
-        image?: T;
-        alt?: T;
-        caption?: T;
-        id?: T;
-      };
-  approach?:
-    | T
-    | {
-        title?: T;
-        text?: T;
-        id?: T;
-      };
-  palette?:
-    | T
-    | {
-        name?: T;
-        color?: T;
-        id?: T;
-      };
-  products?: T;
-  article?: T;
-  featured?: T;
-  sortOrder?: T;
-  published?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories_select".
- */
-export interface CategoriesSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  parent?: T;
-  image?: T;
-  descriptionFa?: T;
-  sortOrder?: T;
-  published?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "product-series_select".
- */
-export interface ProductSeriesSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  styleFa?: T;
-  descriptionFa?: T;
-  heroMedia?: T;
-  published?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "configuration-groups_select".
- */
-export interface ConfigurationGroupsSelect<T extends boolean = true> {
-  title?: T;
-  key?: T;
-  inputType?: T;
-  required?: T;
-  active?: T;
-  helpTextFa?: T;
-  options?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "configuration-options_select".
- */
-export interface ConfigurationOptionsSelect<T extends boolean = true> {
-  '_configuration-options_options_order'?: T;
-  group?: T;
-  title?: T;
-  code?: T;
-  swatchColor?: T;
-  swatchMedia?: T;
-  active?: T;
-  sortOrder?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "addresses_select".
- */
-export interface AddressesSelect<T extends boolean = true> {
-  customer?: T;
-  title?: T;
-  firstName?: T;
-  lastName?: T;
-  company?: T;
-  addressLine1?: T;
-  addressLine2?: T;
-  city?: T;
-  state?: T;
-  postalCode?: T;
-  country?: T;
-  phone?: T;
-  displayLabel?: T;
-  isDefault?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variants_select".
  */
 export interface VariantsSelect<T extends boolean = true> {
@@ -1663,7 +1338,10 @@ export interface VariantsSelect<T extends boolean = true> {
   nilperCode?: T;
   title?: T;
   options?: T;
+  combinationKey?: T;
   shippingMode?: T;
+  availabilityMode?: T;
+  mainImage?: T;
   parcelWeightInGrams?: T;
   tapinBoxID?: T;
   priceInTMNEnabled?: T;
@@ -1686,40 +1364,15 @@ export interface VariantsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantTypes_select".
- */
-export interface VariantTypesSelect<T extends boolean = true> {
-  label?: T;
-  name?: T;
-  options?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  deletedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantOptions_select".
- */
-export interface VariantOptionsSelect<T extends boolean = true> {
-  _variantOptions_options_order?: T;
-  variantType?: T;
-  label?: T;
-  value?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  deletedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   catalogCode?: T;
+  productType?: T;
   brand?: T;
   categories?: T;
-  series?: T;
   salesMode?: T;
   availabilityMode?: T;
   shippingMode?: T;
@@ -1758,9 +1411,17 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   orderNotesFa?: T;
   leadTimeFa?: T;
-  configurationGroups?: T;
+  attributes?:
+    | T
+    | {
+        attribute?: T;
+        allowedOptions?: T;
+        required?: T;
+        id?: T;
+      };
   relatedProducts?: T;
   matchingProducts?: T;
+  variantAttributes?: T;
   enableVariants?: T;
   variantTypes?: T;
   variants?: T;
@@ -1768,46 +1429,6 @@ export interface ProductsSelect<T extends boolean = true> {
   createdAt?: T;
   deletedAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "carts_select".
- */
-export interface CartsSelect<T extends boolean = true> {
-  items?:
-    | T
-    | {
-        product?: T;
-        variant?: T;
-        quantity?: T;
-        configuration?:
-          | T
-          | {
-              groupKey?: T;
-              group?: T;
-              groupLabelFaSnapshot?: T;
-              option?: T;
-              optionCodeSnapshot?: T;
-              labelFaSnapshot?: T;
-              id?: T;
-            };
-        configurationKey?: T;
-        productTitleSnapshot?: T;
-        variantCodeSnapshot?: T;
-        unitPriceInTMN?: T;
-        shippingModeSnapshot?: T;
-        parcelWeightInGramsSnapshot?: T;
-        tapinBoxIDSnapshot?: T;
-        id?: T;
-      };
-  secret?: T;
-  customer?: T;
-  purchasedAt?: T;
-  status?: T;
-  subtotal?: T;
-  currency?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1834,6 +1455,7 @@ export interface OrdersSelect<T extends boolean = true> {
         configurationKey?: T;
         productTitleSnapshot?: T;
         variantCodeSnapshot?: T;
+        variantTitleSnapshot?: T;
         unitPriceInTMN?: T;
         shippingModeSnapshot?: T;
         parcelWeightInGramsSnapshot?: T;
@@ -1913,6 +1535,7 @@ export interface TransactionsSelect<T extends boolean = true> {
         configurationKey?: T;
         productTitleSnapshot?: T;
         variantCodeSnapshot?: T;
+        variantTitleSnapshot?: T;
         unitPriceInTMN?: T;
         shippingModeSnapshot?: T;
         parcelWeightInGramsSnapshot?: T;
@@ -1972,6 +1595,235 @@ export interface TransactionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  descriptionFa?: T;
+  taglineFa?: T;
+  storyFa?: T;
+  logo?: T;
+  heroMedia?: T;
+  heroAlt?: T;
+  heroCaption?: T;
+  featured?: T;
+  sortOrder?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  parent?: T;
+  image?: T;
+  descriptionFa?: T;
+  showOnStorefront?: T;
+  sortOrder?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantTypes_select".
+ */
+export interface VariantTypesSelect<T extends boolean = true> {
+  label?: T;
+  name?: T;
+  options?: T;
+  active?: T;
+  sortOrder?: T;
+  helpTextFa?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantOptions_select".
+ */
+export interface VariantOptionsSelect<T extends boolean = true> {
+  _variantOptions_options_order?: T;
+  variantType?: T;
+  label?: T;
+  value?: T;
+  active?: T;
+  sortOrder?: T;
+  code?: T;
+  groupLabel?: T;
+  image?: T;
+  colorHex?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  captionFa?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        adminThumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_select".
+ */
+export interface ProjectsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  sector?: T;
+  descriptionFa?: T;
+  briefFa?: T;
+  heroMedia?: T;
+  heroAlt?: T;
+  heroCaption?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        alt?: T;
+        caption?: T;
+        id?: T;
+      };
+  approach?:
+    | T
+    | {
+        title?: T;
+        text?: T;
+        id?: T;
+      };
+  palette?:
+    | T
+    | {
+        name?: T;
+        color?: T;
+        id?: T;
+      };
+  products?: T;
+  article?: T;
+  featured?: T;
+  sortOrder?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-categories_select".
+ */
+export interface BlogCategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  sortOrder?: T;
+  published?: T;
+  posts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  description?: T;
+  summary?: T;
+  heroImage?: T;
+  heroCaption?: T;
+  content?: T;
+  takeaway?: T;
+  callToAction?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  relatedPosts?: T;
+  authorName?: T;
+  authorUrl?: T;
+  authorBio?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        socialImage?: T;
+        primaryTopic?: T;
+        noIndex?: T;
+      };
+  publishedAt?: T;
+  featured?: T;
+  sortOrder?: T;
+  wordCount?: T;
+  readingTimeMinutes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  fullName?: T;
+  phone?: T;
+  role?: T;
+  contactTitle?: T;
+  contactDescription?: T;
+  whatsappPhone?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports_select".
  */
 export interface ExportsSelect<T extends boolean = true> {
@@ -2027,6 +1879,99 @@ export interface ImportsSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-otp-challenges_select".
+ */
+export interface CustomerOtpChallengesSelect<T extends boolean = true> {
+  phoneKey?: T;
+  requestIpKey?: T;
+  codeHash?: T;
+  codeSalt?: T;
+  expiresAt?: T;
+  attempts?: T;
+  deliveryState?: T;
+  providerMessageId?: T;
+  consumedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customer-sessions_select".
+ */
+export interface CustomerSessionsSelect<T extends boolean = true> {
+  customer?: T;
+  tokenHash?: T;
+  challengeKey?: T;
+  expiresAt?: T;
+  revokedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses_select".
+ */
+export interface AddressesSelect<T extends boolean = true> {
+  customer?: T;
+  title?: T;
+  firstName?: T;
+  lastName?: T;
+  company?: T;
+  addressLine1?: T;
+  addressLine2?: T;
+  city?: T;
+  state?: T;
+  postalCode?: T;
+  country?: T;
+  phone?: T;
+  displayLabel?: T;
+  isDefault?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts_select".
+ */
+export interface CartsSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        configuration?:
+          | T
+          | {
+              groupKey?: T;
+              group?: T;
+              groupLabelFaSnapshot?: T;
+              option?: T;
+              optionCodeSnapshot?: T;
+              labelFaSnapshot?: T;
+              id?: T;
+            };
+        configurationKey?: T;
+        productTitleSnapshot?: T;
+        variantCodeSnapshot?: T;
+        variantTitleSnapshot?: T;
+        unitPriceInTMN?: T;
+        shippingModeSnapshot?: T;
+        parcelWeightInGramsSnapshot?: T;
+        tapinBoxIDSnapshot?: T;
+        id?: T;
+      };
+  secret?: T;
+  customer?: T;
+  purchasedAt?: T;
+  status?: T;
+  subtotal?: T;
+  currency?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2169,9 +2114,6 @@ export interface TaskCreateCollectionExport {
       | 'brands'
       | 'projects'
       | 'categories'
-      | 'product-series'
-      | 'configuration-groups'
-      | 'configuration-options'
       | 'addresses'
       | 'variants'
       | 'variantTypes'

@@ -23,9 +23,6 @@ const TRANSFER_RETENTION_DAYS = 7;
 const TRANSFER_COLLECTIONS = [
   "brands",
   "categories",
-  "product-series",
-  "configuration-groups",
-  "configuration-options",
   "variantTypes",
   "variantOptions",
   "products",
@@ -38,9 +35,8 @@ const TRANSFER_COLLECTIONS = [
 const STABLE_MATCH_FIELDS: Partial<Record<typeof TRANSFER_COLLECTIONS[number], string>> = {
   brands: "slug",
   categories: "slug",
-  "product-series": "slug",
-  "configuration-groups": "key",
   variantTypes: "name",
+  variantOptions: "value",
   products: "slug",
   variants: "nilperCode",
   "blog-categories": "slug",
@@ -54,9 +50,6 @@ const IMPORT_STOREFRONT_AREAS: Record<
 > = {
   brands: ["catalog", "showcase"],
   categories: ["catalog"],
-  "product-series": ["catalog"],
-  "configuration-groups": ["catalog"],
-  "configuration-options": ["catalog"],
   variantTypes: ["catalog"],
   variantOptions: ["catalog"],
   products: ["catalog"],
@@ -325,7 +318,7 @@ const findDocs = async (
   return result.docs;
 };
 
-const makeExportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
+export const makeExportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
   data,
   originalData: sourceData,
   req,
@@ -334,6 +327,13 @@ const makeExportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
   originalData: unknown[];
   req: PayloadRequest;
 }) => {
+  // Export depth is an editor preference; portable relationship keys must not depend on it.
+  const sourceIDs = sourceData.map(relationshipID).filter((id): id is string | number => id !== undefined);
+  if (sourceIDs.length && ['products', 'variants', 'variantOptions'].includes(slug)) {
+    const populated = await findDocs(req, slug, { id: { in: sourceIDs } }, 3);
+    const byID = new Map(populated.map((doc) => [String(doc.id), doc]));
+    sourceData = sourceData.map((doc) => byID.get(String(relationshipID(doc))) ?? doc);
+  }
   let variantOptionKeys = new Map<string, string>();
   if (slug === "variants") {
     const originalData = sourceData.map((value) => isRecord(value) ? value : {});
@@ -355,9 +355,6 @@ const makeExportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
   const originalData = sourceData.map((value) => isRecord(value) ? value : {});
   return data.map((item, index) => {
     const row = omitSystemFields(item);
-    if ((slug === "configuration-options" || slug === "variantOptions") && item.id !== undefined) {
-      row.id = item.id;
-    }
     const original = originalData[index] ?? {};
 
     if (slug === "brands") {
@@ -366,28 +363,33 @@ const makeExportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
     } else if (slug === "categories") {
       replaceStable(row, original, "parent", "slug");
       replaceStable(row, original, "image", "filename");
-    } else if (slug === "product-series") {
-      replaceStable(row, original, "heroMedia", "filename");
-    } else if (slug === "configuration-groups") {
+    } else if (slug === "variantTypes") {
       delete row.options;
-    } else if (slug === "configuration-options") {
-      replaceStable(row, original, "group", "key");
-      replaceStable(row, original, "swatchMedia", "filename");
     } else if (slug === "variantOptions") {
       replaceStable(row, original, "variantType", "name");
+      replaceStable(row, original, "image", "filename");
     } else if (slug === "products") {
       replaceStable(row, original, "brand", "slug");
       replaceStable(row, original, "categories", "slug", true);
-      replaceStable(row, original, "series", "slug");
       replaceStable(row, original, "mainImage", "filename");
-      replaceStable(row, original, "configurationGroups", "key", true);
       replaceStable(row, original, "relatedProducts", "slug", true);
       replaceStable(row, original, "matchingProducts", "slug", true);
-      replaceStable(row, original, "variantTypes", "name", true);
+      replaceStable(row, original, "variantAttributes", "name", true);
+      if (Array.isArray(original.attributes)) row.attributes = original.attributes.map((value) => {
+        const assignment = isRecord(value) ? value : {};
+        return { attribute: stableValue(assignment.attribute, 'name'), required: assignment.required,
+          allowedOptions: Array.isArray(assignment.allowedOptions) ? assignment.allowedOptions.map((option) => stableValue(option, 'value')) : [] };
+      });
+      delete row.enableVariants;
+      delete row.variantTypes;
+      delete row.series;
+      delete row.configurationGroups;
       replaceGalleryMedia(row, original);
       delete row.variants;
     } else if (slug === "variants") {
       replaceStable(row, original, "product", "slug");
+      replaceStable(row, original, "mainImage", "filename");
+      delete row.combinationKey;
       if ("options" in row && Array.isArray(original.options)) {
         row.options = original.options.map((option) => {
           const id = relationshipID(option);
@@ -460,7 +462,7 @@ const resolveMany = async (
 
 const resolveVariantOption = async (req: PayloadRequest, value: unknown, cache: Map<string, unknown>) => {
   if (typeof value !== "string" || !value.includes(":")) {
-    return resolveStable(req, "variantOptions", "id", value, cache);
+    return resolveStable(req, "variantOptions", "value", value, cache);
   }
   const separator = value.indexOf(":");
   const typeName = value.slice(0, separator);
@@ -479,7 +481,7 @@ const resolveVariantOption = async (req: PayloadRequest, value: unknown, cache: 
   return resolved;
 };
 
-const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
+export const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
   data: sourceData,
   req,
 }: {
@@ -491,9 +493,6 @@ const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
   const data = sourceData.map((value) => isRecord(value) ? value : {});
   return Promise.all(data.map(async (item) => {
     const row = omitSystemFields(item);
-    if ((slug === "configuration-options" || slug === "variantOptions") && item.id !== undefined) {
-      row.id = item.id;
-    }
 
     if (slug === "brands") {
       row.logo = await resolveMedia(req, row.logo, cache);
@@ -501,24 +500,27 @@ const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
     } else if (slug === "categories") {
       row.parent = await resolveStable(req, "categories", "slug", row.parent, cache);
       row.image = await resolveMedia(req, row.image, cache);
-    } else if (slug === "product-series") {
-      row.heroMedia = await resolveMedia(req, row.heroMedia, cache);
-    } else if (slug === "configuration-groups") {
+    } else if (slug === "variantTypes") {
       delete row.options;
-    } else if (slug === "configuration-options") {
-      row.group = await resolveStable(req, "configuration-groups", "key", row.group, cache);
-      row.swatchMedia = await resolveMedia(req, row.swatchMedia, cache);
     } else if (slug === "variantOptions") {
       row.variantType = await resolveStable(req, "variantTypes", "name", row.variantType, cache);
+      row.image = await resolveMedia(req, row.image, cache);
     } else if (slug === "products") {
       row.brand = await resolveStable(req, "brands", "slug", row.brand, cache);
       row.categories = await resolveMany(req, "categories", "slug", row.categories, cache);
-      row.series = await resolveStable(req, "product-series", "slug", row.series, cache);
       row.mainImage = await resolveMedia(req, row.mainImage, cache);
-      row.configurationGroups = await resolveMany(req, "configuration-groups", "key", row.configurationGroups, cache);
       row.relatedProducts = await resolveMany(req, "products", "slug", row.relatedProducts, cache);
       row.matchingProducts = await resolveMany(req, "products", "slug", row.matchingProducts, cache);
-      row.variantTypes = await resolveMany(req, "variantTypes", "name", row.variantTypes, cache);
+      row.variantAttributes = await resolveMany(req, "variantTypes", "name", row.variantAttributes, cache);
+      if (Array.isArray(row.attributes)) row.attributes = await Promise.all(row.attributes.map(async (value) => {
+        if (!isRecord(value)) throw new Error('Invalid product attribute assignment.');
+        return { ...value, attribute: await resolveStable(req, 'variantTypes', 'name', value.attribute, cache),
+          allowedOptions: await resolveMany(req, 'variantOptions', 'value', value.allowedOptions, cache) };
+      }));
+      delete row.enableVariants;
+      delete row.variantTypes;
+      delete row.series;
+      delete row.configurationGroups;
       if (Array.isArray(row.gallery)) {
         row.gallery = await Promise.all(row.gallery.map(async (item) => isRecord(item)
           ? { ...item, image: await resolveMedia(req, item.image, cache) }
@@ -527,6 +529,8 @@ const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => async ({
       delete row.variants;
     } else if (slug === "variants") {
       row.product = await resolveStable(req, "products", "slug", row.product, cache);
+      row.mainImage = await resolveMedia(req, row.mainImage, cache);
+      delete row.combinationKey;
       if (Array.isArray(row.options)) {
         row.options = await Promise.all(row.options.map((option) => resolveVariantOption(req, option, cache)));
       }

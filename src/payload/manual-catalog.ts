@@ -14,7 +14,7 @@ export type ManualTechnicalSpec = {
   sortOrder: number;
 };
 
-type ManualVariantType = {
+type ManualAttribute = {
   name: string;
   label: string;
   options: Array<{ value: string; label: string }>;
@@ -40,16 +40,16 @@ export type ManualCatalogProduct = {
     alt: string;
   };
   category: "bedroom" | "dining-seating" | "home-furniture";
-  series: {
+  familyCategory: {
     slug: string;
     title: string;
     styleFa: string;
     descriptionFa: string;
   };
-  configurationGroupKeys?: Array<"wood-finish" | "upholstery-palette">;
+  customerAttributeKeys?: Array<"wood-finish" | "upholstery-palette">;
   measurements?: ManualMeasurement[];
   technicalSpecs: ManualTechnicalSpec[];
-  variantTypes: ManualVariantType[];
+  variantAttributes: ManualAttribute[];
   variants: ManualVariant[];
 };
 
@@ -69,7 +69,7 @@ const spec = (
   sortOrder: number,
 ): ManualTechnicalSpec => ({ key, labelFa, valueFa, group, sortOrder });
 
-const bedWidthType: ManualVariantType = {
+const bedWidthType: ManualAttribute = {
   name: "bed-width",
   label: "عرض تشک",
   options: [
@@ -78,7 +78,7 @@ const bedWidthType: ManualVariantType = {
   ],
 };
 
-const bedBaseType: ManualVariantType = {
+const bedBaseType: ManualAttribute = {
   name: "bed-base",
   label: "نوع کفی",
   options: [
@@ -87,7 +87,7 @@ const bedBaseType: ManualVariantType = {
   ],
 };
 
-const finishClassType: ManualVariantType = {
+const finishClassType: ManualAttribute = {
   name: "finish-class",
   label: "رده پرداخت",
   options: [
@@ -109,13 +109,13 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "تخت خواب داران",
     },
     category: "bedroom",
-    series: {
+    familyCategory: {
       slug: "daran",
       title: "داران",
       styleFa: "نئوکلاسیک",
       descriptionFa: "سری خواب داران شامل تخت، دراور و آینه، پاتختی و استول هماهنگ است.",
     },
-    configurationGroupKeys: ["wood-finish"],
+    customerAttributeKeys: ["wood-finish"],
     measurements: [
       measurement("height", "ارتفاع کلی", 123, "cm", 10),
       measurement("width", "عرض کلی", 173, "cm", 20),
@@ -132,7 +132,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("storage", "فضای انبارش", "ندارد", "other", 70),
       spec("delivery", "شرایط تحویل", "دمونتاژ", "delivery", 80),
     ],
-    variantTypes: [{
+    variantAttributes: [{
       name: "bed-rail-finish",
       label: "نوع قید تخت",
       options: [
@@ -157,13 +157,13 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "تخت خواب ژیوار",
     },
     category: "bedroom",
-    series: {
+    familyCategory: {
       slug: "zhivar",
       title: "ژیوار",
       styleFa: "نئوکلاسیک",
       descriptionFa: "سری خواب ژیوار با جزئیات چوبی و فرم نئوکلاسیک طراحی شده است.",
     },
-    configurationGroupKeys: ["wood-finish"],
+    customerAttributeKeys: ["wood-finish"],
     measurements: [
       measurement("height", "ارتفاع کلی", 119, "cm", 10),
       measurement("length", "طول کلی", 222, "cm", 20),
@@ -178,7 +178,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("storage", "فضای انبارش", "ندارد", "other", 70),
       spec("delivery", "شرایط تحویل", "دمونتاژ؛ مونتاژ در محل مشتری توسط نیلپر", "delivery", 80),
     ],
-    variantTypes: [bedWidthType, bedBaseType],
+    variantAttributes: [bedWidthType, bedBaseType],
     variants: [
       {
         code: "NBSB850001",
@@ -206,7 +206,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "تخت خواب اورامان",
     },
     category: "bedroom",
-    series: {
+    familyCategory: {
       slug: "uraman",
       title: "اورامان",
       styleFa: "پست‌مدرن",
@@ -223,7 +223,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("storage", "فضای انبارش", "ندارد", "other", 70),
       spec("delivery", "شرایط تحویل", "دمونتاژ؛ مونتاژ در محل مشتری توسط نیلپر", "delivery", 80),
     ],
-    variantTypes: [bedWidthType, bedBaseType],
+    variantAttributes: [bedWidthType, bedBaseType],
     variants: [
       { code: "NBSB853001", title: "عرض ۱۶۰ با کفی ثابت", options: ["bed-width:160", "bed-base:fixed"], measurements: [measurement("width", "عرض کلی", 168, "cm", 10), measurement("weight", "وزن", 160, "kg", 20)] },
       { code: "NBSB853005", title: "عرض ۱۶۰ با کفی جک‌دار", options: ["bed-width:160", "bed-base:lift"], measurements: [measurement("width", "عرض کلی", 168, "cm", 10), measurement("weight", "وزن", 160, "kg", 20)] },
@@ -243,7 +243,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "تخت خواب مانی",
     },
     category: "bedroom",
-    series: {
+    familyCategory: {
       slug: "mani",
       title: "مانی",
       styleFa: "مدرن",
@@ -260,7 +260,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("storage", "فضای انبارش", "دارد", "other", 70),
       spec("delivery", "شرایط تحویل", "دمونتاژ", "delivery", 80),
     ],
-    variantTypes: [bedWidthType, bedBaseType],
+    variantAttributes: [bedWidthType, bedBaseType],
     variants: [
       { code: "NBSB852004", title: "عرض ۱۶۰ ساده", options: ["bed-width:160", "bed-base:fixed"], measurements: [measurement("width", "عرض کلی", 177, "cm", 10), measurement("weight", "وزن", 75, "kg", 20)] },
       { code: "NBSB852005", title: "عرض ۱۶۰ جک‌دار", options: ["bed-width:160", "bed-base:lift"], measurements: [measurement("width", "عرض کلی", 177, "cm", 10), measurement("weight", "وزن", 75, "kg", 20)] },
@@ -279,13 +279,13 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "صندلی بار ویونا",
     },
     category: "dining-seating",
-    series: {
+    familyCategory: {
       slug: "viona",
       title: "ویونا",
       styleFa: "مدرن",
       descriptionFa: "سری ویونا با فرم مدرن، پایه چوبی و نشیمن ارگونومیک طراحی شده است.",
     },
-    configurationGroupKeys: ["wood-finish"],
+    customerAttributeKeys: ["wood-finish"],
     measurements: [
       measurement("seat-height", "ارتفاع نشیمن", 70, "cm", 10),
       measurement("seat-width", "عرض نشیمن", 51, "cm", 20),
@@ -303,7 +303,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("seat-cushion", "تشک نشیمن", "ابر اسفنجی", "comfort", 70),
       spec("delivery", "شرایط تحویل", "مونتاژ", "delivery", 80),
     ],
-    variantTypes: [finishClassType],
+    variantAttributes: [finishClassType],
     variants: [
       { code: "NDTN507003", title: "رنگی", options: ["finish-class:stained"] },
       { code: "NDTN507004", title: "رنگ پوششی", options: ["finish-class:coated"] },
@@ -321,13 +321,13 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "تخت خواب لاوان",
     },
     category: "bedroom",
-    series: {
+    familyCategory: {
       slug: "lavan",
       title: "لاوان",
       styleFa: "نئوکلاسیک",
       descriptionFa: "سری خواب لاوان شامل تخت، دراور، پاتختی، استول و آینه قاب‌دار هماهنگ است.",
     },
-    configurationGroupKeys: ["wood-finish"],
+    customerAttributeKeys: ["wood-finish"],
     measurements: [
       measurement("height", "ارتفاع کلی", 120, "cm", 10),
       measurement("width", "عرض کلی", 169, "cm", 20),
@@ -343,7 +343,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("storage", "فضای انبارش", "ندارد", "other", 60),
       spec("delivery", "شرایط تحویل", "دمونتاژ", "delivery", 70),
     ],
-    variantTypes: [{ name: "bed-form", label: "فرم تخت", options: [{ value: "standard", label: "استاندارد" }] }],
+    variantAttributes: [{ name: "bed-form", label: "فرم تخت", options: [{ value: "standard", label: "استاندارد" }] }],
     variants: [{ code: "NBSB885001", title: "تخت خواب", options: ["bed-form:standard"] }],
   },
   {
@@ -358,13 +358,13 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "تخت خواب ماهور",
     },
     category: "bedroom",
-    series: {
+    familyCategory: {
       slug: "mahoor",
       title: "ماهور",
       styleFa: "پست‌مدرن",
       descriptionFa: "سری خواب ماهور با پایه‌های مورب چوبی و فرم‌های ساده و نرم طراحی شده است.",
     },
-    configurationGroupKeys: ["wood-finish"],
+    customerAttributeKeys: ["wood-finish"],
     measurements: [measurement("height", "ارتفاع کلی", 105, "cm", 10), measurement("length", "طول کلی", 210, "cm", 20)],
     technicalSpecs: [
       spec("headboard-frame", "جنس تاج تخت", "چوب راش و MDF", "construction", 10),
@@ -375,7 +375,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("storage", "فضای انبارش", "ندارد", "other", 60),
       spec("delivery", "شرایط تحویل", "دمونتاژ؛ مونتاژ در محل مشتری توسط نیلپر", "delivery", 70),
     ],
-    variantTypes: [bedWidthType, finishClassType],
+    variantAttributes: [bedWidthType, finishClassType],
     variants: [
       { code: "NBSB851004", title: "عرض ۱۶۰ رنگی", options: ["bed-width:160", "finish-class:stained"], measurements: [measurement("width", "عرض کلی", 168, "cm", 10), measurement("weight", "وزن", 74, "kg", 20)] },
       { code: "NBSB851003", title: "عرض ۱۶۰ رنگ پوششی", options: ["bed-width:160", "finish-class:coated"], measurements: [measurement("width", "عرض کلی", 168, "cm", 10), measurement("weight", "وزن", 74, "kg", 20)] },
@@ -395,13 +395,13 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       alt: "مبل دایان",
     },
     category: "home-furniture",
-    series: {
+    familyCategory: {
       slug: "dayan",
       title: "دایان",
       styleFa: "نئوکلاسیک",
       descriptionFa: "سری دایان شامل مبل، میزهای هماهنگ و محصولات ناهارخوری است.",
     },
-    configurationGroupKeys: ["wood-finish", "upholstery-palette"],
+    customerAttributeKeys: ["wood-finish", "upholstery-palette"],
     technicalSpecs: [
       spec("frame", "جنس اسکلت بدنه و دسته", "چوب چندلایی", "construction", 10),
       spec("suspension", "نوع تعلیق", "تسمه‌کشی", "comfort", 20),
@@ -412,7 +412,7 @@ export const manualCatalogProducts: ManualCatalogProduct[] = [
       spec("seat-cushion", "جنس تشک نشیمن", "فوم تزریقی پلی‌اورتان", "comfort", 70),
       spec("delivery", "شرایط تحویل", "مونتاژشده", "delivery", 80),
     ],
-    variantTypes: [
+    variantAttributes: [
       {
         name: "seating-form",
         label: "فرم نشیمن",

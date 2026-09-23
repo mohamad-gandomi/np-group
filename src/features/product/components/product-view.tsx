@@ -6,9 +6,8 @@ import { siteConfig } from "@/config/site";
 import type { Product } from "@/features/catalog/catalog-types";
 import type { SalesContact } from "../payload-sales-contacts";
 import { getProductPresentation } from "../product-details";
-import { ProductGallery } from "./product-gallery";
+import { ProductPurchase } from "./product-purchase";
 import { ProductSpecifications } from "./product-specifications";
-import { ProductSummary } from "./product-summary";
 
 export function ProductView({ product, relatedProducts = [], salesContacts = [] }: { product: Product; relatedProducts?: readonly Product[]; salesContacts?: readonly SalesContact[] }) {
   const details = getProductPresentation(product);
@@ -29,10 +28,7 @@ export function ProductView({ product, relatedProducts = [], salesContacts = [] 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />
       <div className="container-shell py-6 sm:py-9">
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground" aria-label="مسیر صفحه"><Link href="/">خانه</Link><span>/</span><Link href="/shop">فروشگاه</Link><span>/</span><Link href={`/shop/${product.category}`}>{categoryTitle}</Link><span>/</span><span className="text-foreground">{product.name}</span></nav>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.72fr)] lg:items-start xl:gap-12" dir="rtl">
-          <ProductGallery images={details.gallery} name={product.name} brand={product.brand} />
-          <div dir="rtl"><ProductSummary product={product} description={details.description} depth={details.depth} height={details.height} leadTime={details.leadTime} salesContacts={salesContacts} /></div>
-        </div>
+        <ProductPurchase product={product} gallery={details.gallery} description={details.description} depth={details.depth} height={details.height} leadTime={details.leadTime} salesContacts={salesContacts} />
       </div>
 
       <section className="border-y bg-card py-14 sm:py-20"><div className="container-shell"><div className="mb-8 max-w-2xl"><p className="text-xs font-semibold tracking-[0.16em] text-wine">جزئیات محصول</p><h2 className="mt-3 text-3xl font-medium sm:text-4xl">اطلاعاتی برای انتخاب مطمئن‌تر</h2></div><ProductSpecifications product={product} depth={details.depth} height={details.height} warranty={details.warranty} assembly={details.assembly} care={details.care} /></div></section>

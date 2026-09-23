@@ -12,6 +12,7 @@ export type AccountOrderItem = {
   productName: string;
   image: string;
   color: string;
+  selectionSummary?: string;
   quantity: number;
   unitPrice: number;
 };

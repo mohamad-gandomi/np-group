@@ -57,6 +57,7 @@ For initial setup, start PostgreSQL, seed the representative Payload data, and s
 
 ```bash
 npm run payload:db:start
+npm run payload:migrate
 npm run payload:seed
 npm run dev
 ```
@@ -95,9 +96,23 @@ The uploaded local Payload media directory is ignored by Git.
 
 ## Payload data import and export
 
-Administrators can import or export selected records from the list menu of products, variants, posts, projects, brands, categories, series, configuration data, variant data, and blog categories. The workflow uses Payload's official import/export plugin and JSON files; each file contains an array for one collection, so a small batch such as seven products can be processed without exporting or importing the entire database.
+Administrators can import or export selected records from the list menu of products, manual variants, attributes, attribute options, brands, categories, posts, projects, and blog categories. Each JSON file contains an array for one collection.
 
-Upload images to «رسانه‌ها» first, then refer to them by exact filename in JSON. Portable relations use stable business fields such as product/post/project `slug`, variant `nilperCode`, configuration-group `key`, and variant-type `name`. For update/upsert, Nilper automatically replaces the plugin's default `id` match with the appropriate stable field where one exists. Ready-to-copy files and the dependency order are in [`templates/data-transfer`](templates/data-transfer/README.md).
+Upload images to «رسانه‌ها» first, then refer to exact filenames in JSON. Portable identifiers are product/brand/category `slug`, variant `nilperCode`, attribute `name`, and attribute-option `value`. Update/upsert automatically uses these stable keys. Templates and import order are in [`templates/data-transfer`](templates/data-transfer/README.md).
+
+## Product management
+
+Products explicitly have type **Simple** or **Variable**, a brand, and hierarchical categories. Assign reusable attributes and their allowed options on the product. For a variable product, select which assigned attributes define its manually created variants. Other attributes remain customer choices (fabric, finish, etc.). **Attributes do NOT automatically generate Variants.**
+
+Categories include a **Show on homepage and shop** switch. Editors may select at most six; only those selected categories appear in the homepage category grid and the shop's category cards/filters, ordered by `sortOrder`. Other published categories and their direct routes remain available.
+
+Each model has a unique SKU and one option per defining attribute. A model inherits product pricing, availability, shipping and media unless overridden. Product-level measurements and specifications remain flexible; internal keys and row order are automatic. Simple products have no variant controls.
+
+The ecommerce plugin's internal `variantTypes` / `variantOptions` storage is presented as «ویژگی» / «گزینه ویژگی». The storefront and server share authoritative commerce resolution; checkout, authentication, payment and shipping integrations remain in place. Orders and transactions keep immutable text, SKU, choice and price snapshots.
+
+Catalog migrations follow expand → backfill → contract. Back up PostgreSQL, stop application writes during deployment, and run `npm run payload:migrate` before serving the new release. Schema push is disabled. Former editor collections are archived under `catalog_legacy`; ID mappings and migration warnings remain in `catalog_migration_map` and `catalog_migration_report`. Rollback requires restoring the pre-migration backup. See [NILPER_CONTEXT.md](NILPER_CONTEXT.md) for the migration and verification record.
+
+Run `npm run payload:verify:catalog` for the unified model regression suite. To test a restored pre-refactor database, use `node scripts/verify-catalog-migration.mjs nilper_catalog_migration_verify_SUFFIX`; the script refuses the application database. `scripts/reconcile-catalog-baseline.mjs` is only for an existing dev-pushed database with an out-of-date migration ledger: it verifies the baseline before `--apply` records the three already-present migrations.
 
 Imports and exports run through Payload's background jobs. Their uploaded/generated files and admin history are removed automatically after seven days; imported content is not removed.
 

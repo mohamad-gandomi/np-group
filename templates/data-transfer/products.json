@@ -5,7 +5,7 @@
     "catalogCode": "NSC 100",
     "brand": "sample-brand",
     "categories": ["chairs"],
-    "series": "sample-series",
+    "productType": "variable",
     "salesMode": "direct",
     "availabilityMode": "in_stock",
     "shippingMode": "freight",
@@ -47,9 +47,12 @@
         ]
       }
     },
-    "configurationGroups": ["wood-finish"],
-    "enableVariants": true,
-    "variantTypes": ["seat-size"],
+    "attributes": [
+      { "attribute": "seat-size", "allowedOptions": ["seat-single"] },
+      { "attribute": "wood-finish", "allowedOptions": ["wood-walnut"], "required": true },
+      { "attribute": "fabric", "allowedOptions": ["verona-a01"], "required": true }
+    ],
+    "variantAttributes": ["seat-size"],
     "_status": "published"
   }
 ]

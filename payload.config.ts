@@ -5,6 +5,7 @@ import path from "node:path";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import { adminNavigationOrderPlugin } from "./src/payload/admin-navigation";
 import { ecommerce } from "./src/payload/commerce";
 import { collections } from "./src/payload/collections";
 import {
@@ -108,6 +109,7 @@ export default buildConfig({
   collections,
   cors: [process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"],
   db: postgresAdapter({
+    push: false,
     migrationDir: path.resolve(projectRoot, "src/payload/migrations"),
     pool: { connectionString: databaseURI },
   }),
@@ -124,7 +126,7 @@ export default buildConfig({
     },
     tasks: [cleanupDataTransferFilesTask],
   },
-  plugins: [ecommerce, dataTransferPlugin],
+  plugins: [ecommerce, dataTransferPlugin, adminNavigationOrderPlugin],
   secret: payloadSecret,
   serverURL: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   sharp,

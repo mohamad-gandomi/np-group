@@ -17,7 +17,8 @@ import {
   withNilperCommerceItemFields,
 } from "./cart-configuration";
 import { measurementsField, technicalSpecsField } from "./domain-fields";
-import { NILPER_COMMERCE_CURRENCIES, validateCommerceQuantity, validateTomanAmount } from "./money";
+import { attributeCollection, productAttributeFields, relationID, relationIDs, validateProduct, validateVariant } from "./catalog-domain";
+import { NILPER_COMMERCE_CURRENCIES, assertTomanAmount, validateCommerceQuantity, validateTomanAmount } from "./money";
 import { withStorefrontRevalidation } from "./storefront-revalidation";
 import { zarinpalAdapter } from "@/features/payments/zarinpal/adapter";
 
@@ -269,9 +270,9 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
             { name: "title", type: "text", label: "نام فارسی محصول", required: true, admin: { rtl: true } },
             { name: "slug", type: "text", label: "نامک", required: true, unique: true },
             { name: "catalogCode", type: "text", label: "کد کاتالوگ" },
+            { name: "productType", type: "select", label: "نوع محصول", required: true, defaultValue: "simple", options: [{ label: "محصول ساده", value: "simple" }, { label: "محصول متغیر", value: "variable" }] },
             { name: "brand", type: "relationship", relationTo: "brands", label: "برند", required: true },
             { name: "categories", type: "relationship", relationTo: "categories", hasMany: true, label: "دسته‌بندی‌ها", required: true },
-            { name: "series", type: "relationship", relationTo: "product-series", label: "سری محصول" },
           ],
         },
         {
@@ -279,6 +280,7 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
           fields: [
             {
               name: "salesMode",
+              defaultValue: "made_to_order",
               type: "select",
               label: "روش فروش",
               required: true,
@@ -290,6 +292,7 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
             },
             {
               name: "availabilityMode",
+              defaultValue: "orderable",
               type: "select",
               label: "وضعیت موجودی",
               required: true,
@@ -324,17 +327,17 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
           label: "اطلاعات محصول",
           fields: [
             { name: "descriptionFa", type: "richText", label: "معرفی فارسی محصول", required: true },
-            measurementsField("فقط اندازه‌های مشترک همه گونه‌ها؛ اندازه متفاوت هر کد ثبت در خود گونه نگهداری می‌شود."),
+            measurementsField("فقط اندازه‌های مشترک همه مدل‌ها؛ اندازه متفاوت هر کد ثبت در خود مدل نگهداری می‌شود."),
             technicalSpecsField(),
             { name: "orderNotesFa", type: "textarea", label: "ملاحظات سفارش‌گیری" },
             { name: "leadTimeFa", type: "text", label: "زمان آماده‌سازی", admin: { rtl: true } },
           ],
         },
         {
-          label: "گونه‌ها و پیکربندی",
-          description: "گونه فقط برای کد ثبت/شناسه عملیاتی است؛ رنگ چوب و پارچه در پیکربندی نگهداری می‌شوند.",
+          label: "ویژگی‌ها",
+          description: "ویژگی‌ها به‌صورت خودکار مدل ایجاد نمی‌کنند.",
           fields: [
-            { name: "configurationGroups", type: "relationship", relationTo: "configuration-groups", hasMany: true, label: "گروه‌های پیکربندی" },
+            ...productAttributeFields,
             { name: "relatedProducts", type: "relationship", relationTo: "products", hasMany: true, label: "محصولات مرتبط" },
             {
               name: "matchingProducts",
@@ -344,7 +347,27 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
               label: "محصولات ست / هماهنگ",
               admin: { description: "رابطه صریح برای محصولات یک ست یا خانواده؛ از پیشنهاد عمومی «محصولات مرتبط» جدا است." },
             },
-            ...[variantField("enableVariants"), variantField("variantTypes"), variantField("variants")].filter((field): field is Field => Boolean(field)),
+          ],
+        },
+        {
+          label: "مدل‌های محصول",
+          admin: { condition: (data) => data?.productType === "variable" },
+          fields: [
+            { name: "variantAttributes", type: "relationship", relationTo: "variantTypes", hasMany: true, label: "ویژگی‌های سازنده مدل",
+              filterOptions: ({ data }) => ({ id: { in: (data?.attributes ?? []).map((row: { attribute: unknown }) => relationID(row.attribute)).filter(Boolean) } }) },
+            ...[variantField("enableVariants"), variantField("variantTypes")].filter((field): field is Field => Boolean(field)).map(hiddenAdminField),
+            {
+              name: "variants",
+              type: "join",
+              collection: "variants",
+              on: "product",
+              label: "مدل‌های این محصول",
+              admin: {
+                allowCreate: true,
+                defaultColumns: ["nilperCode", "options", "priceInTMN", "_status"],
+                description: "مدل‌های واقعی را همین‌جا ببینید، ویرایش کنید یا با «افزودن مورد جدید» بسازید؛ محصول فعلی خودکار انتخاب می‌شود.",
+              },
+            },
           ],
         },
       ],
@@ -377,18 +400,26 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
     return {
       ...field,
       label,
+      validate: name === "options" ? () => true as const : field.validate,
+      filterOptions: name === "options" ? async ({ siblingData, req }: { siblingData: unknown; req: import("payload").PayloadRequest }) => {
+        const id = relationID((siblingData as { product?: unknown })?.product);
+        if (!id) return false;
+        const product = await req.payload.findByID({ collection: "products", id, depth: 0, req });
+        const attributes = relationIDs(product.variantAttributes);
+        return { id: { in: (product.attributes ?? []).filter((row) => attributes.includes(relationID(row.attribute)!)).flatMap((row) => relationIDs(row.allowedOptions)) } };
+      } : field.filterOptions,
       admin: {
         ...admin,
         ...(name === "product" ? { readOnly: false } : {}),
         ...(description ? { description } : {}),
       },
-    } satisfies Field;
+    } as Field;
   };
   const localizePriceField = (field: Field): Field => {
     if (field.type === "group") {
       return {
         ...field,
-        admin: { ...field.admin, description: "قیمت فروش این گونه به تومان." },
+        admin: { ...field.admin, description: "برای استفاده از قیمت محصول، قیمت اختصاصی مدل را فعال نکنید." },
         fields: field.fields.map(localizePriceField),
       };
     }
@@ -408,7 +439,7 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
     }
 
     if (fieldNamed(field, "priceInTMNEnabled")) {
-      return { ...field, label: "فعال‌سازی قیمت (تومان)" } as Field;
+      return { ...field, label: "قیمت اختصاصی مدل (تومان)" } as Field;
     }
 
     if (fieldNamed(field, "priceInTMN")) {
@@ -426,11 +457,14 @@ const variantFields = (defaultCollection: CollectionConfig): Field[] => {
     .map(withCommerceValidation)
     .map(localizePriceField);
   return [
-    standardRelationship("product", "محصول", "محصول مادر را پیش از انتخاب گزینه‌های گونه مشخص کنید."),
+    standardRelationship("product", "محصول", "محصول مادر را پیش از انتخاب گزینه‌های مدل مشخص کنید."),
     { name: "nilperCode", type: "text", label: "کد ثبت نیلپر / SKU", required: true, unique: true },
-    present("title", "عنوان گونه", "عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود."),
-    standardRelationship("options", "گزینه‌های گونه", "گزینه‌هایی را انتخاب کنید که در محصول مادر فعال شده‌اند."),
-    shippingModeField(),
+    present("title", "عنوان مدل", "عنوان داخلی برای مدیریت؛ این متن به مشتری نمایش داده نمی‌شود و به‌صورت خودکار تکمیل می‌شود."),
+    standardRelationship("options", "گزینه‌های ویژگی", "از هر ویژگی سازنده مدل یک گزینه انتخاب کنید."),
+    { name: "combinationKey", type: "text", unique: true, index: true, admin: { hidden: true } },
+    { ...shippingModeField(), defaultValue: undefined, admin: { description: "خالی: استفاده از شیوه ارسال محصول" } } as Field,
+    { name: "availabilityMode", type: "select", label: "وضعیت موجودی مدل", options: [{ label: "قابل سفارش", value: "orderable" }, { label: "موجود", value: "in_stock" }, { label: "ناموجود", value: "unavailable" }], admin: { description: "خالی: استفاده از وضعیت محصول" } },
+    { name: "mainImage", type: "upload", relationTo: "media", label: "تصویر مدل", admin: { description: "خالی: استفاده از تصویر محصول" } },
     ...parcelFields(),
     ...priceFields,
     measurementsField("فقط اختلاف فیزیکی این کد ثبت، مانند فرم نشیمن، ابعاد، وزن یا متراژ پارچه."),
@@ -490,6 +524,12 @@ export const ecommerce = ecommercePlugin({
         beforeValidate: [
           ...(defaultCollection.hooks?.beforeValidate ?? []),
           nilperCommerceItemsHook("cart"),
+        ],
+        beforeChange: [
+          ...(defaultCollection.hooks?.beforeChange ?? []),
+          ({ data }) => ({ ...data, subtotal: assertTomanAmount((data.items ?? []).reduce(
+            (sum: number, item: { unitPriceInTMN: number; quantity: number }) => sum + item.unitPriceInTMN * item.quantity, 0,
+          )) }),
         ],
       },
     }),
@@ -647,39 +687,35 @@ export const ecommerce = ecommercePlugin({
     productsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
       labels: { singular: "محصول", plural: "محصولات" },
-      hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "status"),
+      hooks: withStorefrontRevalidation({ ...defaultCollection.hooks, beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateProduct] }, ["catalog"], "status"),
       admin: {
         ...defaultCollection.admin,
         group: "فروشگاه",
         useAsTitle: "title",
         defaultColumns: ["title", "catalogCode", "salesMode", "availabilityMode", "updatedAt"],
-        description: "پیش‌نمایش مدیریت محصول نیلپر؛ گونه‌های SKU از انتخاب‌های پارچه و رنگ چوب جدا هستند.",
+        description: "محصول ساده یا متغیر، ویژگی‌های قابل انتخاب و مدل‌های دستی.",
       },
       fields: productFields(defaultCollection),
     }),
     variants: {
       variantsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
-        labels: { singular: "گونه / کد ثبت", plural: "گونه‌ها / کدهای ثبت" },
-        hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "status"),
+        labels: { singular: "مدل محصول", plural: "مدل‌های محصول" },
+        hooks: withStorefrontRevalidation({ ...defaultCollection.hooks, beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateVariant] }, ["catalog"], "status"),
         admin: {
           ...defaultCollection.admin,
           group: "فروشگاه",
           useAsTitle: "nilperCode",
           defaultColumns: ["nilperCode", "title", "product", "priceInTMN", "_status"],
-          description: "هر گونه باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.",
+          description: "هر مدل باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.",
         },
         fields: variantFields(defaultCollection),
       }),
       variantOptionsCollectionOverride: ({ defaultCollection }) => ({
-        ...defaultCollection,
-        labels: { singular: "گزینه گونه", plural: "گزینه‌های گونه" },
-        hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "always"),
+        ...attributeCollection({ ...defaultCollection, hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "always") }, true),
       }),
       variantTypesCollectionOverride: ({ defaultCollection }) => ({
-        ...defaultCollection,
-        labels: { singular: "نوع گونه", plural: "انواع گونه" },
-        hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "always"),
+        ...attributeCollection({ ...defaultCollection, hooks: withStorefrontRevalidation(defaultCollection.hooks, ["catalog"], "always") }, false),
       }),
     },
   },

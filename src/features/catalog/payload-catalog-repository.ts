@@ -6,7 +6,8 @@ import { getPayload } from "payload";
 import type { Where } from "payload";
 
 import config from "../../../payload.config";
-import type { Category, ConfigurationGroup, ConfigurationOption, Product as PayloadProduct, Variant } from "@/payload-types";
+import type { Category, VariantType, VariantOption, Product as PayloadProduct, Variant } from "@/payload-types";
+import { relationIDs } from "@/payload/catalog-domain";
 
 import { PAGE_SIZE, parseCatalogQuery, type RawSearchParams } from "./catalog-query";
 import {
@@ -22,13 +23,13 @@ const getCatalogPayload = cache(() => getPayload({ config }));
 
 async function loadRelations(product: PayloadProduct) {
   const payload = await getCatalogPayload();
-  const groupIDs = (product.configurationGroups ?? [])
-    .map((group) => typeof group === "number" ? group : group.id);
+  const groupIDs = (product.attributes ?? []).map((row) => typeof row.attribute === 'number' ? row.attribute : row.attribute.id);
+  const optionIDs = (product.attributes ?? []).flatMap((row) => relationIDs(row.allowedOptions));
 
   const [groups, options, variants] = await Promise.all([
     groupIDs.length
       ? payload.find({
-          collection: "configuration-groups",
+          collection: "variantTypes",
           depth: 0,
           limit: groupIDs.length,
           overrideAccess: false,
@@ -38,16 +39,16 @@ async function loadRelations(product: PayloadProduct) {
       : Promise.resolve({ docs: [] }),
     groupIDs.length
       ? payload.find({
-          collection: "configuration-options",
-          depth: 0,
+          collection: "variantOptions",
+          depth: 1,
           limit: 100,
           overrideAccess: false,
           pagination: false,
           sort: "sortOrder",
-          where: { group: { in: groupIDs } },
+          where: { and: [{ id: { in: optionIDs } }, { active: { equals: true } }] },
         })
       : Promise.resolve({ docs: [] }),
-    product.enableVariants
+    product.productType === 'variable'
       ? payload.find({
           collection: "variants",
           depth: 2,
@@ -61,8 +62,8 @@ async function loadRelations(product: PayloadProduct) {
   ]);
 
   return {
-    configurationGroups: groups.docs as ConfigurationGroup[],
-    configurationOptions: options.docs as ConfigurationOption[],
+    attributes: groups.docs as VariantType[],
+    attributeOptions: options.docs as VariantOption[],
     variants: variants.docs as Variant[],
   };
 }
@@ -119,9 +120,12 @@ const valueOptions = (values: readonly string[]) => [...new Set(values)]
   .map((value) => ({ label: value, value }));
 
 type CatalogCategorySource = {
+  id: number;
+  parentID?: number;
   description: string;
   image: string;
   payloadSlug: string;
+  showOnStorefront: boolean;
   sortOrder: number;
   storefrontSlug: string;
   title: string;
@@ -142,9 +146,12 @@ async function findAllCatalogCategorySources(): Promise<CatalogCategorySource[]>
   return (result.docs as Category[]).map((category) => {
     const taxonomy = storefrontTaxonomyForPayloadCategory(category.slug, category.title);
     return {
+      id: category.id,
+      parentID: typeof category.parent === 'number' ? category.parent : category.parent?.id,
       description: category.descriptionFa ?? "",
       image: payloadMediaURL(category.image) ?? "",
       payloadSlug: category.slug,
+      showOnStorefront: category.showOnStorefront === true,
       sortOrder: category.sortOrder ?? 0,
       storefrontSlug: taxonomy.slug,
       title: category.title,
@@ -169,35 +176,21 @@ const categoryClasses = [
   "md:col-span-4",
 ];
 
-const requiredCategories = [
-  {
-    slug: "accessories",
-    title: "اکسسوری",
-    description: "جزئیات و اکسسوری‌های تکمیل‌کننده فضای خانه.",
-    count: "۰ محصول",
-    image: "",
-  },
-  {
-    slug: "lighting",
-    title: "لوستر",
-    description: "لوسترها و روشنایی‌های دکوراتیو برای تکمیل فضای خانه.",
-    count: "۰ محصول",
-    image: "/placeholders/lighting.jpg",
-  },
-] as const;
-
-export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
-  const [products, categorySources] = await Promise.all([
-    getCatalogProducts(),
-    getCatalogCategorySources(),
-  ]);
+const buildCatalogCategories = (
+  products: readonly Product[],
+  categorySources: readonly CatalogCategorySource[],
+  selectedOnly: boolean,
+): CatalogCategory[] => {
+  const availableSources = selectedOnly
+    ? categorySources.filter((category) => category.showOnStorefront)
+    : categorySources;
   const storefrontSlugs = [...new Set([
-    ...categorySources.map((category) => category.storefrontSlug),
-    ...products.map((product) => product.category),
+    ...availableSources.map((category) => category.storefrontSlug),
+    ...(selectedOnly ? [] : products.map((product) => product.category)),
   ])];
   const categoryDrafts = storefrontSlugs.map((slug) => {
-    const categoryProducts = products.filter((product) => product.category === slug);
-    const matchingSources = categorySources
+    const categoryProducts = products.filter((product) => product.categorySlugs?.includes(slug) || product.category === slug);
+    const matchingSources = availableSources
       .filter((category) => category.storefrontSlug === slug)
       .sort((left, right) => {
         const rightUsage = categoryProducts.filter((product) => product.payloadCategorySlug === right.payloadSlug).length;
@@ -215,15 +208,7 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
       sortOrder: selected?.sortOrder ?? Number.MAX_SAFE_INTEGER,
     };
   });
-  for (const requiredCategory of requiredCategories) {
-    if (!categoryDrafts.some((category) => category.slug === requiredCategory.slug)) {
-      categoryDrafts.push({
-        ...requiredCategory,
-        sortOrder: Number.MAX_SAFE_INTEGER,
-      });
-    }
-  }
-  const categories = categoryDrafts
+  return categoryDrafts
     .sort((left, right) => left.sortOrder - right.sortOrder || left.title.localeCompare(right.title, "fa"))
     .map((category, index): CatalogCategory => ({
       slug: category.slug,
@@ -233,6 +218,14 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
       image: category.image,
       className: categoryClasses[index % categoryClasses.length],
     }));
+};
+
+export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
+  const [products, categorySources] = await Promise.all([
+    getCatalogProducts(),
+    getCatalogCategorySources(),
+  ]);
+  const categories = buildCatalogCategories(products, categorySources, true);
 
   return {
     categories,
@@ -248,7 +241,13 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
   };
 });
 
-export const getCatalogCategories = cache(async () => (await getCatalogFacets()).categories);
+export const getCatalogCategories = cache(async () => {
+  const [products, categorySources] = await Promise.all([
+    getCatalogProducts(),
+    getCatalogCategorySources(),
+  ]);
+  return buildCatalogCategories(products, categorySources, false);
+});
 
 export const getCatalogCategory = cache(async (slug: string) =>
   (await getCatalogCategories()).find((category) => category.slug === slug),
@@ -261,7 +260,15 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
   const conditions: Where[] = [];
 
   if (query.category.length) {
-    const payloadSlugs = [...new Set(query.category.flatMap(payloadCategorySlugsForStorefront))];
+    const sources = await getCatalogCategorySources();
+    const selected = new Set(query.category.flatMap(payloadCategorySlugsForStorefront));
+    const included = new Set(sources.filter((source) => selected.has(source.payloadSlug)).map((source) => source.id));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const source of sources) if (source.parentID && included.has(source.parentID) && !included.has(source.id)) { included.add(source.id); changed = true; }
+    }
+    const payloadSlugs = [...new Set([...selected, ...sources.filter((source) => included.has(source.id)).map((source) => source.payloadSlug)])];
     conditions.push(payloadSlugs.length ? { "categories.slug": { in: payloadSlugs } } : impossibleCondition());
   }
 
@@ -281,17 +288,17 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
   if (query.color.length) {
     const payload = await getCatalogPayload();
     const options = await payload.find({
-      collection: "configuration-options",
+      collection: "variantOptions",
       depth: 0,
       limit: 100,
       overrideAccess: false,
       pagination: false,
-      where: { title: { in: query.color } },
+      where: { label: { in: query.color } },
     });
     const groupIDs = [...new Set(options.docs.map((option) =>
-      typeof option.group === "number" ? option.group : option.group.id,
+      option.id,
     ))];
-    conditions.push(groupIDs.length ? { configurationGroups: { in: groupIDs } } : impossibleCondition());
+    conditions.push(groupIDs.length ? { 'attributes.allowedOptions': { in: groupIDs } } : impossibleCondition());
   }
 
   if (query.availability.length) {
@@ -314,7 +321,7 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
       or: [
         { title: { contains: word } },
         { catalogCode: { contains: word } },
-        { "series.title": { contains: word } },
+        { "categories.title": { contains: word } },
         { "technicalSpecs.valueFa": { contains: word } },
       ],
     })));

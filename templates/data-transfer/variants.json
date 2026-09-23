@@ -3,17 +3,14 @@
     "product": "sample-chair",
     "nilperCode": "NSC100001",
     "title": "صندلی نمونه تک‌نفره",
-    "options": ["seat-size:single"],
-    "shippingMode": "freight",
-    "priceInTMNEnabled": true,
-    "priceInTMN": 12500000,
+    "options": ["seat-single"],
+    "shippingMode": null,
+    "priceInTMNEnabled": false,
     "measurements": [
       {
-        "key": "width",
         "labelFa": "عرض کلی",
         "value": 65,
-        "unit": "cm",
-        "sortOrder": 10
+        "unit": "cm"
       }
     ],
     "_status": "published"
