@@ -110,7 +110,7 @@ try {
     where: { and: [{ slug: { equals: "delan-sofa" } }, { _status: { equals: "published" } }] },
   });
   const product = productResult.docs[0] as Product | undefined;
-  assert(product, "Run `npm run payload:seed` before Phase 11 verification.");
+  assert(product, "Run `npm run payload:seed` before shipping verification.");
   assert.equal(product.shippingMode ?? "freight", "freight", "Existing products must default safely to freight.");
 
   const variantsResult = await payload.find({
@@ -121,7 +121,7 @@ try {
     where: { and: [{ product: { equals: product.id } }, { _status: { equals: "published" } }] },
   });
   const [parcelVariant, freightVariant] = variantsResult.docs as Variant[];
-  assert(parcelVariant && freightVariant, "Phase 11 verification needs two seeded Delan variants.");
+  assert(parcelVariant && freightVariant, "Shipping verification needs two seeded Delan variants.");
   for (const variant of [parcelVariant, freightVariant]) {
     originalVariants.set(variant.id, {
       parcelWeightInGrams: variant.parcelWeightInGrams,
@@ -275,7 +275,7 @@ try {
   );
 
   assert(initiated.redirectURL);
-  payload.logger.info("Phase 11 verification passed: parcel, freight, mixed-cart fallback, payment totals, API failure, post-payment shipment creation, tracking, and duplicate prevention all work.");
+  payload.logger.info("Shipping verification passed: parcel, freight, mixed-cart fallback, payment totals, API failure, post-payment shipment creation, tracking, and duplicate prevention all work.");
 } finally {
   for (const id of createdOrderIDs) await payload.delete({ collection: "orders", id, overrideAccess: true }).catch(() => undefined);
   for (const id of createdTransactionIDs) await payload.delete({ collection: "transactions", id, overrideAccess: true }).catch(() => undefined);

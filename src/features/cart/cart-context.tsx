@@ -35,7 +35,6 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | null>(null);
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const CART_STORAGE_KEY = "npgroup-cart-v2";
-const LEGACY_CART_STORAGE_KEY = "npgroup-cart-v1";
 const MAX_ITEM_QUANTITY = 20;
 
 type CartMode = "authenticated" | "guest" | "loading";
@@ -49,7 +48,6 @@ const cartProduct = (product: Product): CartProduct => ({
   price: product.price,
   image: product.image,
   availability: product.availability,
-  ...(product.source ? { source: product.source } : {}),
   ...(product.payloadProductId ? { payloadProductId: product.payloadProductId } : {}),
 });
 
@@ -73,19 +71,9 @@ const itemIdentity = (productId: number, selection: CartSelection) => {
 const storedReferences = (): CartLineReference[] => {
   try {
     const current = window.localStorage.getItem(CART_STORAGE_KEY);
-    if (current) {
-      const parsed = JSON.parse(current) as { items?: CartLineReference[] };
-      return Array.isArray(parsed.items) ? parsed.items : [];
-    }
-
-    const legacy = window.localStorage.getItem(LEGACY_CART_STORAGE_KEY);
-    if (!legacy) return [];
-    const parsed = JSON.parse(legacy) as CartItem[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.flatMap((item) => {
-      const reference = itemReference(item);
-      return reference ? [reference] : [];
-    });
+    if (!current) return [];
+    const parsed = JSON.parse(current) as { items?: CartLineReference[] };
+    return Array.isArray(parsed.items) ? parsed.items : [];
   } catch {
     return [];
   }
@@ -98,7 +86,6 @@ const saveGuestReferences = (items: CartItem[]) => {
   });
   try {
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ version: 2, items: references }));
-    window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
   } catch {
     // The in-memory cart remains usable when browser storage is unavailable.
   }
@@ -107,7 +94,6 @@ const saveGuestReferences = (items: CartItem[]) => {
 const clearGuestReferences = () => {
   try {
     window.localStorage.removeItem(CART_STORAGE_KEY);
-    window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
   } catch {
     // The authenticated Payload cart is already canonical.
   }

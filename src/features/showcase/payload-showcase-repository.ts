@@ -81,7 +81,6 @@ function mapProject(project: PayloadProject, products: readonly Product[]): Payl
     palette: (project.palette ?? []).map((item) => ({ name: item.name, color: item.color })),
     gallery: (project.gallery ?? []).map((item) =>
       imageFromMedia(item.image, item.alt, item.caption)),
-    productIds: relatedProducts.map((product) => product.id),
     articleSlug: relationshipSlug(project.article),
     publication: { status: "published", updatedAt: project.updatedAt, verification: { approvedAt: project.updatedAt, evidence: "Payload CMS" } },
     products: relatedProducts,

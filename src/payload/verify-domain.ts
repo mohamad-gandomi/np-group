@@ -65,13 +65,13 @@ const payload = await getPayload({ config });
 try {
   const brand = await payload.create({
     collection: "brands",
-    data: { title: `برند آزمون ${shortID}`, slug: `phase3-brand-${shortID}`, published: true },
+    data: { title: `برند آزمون ${shortID}`, slug: `domain-brand-${shortID}`, published: true },
   });
   remember("brands", brand.id);
 
   const hiddenBrand = await payload.create({
     collection: "brands",
-    data: { title: `برند پنهان ${shortID}`, slug: `phase3-hidden-brand-${shortID}`, published: false },
+    data: { title: `برند پنهان ${shortID}`, slug: `domain-hidden-brand-${shortID}`, published: false },
   });
   remember("brands", hiddenBrand.id);
 
@@ -84,13 +84,13 @@ try {
 
   const category = await payload.create({
     collection: "categories",
-    data: { title: `دسته آزمون ${shortID}`, slug: `phase3-category-${shortID}`, published: true },
+    data: { title: `دسته آزمون ${shortID}`, slug: `domain-category-${shortID}`, published: true },
   });
   remember("categories", category.id);
 
   const series = await payload.create({
     collection: "categories",
-    data: { title: `خانواده آزمون ${shortID}`, slug: `phase3-family-${shortID}`, parent: category.id, published: true },
+    data: { title: `خانواده آزمون ${shortID}`, slug: `domain-family-${shortID}`, parent: category.id, published: true },
   });
   remember("categories", series.id);
 
@@ -98,7 +98,7 @@ try {
     collection: "products",
     data: {
       title: `محصول هماهنگ ${shortID}`,
-      slug: `phase3-companion-${shortID}`,
+      slug: `domain-companion-${shortID}`,
       brand: brand.id,
       categories: [category.id, series.id],
       salesMode: "inquiry",
@@ -113,7 +113,7 @@ try {
 
   const variantType = await payload.create({
     collection: "variantTypes",
-    data: { label: `فرم آزمون ${shortID}`, name: `phase3-form-${shortID}` },
+    data: { label: `فرم آزمون ${shortID}`, name: `domain-form-${shortID}` },
   });
   remember("variantTypes", variantType.id);
 
@@ -127,7 +127,7 @@ try {
     collection: "products",
     data: {
       title: `محصول آزمون ${shortID}`,
-      slug: `phase3-product-${shortID}`,
+      slug: `domain-product-${shortID}`,
       brand: brand.id,
       categories: [category.id, series.id],
       salesMode: "direct",
@@ -226,7 +226,7 @@ try {
   assert.equal(apiVariant.measurements?.[1]?.key, "fabric");
   assert.deepEqual(apiProduct.matchingProducts, [companion.id]);
 
-  payload.logger.info("Phase 3 domain verification passed: schema, access, stable catalog identifiers, TMN flow, and payment boundary.");
+  payload.logger.info("Domain verification passed: schema, access, stable catalog identifiers, TMN flow, and payment boundary.");
 } finally {
   for (const collection of ["transactions", "orders", "carts", "variants", "products", "variantOptions", "variantTypes", "categories", "brands"]) {
     for (const id of [...(created[collection] ?? [])].reverse()) {

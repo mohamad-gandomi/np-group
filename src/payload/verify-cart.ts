@@ -44,8 +44,8 @@ try {
   const user = await payload.create({
     collection: "users",
     data: {
-      email: `phase4-${shortID}@example.test`,
-      password: `Phase4-${runID}!`,
+      email: `cart-${shortID}@example.test`,
+      password: `Cart-${runID}!`,
       fullName: `مدیر آزمون ${shortID}`,
       role: "admin",
       active: true,
@@ -64,19 +64,19 @@ try {
 
   const brand = await payload.create({
     collection: "brands",
-    data: { title: `برند آزمون ${shortID}`, slug: `phase4-brand-${shortID}`, published: true },
+    data: { title: `برند آزمون ${shortID}`, slug: `cart-brand-${shortID}`, published: true },
   });
   remember("brands", brand.id);
 
   const category = await payload.create({
     collection: "categories",
-    data: { title: `دسته آزمون ${shortID}`, slug: `phase4-category-${shortID}`, published: true },
+    data: { title: `دسته آزمون ${shortID}`, slug: `cart-category-${shortID}`, published: true },
   });
   remember("categories", category.id);
 
   const variantType = await payload.create({
     collection: "variantTypes",
-    data: { label: `فرم آزمون ${shortID}`, name: `phase4-form-${shortID}` },
+    data: { label: `فرم آزمون ${shortID}`, name: `cart-form-${shortID}` },
   });
   remember("variantTypes", variantType.id);
 
@@ -138,7 +138,7 @@ try {
     collection: "products",
     data: {
       title: `محصول پیکربندی ${shortID}`,
-      slug: `phase4-product-${shortID}`,
+      slug: `cart-product-${shortID}`,
       brand: brand.id,
       categories: [category.id],
       salesMode: "direct",
@@ -161,7 +161,7 @@ try {
     collection: "products",
     data: {
       title: `محصول دیگر ${shortID}`,
-      slug: `phase4-other-${shortID}`,
+      slug: `cart-other-${shortID}`,
       brand: brand.id,
       categories: [category.id],
       salesMode: "direct",
@@ -180,7 +180,7 @@ try {
     collection: "products",
     data: {
       title: `محصول پیش‌نویس ${shortID}`,
-      slug: `phase4-hidden-${shortID}`,
+      slug: `cart-hidden-${shortID}`,
       brand: brand.id,
       categories: [category.id],
       salesMode: "direct",
@@ -394,7 +394,7 @@ try {
   assert.equal(preservedOrder.items?.[0]?.unitPriceInTMN, 250_000);
   assert.equal(preservedOrder.items?.[0]?.configuration?.find((selection) => selection.groupKey === woodGroup.name)?.labelFaSnapshot, "گردویی");
 
-  payload.logger.info("Phase 4 verification passed: trusted configuration, normalized matching, server validation, totals, and snapshots.");
+  payload.logger.info("Cart verification passed: trusted configuration, normalized matching, server validation, totals, and snapshots.");
 } finally {
   for (const collection of [
     "transactions",

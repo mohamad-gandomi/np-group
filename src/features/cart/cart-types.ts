@@ -27,7 +27,6 @@ export type CartProduct = Pick<
   | "payloadProductId"
   | "price"
   | "slug"
-  | "source"
 >;
 
 export type CartItem = CartSelection & {
@@ -51,4 +50,3 @@ export type CartResponse = {
   subtotal: number;
   shippingMode: "parcel" | "freight";
 };
-

@@ -26,7 +26,7 @@ try {
   const blogCategory = publicPosts.docs[0]?.category;
   assert.ok(heroImage);
   assert.ok(blogCategory);
-  const draftSlug = `phase12-private-draft-${Date.now()}`;
+  const draftSlug = `content-private-draft-${Date.now()}`;
   const draft = await payload.create({
     collection: "posts",
     draft: true,
@@ -47,7 +47,7 @@ try {
   assert.equal(hiddenDraft.totalDocs, 0, "draft posts are hidden from public readers");
   await payload.delete({ collection: "posts", id: draft.id, overrideAccess: true });
 
-  payload.logger.info("Phase 12 verification passed: dynamic posts, derived reading data, TOC, media, and draft isolation.");
+  payload.logger.info("Content verification passed: dynamic posts, derived reading data, TOC, media, and draft isolation.");
 } finally {
   await payload.destroy();
 }

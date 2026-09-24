@@ -1,5 +1,0 @@
-[
-  { "variantType": "seat-size", "value": "seat-single", "label": "تک‌نفره", "active": true },
-  { "variantType": "wood-finish", "value": "wood-walnut", "label": "گردویی", "colorHex": "#76513c", "active": true },
-  { "variantType": "fabric", "value": "verona-a01", "label": "A01", "code": "VR-A01", "groupLabel": "Verona Palette", "image": "", "active": true }
-]

@@ -1,4 +1,3 @@
-import { products } from "@/features/catalog/catalog-data";
 import { brandRegistry } from "./brand-registry";
 
 export type Publication =
@@ -15,7 +14,7 @@ export type Project = {
   description: string; brief: string; image: ShowcaseImage;
   approach: { title: string; text: string }[];
   palette: { name: string; color: string }[];
-  gallery: ShowcaseImage[]; productIds: string[]; articleSlug: string;
+  gallery: ShowcaseImage[]; articleSlug: string;
   publication: Publication;
 };
 
@@ -46,7 +45,7 @@ export const projects: Project[] = [
       { title: "نور و بافت در کنار هم", text: "در کنار روشنایی کلی، نور موضعی می‌تواند محدوده هر نشیمن را مشخص کند. رنگ‌های گرم در کنار سطوح سنگی، پیشنهاد بصری این کانسپت‌اند؛ برای اجرا، نمونه متریال و محاسبات نور لازم است." },
     ],
     palette: [{ name: "سنگ روشن", color: "#ccc5b9" }, { name: "آبی عمیق", color: "#374e59" }, { name: "برنج", color: "#ac8950" }],
-    gallery: [living, bright], productIds: ["luna", "vera", "linea", "dora"], articleSlug: "layered-lighting-at-home", publication: { status: "demo" },
+    gallery: [living, bright], articleSlug: "layered-lighting-at-home", publication: { status: "demo" },
   },
   {
     slug: "a-room-to-slow-down", title: "خانه، با ریتم آرام‌تر", sector: "residential",
@@ -59,7 +58,7 @@ export const projects: Project[] = [
       { title: "گوشه‌ای برای خواندن", text: "یک صندلی مستقل کنار منبع نور، کاربرد دیگری به نشیمن می‌دهد. فاصله چراغ از چشم، محل قرار گرفتن کتاب و دسترسی به میز کوچک را هم‌زمان با زیبایی چیدمان بررسی می‌کنیم." },
     ],
     palette: [{ name: "کرم گرم", color: "#ded3bf" }, { name: "چوب طبیعی", color: "#917053" }, { name: "سبز ملایم", color: "#788070" }],
-    gallery: [bright, { ...sofa, caption: "مرجع رنگ و فرم نشیمن؛ محصول نصب‌شده در این فضا نیست." }], productIds: ["luna", "ara", "dora", "ravi"], articleSlug: "choosing-sofa-dimensions", publication: { status: "demo" },
+    gallery: [bright, { ...sofa, caption: "مرجع رنگ و فرم نشیمن؛ محصول نصب‌شده در این فضا نیست." }], articleSlug: "choosing-sofa-dimensions", publication: { status: "demo" },
   },
   {
     slug: "light-and-texture", title: "روشن، ساده، نزدیک", sector: "residential",
@@ -72,7 +71,7 @@ export const projects: Project[] = [
       { title: "اتاقی برای زندگی روزمره", text: "سهولت نظافت، دسترسی به پنجره و مسیر حرکت به اندازه تصویر نهایی اهمیت دارند. پیش از نهایی کردن چیدمان، یک روز معمولی در این فضا را مرور می‌کنیم و جای وسایل پرکاربرد را مشخص می‌کنیم." },
     ],
     palette: [{ name: "شیری", color: "#e9e3d7" }, { name: "حصیری", color: "#b99c77" }, { name: "ذغالی", color: "#484743" }],
-    gallery: [living, { ...sofa, caption: "مطالعه تضاد رنگ پارچه؛ تصویر محصول اجراشده در این فضا نیست." }], productIds: ["vera", "aura", "arta", "ravi"], articleSlug: "living-room-with-room-to-breathe", publication: { status: "demo" },
+    gallery: [living, { ...sofa, caption: "مطالعه تضاد رنگ پارچه؛ تصویر محصول اجراشده در این فضا نیست." }], articleSlug: "living-room-with-room-to-breathe", publication: { status: "demo" },
   },
 ];
 
@@ -83,11 +82,3 @@ export const sectorLabels = {
   workplace: "فضای کاری",
   healthcare: "درمانی",
 } satisfies Record<Project["sector"], string>;
-export const getBrand = (slug: string) => brands.find((brand) => brand.slug === slug);
-export const getProject = (slug: string) => projects.find((project) => project.slug === slug);
-export const brandProducts = (brand: BrandProfile) => products.filter((product) => product.brand === brand.name);
-export const projectProducts = (project: Project) => project.productIds.map((id) => products.find((product) => product.id === id)).filter((product) => product !== undefined);
-export function directoryRecords<T extends { publication: Publication }>(records: T[]): T[] {
-  const published = records.filter((record) => record.publication.status === "published");
-  return published.length ? published : records;
-}

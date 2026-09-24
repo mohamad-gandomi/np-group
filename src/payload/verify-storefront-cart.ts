@@ -28,8 +28,8 @@ try {
   await payload.create({
     collection: "users",
     data: {
-      email: `phase5-${runID}@example.test`,
-      password: `Phase5-${runID}!`,
+      email: `storefront-cart-${runID}@example.test`,
+      password: `StorefrontCart-${runID}!`,
       fullName: "مدیر آزمون برش دلان",
       role: "admin",
       active: true,
@@ -53,7 +53,7 @@ try {
     where: { and: [{ slug: { equals: "delan-sofa" } }, { _status: { equals: "published" } }] },
   });
   product = products.docs[0];
-  assert(product, "Run `npm run payload:seed` before Phase 5 verification.");
+  assert(product, "Run `npm run payload:seed` before storefront cart verification.");
   assert.equal(product._status, "published");
   assert.equal(product.slug, "delan-sofa");
   assert.equal(product.catalogCode, "NHSS 994");
@@ -75,7 +75,6 @@ try {
     attributeOptions: options,
     variants,
   });
-  assert.equal(mapped.source, "payload");
   assert.equal(mapped.name, "مبل دلان");
   assert.match(mapped.image, /^\/api\/media\/file\//, "Same-app Payload media must use a local image path.");
   assert(!mapped.image.includes("localhost"), "Storefront image URLs must not capture Payload's local server URL.");
@@ -156,7 +155,7 @@ try {
   assert(preserved.items?.[0]?.configuration?.some((selection) => selection.groupLabelFaSnapshot === originalGroupTitle));
   assert(preserved.items?.[0]?.configuration?.some((selection) => selection.labelFaSnapshot === originalOptionTitle));
 
-  payload.logger.info("Phase 5 verification passed: seeded Delan mapping, configuration-aware cart identity/totals, and historical order snapshots.");
+  payload.logger.info("Storefront cart verification passed: seeded Delan mapping, configuration-aware cart identity/totals, and historical order snapshots.");
 } finally {
   for (const id of created.orders.reverse()) await payload.delete({ collection: "orders", id }).catch(() => undefined);
   for (const id of created.carts.reverse()) await payload.delete({ collection: "carts", id }).catch(() => undefined);

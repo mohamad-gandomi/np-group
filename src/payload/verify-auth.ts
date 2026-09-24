@@ -45,7 +45,7 @@ try {
   let lockedCode = "";
   const lockedRequest = await requestCustomerOtp(payload, {
     phone: lockedPhone,
-    requestIp: `phase9-lock-${runId}`,
+    requestIp: `auth-lock-${runId}`,
     deliverOtp: async (_normalizedPhone, code) => {
       lockedCode = code;
       return { messageId: `${runId}-locked` };
@@ -57,7 +57,7 @@ try {
   await assert.rejects(
     requestCustomerOtp(payload, {
       phone: lockedPhone,
-      requestIp: `phase9-lock-${runId}`,
+      requestIp: `auth-lock-${runId}`,
       deliverOtp: async () => ({ messageId: `${runId}-unexpected` }),
     }),
     (error: unknown) => error instanceof CustomerAuthError && Boolean(error.retryAfter),
@@ -79,7 +79,7 @@ try {
   let successCode = "";
   await requestCustomerOtp(payload, {
     phone: successPhone,
-    requestIp: `phase9-success-${runId}`,
+    requestIp: `auth-success-${runId}`,
     deliverOtp: async (_normalizedPhone, code) => {
       successCode = code;
       return { messageId: `${runId}-success` };
@@ -156,7 +156,7 @@ try {
   await revokeCustomerSession(sessionHeaders, payload);
   assert.equal(await authenticateCustomerSession(sessionHeaders, payload), null);
 
-  const sharedIp = `phase9-rate-${runId}`;
+  const sharedIp = `auth-rate-${runId}`;
   for (let index = 0; index < 20; index += 1) {
     await requestCustomerOtp(payload, {
       phone: `0935${String(index).padStart(7, "0")}`,
@@ -173,7 +173,7 @@ try {
     (error: unknown) => error instanceof CustomerAuthError && Boolean(error.retryAfter),
   );
 
-  payload.logger.info("Phase 9 verification passed: OTP security, customer sessions, profiles, addresses, account queries, and revocation work in Payload.");
+  payload.logger.info("Authentication verification passed: OTP security, customer sessions, profiles, addresses, account queries, and revocation work in Payload.");
 } finally {
   await rememberCreatedRecords();
   for (const id of [...new Set(sessionIds)].reverse()) await payload.delete({ collection: "customer-sessions", id, overrideAccess: true }).catch(() => undefined);

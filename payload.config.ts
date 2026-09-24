@@ -109,7 +109,10 @@ export default buildConfig({
   collections,
   cors: [process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"],
   db: postgresAdapter({
-    push: false,
+    // Development databases follow the current config directly. Payload also
+    // refuses schema push in production; keep the explicit guard here as part
+    // of the deployment contract.
+    push: process.env.NODE_ENV !== "production",
     migrationDir: path.resolve(projectRoot, "src/payload/migrations"),
     pool: { connectionString: databaseURI },
   }),
