@@ -57,7 +57,7 @@ try {
     where: { and: [{ slug: { equals: "delan-sofa" } }, { _status: { equals: "published" } }] },
   });
   const product = products.docs[0] as Product | undefined;
-  assert(product, "Run `npm run payload:seed` before Phase 10 verification.");
+  assert(product, "Run `npm run payload:seed` before payment verification.");
   const groupIDs = (product.attributes ?? []).filter((row) => row.required).map((row) => typeof row.attribute === "number" ? row.attribute : row.attribute.id);
   const [groupsResult, optionsResult, variantsResult] = await Promise.all([
     payload.find({ collection: "variantTypes", depth: 0, pagination: false, where: { id: { in: groupIDs } } }),
@@ -187,7 +187,7 @@ try {
   assert.equal(cancelledResult.status, "cancelled");
   assert.equal(verifyCalls, 1, "A cancelled gateway return must not be verified or create an order.");
 
-  payload.logger.info("Phase 10 verification passed: trusted Toman/Rial amounts, authoritative confirmation, cancellation, mismatch rejection, provider references, and idempotent callbacks all work.");
+  payload.logger.info("Payment verification passed: trusted Toman/Rial amounts, authoritative confirmation, cancellation, mismatch rejection, provider references, and idempotent callbacks all work.");
 } finally {
   for (const id of createdOrderIDs) await payload.delete({ collection: "orders", id, overrideAccess: true }).catch(() => undefined);
   for (const id of createdTransactionIDs) await payload.delete({ collection: "transactions", id, overrideAccess: true }).catch(() => undefined);

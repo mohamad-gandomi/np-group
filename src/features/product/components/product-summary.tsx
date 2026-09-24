@@ -56,12 +56,6 @@ export function ProductSummary({ product, description, depth, height, leadTime, 
   }, [depth, height, product.measurements, product.width, selectedVariant]);
 
   const addToCart = async () => {
-    if (product.source !== "payload") {
-      addItem(product, color, quantity);
-      setAdded(true);
-      window.setTimeout(() => setAdded(false), 2400);
-      return;
-    }
     if (!product.payloadProductId || !variantComplete || !groupsComplete || effectivePrice === null) return;
 
     setAdding(true);

@@ -198,7 +198,6 @@ async function cartResponse(
       product: {
         id: product.id,
         payloadProductId: payloadProduct.id,
-        source: "payload",
         slug: product.slug,
         name: item.productTitleSnapshot,
         brand: product.brand,

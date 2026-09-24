@@ -46,7 +46,7 @@ try {
     where: { and: [{ slug: { equals: "delan-sofa" } }, { _status: { equals: "published" } }] },
   });
   product = products.docs[0];
-  assert(product, "Run `npm run payload:seed` before Phase 8 verification.");
+  assert(product, "Run `npm run payload:seed` before order verification.");
 
   const groupIDs = (product.attributes ?? []).filter((row) => row.required).map((row) => typeof row.attribute === "number" ? row.attribute : row.attribute.id);
   const [groupsResult, optionsResult, variantsResult] = await Promise.all([
@@ -163,7 +163,7 @@ try {
     /بین/,
   );
 
-  payload.logger.info("Phase 8 verification passed: authenticated Payload carts and orders persist, isolate, transition, and remain visible in the account model.");
+  payload.logger.info("Order verification passed: authenticated Payload carts and orders persist, isolate, transition, and remain visible in the account model.");
 } finally {
   for (const id of createdOrderIDs) {
     await payload.delete({ collection: "orders", id, overrideAccess: true }).catch(() => undefined);

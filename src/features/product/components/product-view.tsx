@@ -31,7 +31,7 @@ export function ProductView({ product, relatedProducts = [], salesContacts = [] 
         <ProductPurchase product={product} gallery={details.gallery} description={details.description} depth={details.depth} height={details.height} leadTime={details.leadTime} salesContacts={salesContacts} />
       </div>
 
-      <section className="border-y bg-card py-14 sm:py-20"><div className="container-shell"><div className="mb-8 max-w-2xl"><p className="text-xs font-semibold tracking-[0.16em] text-wine">جزئیات محصول</p><h2 className="mt-3 text-3xl font-medium sm:text-4xl">اطلاعاتی برای انتخاب مطمئن‌تر</h2></div><ProductSpecifications product={product} depth={details.depth} height={details.height} warranty={details.warranty} assembly={details.assembly} care={details.care} /></div></section>
+      <section className="border-y bg-card py-14 sm:py-20"><div className="container-shell"><div className="mb-8 max-w-2xl"><p className="text-xs font-semibold tracking-[0.16em] text-wine">جزئیات محصول</p><h2 className="mt-3 text-3xl font-medium sm:text-4xl">اطلاعاتی برای انتخاب مطمئن‌تر</h2></div><ProductSpecifications product={product} warranty={details.warranty} assembly={details.assembly} care={details.care} /></div></section>
 
       {relatedProducts.length ? <section className="py-16 sm:py-24"><div className="container-shell"><SectionHeading eyebrow="انتخاب‌های نزدیک" title="محصولات مرتبط" link="مشاهده مجموعه" href={`/shop/${product.category}`} /><div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div></div></section> : null}
     </main>

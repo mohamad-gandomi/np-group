@@ -67,7 +67,6 @@ export type Product = {
   isNew: boolean;
   isSale: boolean;
   createdAt: string;
-  source?: "fixture" | "payload";
   payloadProductId?: number;
   payloadCategorySlug?: string;
   description?: string;

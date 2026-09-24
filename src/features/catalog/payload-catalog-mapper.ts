@@ -137,7 +137,6 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
   return {
     id: `payload-${product.id}`,
     payloadProductId: product.id,
-    source: "payload",
     productType: product.productType,
     ...(category?.slug ? { payloadCategorySlug: category.slug } : {}),
     slug: product.slug,
