@@ -719,7 +719,7 @@ export const ecommerce = ecommercePlugin({
         hooks: withStorefrontRevalidation({ ...defaultCollection.hooks, beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateVariant] }, ["catalog"], "status"),
         admin: {
           ...defaultCollection.admin,
-          group: "فروشگاه",
+          group: false,
           useAsTitle: "nilperCode",
           defaultColumns: ["nilperCode", "title", "product", "priceInTMN", "_status"],
           description: "هر مدل باید یک کد ثبت، قیمت یا تفاوت عملیاتی واقعی داشته باشد.",

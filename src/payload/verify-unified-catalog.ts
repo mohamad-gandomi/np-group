@@ -6,7 +6,7 @@ import { validateNilperCommerceItems } from './cart-configuration';
 import { resolveCommerce } from './catalog-domain';
 import { mapPayloadProduct } from '../features/catalog/payload-catalog-mapper';
 import { makeExportHook, makeImportHook } from './data-transfer';
-import { ADMIN_NAVIGATION_GROUPS } from './admin-navigation';
+import { ADMIN_NAVIGATION_GROUPS, STORE_NAVIGATION_COLLECTIONS } from './admin-navigation';
 
 const payload = await getPayload({ config });
 const req = await createLocalReq({ context: { disableStorefrontRevalidation: true } }, payload);
@@ -39,14 +39,22 @@ try {
     .map((collection) => collection.admin?.group)
     .filter((group): group is string => typeof group === 'string'))];
   assert.deepEqual(visibleNavigationGroups, [...ADMIN_NAVIGATION_GROUPS], 'Payload navigation groups must use the requested order.');
+  const visibleStoreCollections = payload.config.collections
+    .filter((collection) => collection.admin?.group === 'فروشگاه')
+    .map((collection) => collection.slug);
+  assert.deepEqual(visibleStoreCollections, [...STORE_NAVIGATION_COLLECTIONS], 'Store navigation collections must use the requested order.');
   const productsConfig = payload.config.collections.find((collection) => collection.slug === 'products');
+  const variantsConfig = payload.config.collections.find((collection) => collection.slug === 'variants');
   const attributesConfig = payload.config.collections.find((collection) => collection.slug === 'variantTypes');
+  const attributeOptionsConfig = payload.config.collections.find((collection) => collection.slug === 'variantOptions');
   const categoriesConfig = payload.config.collections.find((collection) => collection.slug === 'categories');
   const productModelsJoin = findField(productsConfig?.fields ?? [], 'variants');
   const attributeOptionsJoin = findField(attributesConfig?.fields ?? [], 'options');
   const storefrontCategoryField = findField(categoriesConfig?.fields ?? [], 'showOnStorefront');
   assert.equal((productModelsJoin?.admin as Record<string, unknown>)?.allowCreate, true, 'Models must be creatable inside Product.');
   assert.equal((attributeOptionsJoin?.admin as Record<string, unknown>)?.allowCreate, true, 'Options must be creatable inside Attribute.');
+  assert.equal(variantsConfig?.admin?.group, false, 'Models must stay out of the sidebar without disabling their admin routes.');
+  assert.equal(attributeOptionsConfig?.admin?.group, false, 'Attribute options must stay out of the sidebar without disabling their admin routes.');
   assert(storefrontCategoryField, 'Categories must expose the homepage/shop selection field.');
   const brand = remember('brands', await payload.create({ collection: 'brands', req, data: { title: prefix, slug: prefix } }));
   const category = remember('categories', await payload.create({ collection: 'categories', req, data: { title: prefix, slug: prefix } }));

@@ -162,7 +162,7 @@ export function attributeCollection(collection: CollectionConfig, option: boolea
     ...collection,
     trash: false,
     labels: option ? { singular: 'گزینه ویژگی', plural: 'گزینه‌های ویژگی' } : { singular: 'ویژگی', plural: 'ویژگی‌ها' },
-    admin: { ...collection.admin, group: 'کاتالوگ', description: 'ویژگی‌ها به‌صورت خودکار مدل ایجاد نمی‌کنند.', defaultColumns: option ? ['label', 'variantType', 'value', 'active'] : ['label', 'name', 'active'] },
+    admin: { ...collection.admin, group: option ? false : 'فروشگاه', description: 'ویژگی‌ها به‌صورت خودکار مدل ایجاد نمی‌کنند.', defaultColumns: option ? ['label', 'variantType', 'value', 'active'] : ['label', 'name', 'active'] },
     hooks: { ...collection.hooks, beforeDelete: [...(collection.hooks?.beforeDelete ?? []), protectAttribute(option)],
       beforeValidate: [...(collection.hooks?.beforeValidate ?? []), async ({ data, originalDoc, req }) => {
         if (option && originalDoc?.id && data?.variantType !== undefined && relationID(data.variantType) !== relationID(originalDoc.variantType)) {

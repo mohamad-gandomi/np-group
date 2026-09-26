@@ -293,7 +293,7 @@ export const Brands: CollectionConfig = {
   slug: "brands",
   access: publishedContentAccess,
   labels: { singular: "برند", plural: "برندها" },
-  admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "slug", "published"] },
+  admin: { group: "فروشگاه", useAsTitle: "title", defaultColumns: ["title", "slug", "published"] },
   hooks: withStorefrontRevalidation(undefined, ["catalog", "showcase"], "published"),
   fields: [
     rtlText("title", "نام فارسی برند", true),
@@ -439,7 +439,7 @@ export const Categories: CollectionConfig = {
   slug: "categories",
   access: publishedContentAccess,
   labels: { singular: "دسته‌بندی", plural: "دسته‌بندی‌ها" },
-  admin: { group: "کاتالوگ", useAsTitle: "title", defaultColumns: ["title", "parent", "showOnStorefront", "sortOrder", "published"] },
+  admin: { group: "فروشگاه", useAsTitle: "title", defaultColumns: ["title", "parent", "showOnStorefront", "sortOrder", "published"] },
   hooks: withStorefrontRevalidation({ beforeValidate: [validateCategoryStorefrontSelection] }, ["catalog"], "published"),
   fields: [
     rtlText("title", "عنوان فارسی", true),

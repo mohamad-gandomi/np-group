@@ -2,15 +2,27 @@ import type { CollectionConfig, Plugin } from "payload";
 
 export const ADMIN_NAVIGATION_GROUPS = [
   "فروشگاه",
-  "کاتالوگ",
   "محتوا",
   "مجله",
   "مدیریت",
-  "ابزار داده",
+] as const;
+
+export const STORE_NAVIGATION_COLLECTIONS = [
+  "products",
+  "orders",
+  "transactions",
+  "customers",
+  "categories",
+  "brands",
+  "variantTypes",
 ] as const;
 
 const groupRank = new Map<string, number>(
   ADMIN_NAVIGATION_GROUPS.map((group, index) => [group, index]),
+);
+
+const storeCollectionRank = new Map<string, number>(
+  STORE_NAVIGATION_COLLECTIONS.map((slug, index) => [slug, index]),
 );
 
 const collectionGroup = (collection: CollectionConfig): string | undefined => {
@@ -25,7 +37,15 @@ export const orderAdminNavigationCollections = (
   .sort((left, right) => {
     const leftRank = groupRank.get(collectionGroup(left.collection) ?? "") ?? Number.MAX_SAFE_INTEGER;
     const rightRank = groupRank.get(collectionGroup(right.collection) ?? "") ?? Number.MAX_SAFE_INTEGER;
-    return leftRank - rightRank || left.index - right.index;
+    if (leftRank !== rightRank) return leftRank - rightRank;
+
+    if (collectionGroup(left.collection) === "فروشگاه") {
+      const leftCollectionRank = storeCollectionRank.get(left.collection.slug) ?? Number.MAX_SAFE_INTEGER;
+      const rightCollectionRank = storeCollectionRank.get(right.collection.slug) ?? Number.MAX_SAFE_INTEGER;
+      if (leftCollectionRank !== rightCollectionRank) return leftCollectionRank - rightCollectionRank;
+    }
+
+    return left.index - right.index;
   })
   .map(({ collection }) => collection);
 

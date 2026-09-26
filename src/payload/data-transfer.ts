@@ -206,7 +206,7 @@ const secureTransferCollection = (collection: CollectionConfig, kind: TransferKi
             },
           }
         : collection.admin?.components,
-      group: "ابزار داده",
+      group: "مدیریت",
       defaultColumns: kind === "import"
         ? ["filename", "collectionSlug", "importMode", "status", "createdAt"]
         : ["name", "collectionSlug", "format", "createdAt"],
