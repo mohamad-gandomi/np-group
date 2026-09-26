@@ -74,15 +74,13 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    customers: Customer;
-    variants: Variant;
     products: Product;
     orders: Order;
     transactions: Transaction;
-    brands: Brand;
+    customers: Customer;
     categories: Category;
+    brands: Brand;
     variantTypes: VariantType;
-    variantOptions: VariantOption;
     media: Media;
     projects: Project;
     'blog-categories': BlogCategory;
@@ -93,6 +91,8 @@ export interface Config {
     'customer-otp-challenges': CustomerOtpChallenge;
     'customer-sessions': CustomerSession;
     addresses: Address;
+    variants: Variant;
+    variantOptions: VariantOption;
     carts: Cart;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -101,12 +101,12 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    products: {
+      variants: 'variants';
+    };
     customers: {
       addresses: 'addresses';
       orders: 'orders';
-    };
-    products: {
-      variants: 'variants';
     };
     variantTypes: {
       options: 'variantOptions';
@@ -116,15 +116,13 @@ export interface Config {
     };
   };
   collectionsSelect: {
-    customers: CustomersSelect<false> | CustomersSelect<true>;
-    variants: VariantsSelect<false> | VariantsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
-    brands: BrandsSelect<false> | BrandsSelect<true>;
+    customers: CustomersSelect<false> | CustomersSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
     variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
-    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
@@ -135,6 +133,8 @@ export interface Config {
     'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
     'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
+    variants: VariantsSelect<false> | VariantsSelect<true>;
+    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -221,148 +221,6 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customers".
- */
-export interface Customer {
-  id: number;
-  fullName?: string | null;
-  phone: string;
-  active?: boolean | null;
-  addresses?: {
-    docs?: (number | Address)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  orders?: {
-    docs?: (number | Order)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  updatedAt: string;
-  createdAt: string;
-  collection: 'customers';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "addresses".
- */
-export interface Address {
-  id: number;
-  customer?: (number | null) | Customer;
-  title?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  company?: string | null;
-  addressLine1?: string | null;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  postalCode?: string | null;
-  country: 'IR';
-  phone?: string | null;
-  displayLabel?: string | null;
-  isDefault?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "orders".
- */
-export interface Order {
-  id: number;
-  items?:
-    | {
-        product?: (number | null) | Product;
-        variant?: (number | null) | Variant;
-        quantity: number;
-        /**
-         * ورودی پایدار ویژگی و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
-         */
-        configuration?:
-          | {
-              groupKey: string;
-              group?: (number | null) | VariantType;
-              groupLabelFaSnapshot: string;
-              option?: (number | null) | VariantOption;
-              optionCodeSnapshot?: string | null;
-              labelFaSnapshot: string;
-              id?: string | null;
-            }[]
-          | null;
-        configurationKey: string;
-        productTitleSnapshot: string;
-        variantCodeSnapshot?: string | null;
-        variantTitleSnapshot?: string | null;
-        unitPriceInTMN: number;
-        shippingModeSnapshot?: ('parcel' | 'freight') | null;
-        parcelWeightInGramsSnapshot?: number | null;
-        tapinBoxIDSnapshot?: number | null;
-        id?: string | null;
-      }[]
-    | null;
-  customer?: (number | null) | Customer;
-  contactName: string;
-  contactPhone: string;
-  /**
-   * این ارتباط خودکار است؛ جزئیات ثبت‌شده پایین، تصویر ثابت آدرس در زمان سفارش است.
-   */
-  customerAddress?: (number | null) | Address;
-  shippingAddress?: {
-    title?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    company?: string | null;
-    addressLine1?: string | null;
-    addressLine2?: string | null;
-    city?: string | null;
-    state?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-    phone?: string | null;
-  };
-  deliveryMethod: 'advisor';
-  shippingMode?: ('parcel' | 'freight') | null;
-  shippingAmountInTMN?: number | null;
-  shippingProvider?: ('tapin' | 'manual') | null;
-  shippingServiceID?: string | null;
-  shippingServiceLabel?: string | null;
-  shippingProvinceCode?: number | null;
-  shippingCityCode?: number | null;
-  shippingWeightInGrams?: number | null;
-  shippingBoxID?: number | null;
-  shippingQuotedAt?: string | null;
-  shippingStatus?:
-    | (
-        | 'manual_coordination'
-        | 'quoted'
-        | 'shipment_pending'
-        | 'creating'
-        | 'created'
-        | 'in_transit'
-        | 'delivered'
-        | 'failed'
-      )
-    | null;
-  shippingShipmentID?: string | null;
-  shippingTrackingCode?: string | null;
-  shippingProviderStatus?: string | null;
-  shippingFailureMessage?: string | null;
-  shipmentCreatedAt?: string | null;
-  amount?: number | null;
-  currency?: 'TMN' | null;
-  paymentMethod: 'zarinpal' | 'invoice';
-  paymentTransaction?: (number | null) | Transaction;
-  customerEmail?: string | null;
-  transactions?: (number | Transaction)[] | null;
-  status?: OrderStatus;
-  orderNumber: string;
-  sourceCart?: (number | null) | Cart;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * محصول ساده یا متغیر، ویژگی‌های قابل انتخاب و مدل‌های دستی.
@@ -646,6 +504,148 @@ export interface Variant {
   createdAt: string;
   deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  items?:
+    | {
+        product?: (number | null) | Product;
+        variant?: (number | null) | Variant;
+        quantity: number;
+        /**
+         * ورودی پایدار ویژگی و گزینه؛ عنوان‌ها و شناسه نهایی در سرور بازنویسی می‌شوند.
+         */
+        configuration?:
+          | {
+              groupKey: string;
+              group?: (number | null) | VariantType;
+              groupLabelFaSnapshot: string;
+              option?: (number | null) | VariantOption;
+              optionCodeSnapshot?: string | null;
+              labelFaSnapshot: string;
+              id?: string | null;
+            }[]
+          | null;
+        configurationKey: string;
+        productTitleSnapshot: string;
+        variantCodeSnapshot?: string | null;
+        variantTitleSnapshot?: string | null;
+        unitPriceInTMN: number;
+        shippingModeSnapshot?: ('parcel' | 'freight') | null;
+        parcelWeightInGramsSnapshot?: number | null;
+        tapinBoxIDSnapshot?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  customer?: (number | null) | Customer;
+  contactName: string;
+  contactPhone: string;
+  /**
+   * این ارتباط خودکار است؛ جزئیات ثبت‌شده پایین، تصویر ثابت آدرس در زمان سفارش است.
+   */
+  customerAddress?: (number | null) | Address;
+  shippingAddress?: {
+    title?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    company?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+    phone?: string | null;
+  };
+  deliveryMethod: 'advisor';
+  shippingMode?: ('parcel' | 'freight') | null;
+  shippingAmountInTMN?: number | null;
+  shippingProvider?: ('tapin' | 'manual') | null;
+  shippingServiceID?: string | null;
+  shippingServiceLabel?: string | null;
+  shippingProvinceCode?: number | null;
+  shippingCityCode?: number | null;
+  shippingWeightInGrams?: number | null;
+  shippingBoxID?: number | null;
+  shippingQuotedAt?: string | null;
+  shippingStatus?:
+    | (
+        | 'manual_coordination'
+        | 'quoted'
+        | 'shipment_pending'
+        | 'creating'
+        | 'created'
+        | 'in_transit'
+        | 'delivered'
+        | 'failed'
+      )
+    | null;
+  shippingShipmentID?: string | null;
+  shippingTrackingCode?: string | null;
+  shippingProviderStatus?: string | null;
+  shippingFailureMessage?: string | null;
+  shipmentCreatedAt?: string | null;
+  amount?: number | null;
+  currency?: 'TMN' | null;
+  paymentMethod: 'zarinpal' | 'invoice';
+  paymentTransaction?: (number | null) | Transaction;
+  customerEmail?: string | null;
+  transactions?: (number | Transaction)[] | null;
+  status?: OrderStatus;
+  orderNumber: string;
+  sourceCart?: (number | null) | Cart;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers".
+ */
+export interface Customer {
+  id: number;
+  fullName?: string | null;
+  phone: string;
+  active?: boolean | null;
+  addresses?: {
+    docs?: (number | Address)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  orders?: {
+    docs?: (number | Order)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  collection: 'customers';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses".
+ */
+export interface Address {
+  id: number;
+  customer?: (number | null) | Customer;
+  title?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  company?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country: 'IR';
+  phone?: string | null;
+  displayLabel?: string | null;
+  isDefault?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1193,14 +1193,6 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'customers';
-        value: number | Customer;
-      } | null)
-    | ({
-        relationTo: 'variants';
-        value: number | Variant;
-      } | null)
-    | ({
         relationTo: 'products';
         value: number | Product;
       } | null)
@@ -1213,20 +1205,20 @@ export interface PayloadLockedDocument {
         value: number | Transaction;
       } | null)
     | ({
-        relationTo: 'brands';
-        value: number | Brand;
+        relationTo: 'customers';
+        value: number | Customer;
       } | null)
     | ({
         relationTo: 'categories';
         value: number | Category;
       } | null)
     | ({
-        relationTo: 'variantTypes';
-        value: number | VariantType;
+        relationTo: 'brands';
+        value: number | Brand;
       } | null)
     | ({
-        relationTo: 'variantOptions';
-        value: number | VariantOption;
+        relationTo: 'variantTypes';
+        value: number | VariantType;
       } | null)
     | ({
         relationTo: 'media';
@@ -1259,6 +1251,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'addresses';
         value: number | Address;
+      } | null)
+    | ({
+        relationTo: 'variants';
+        value: number | Variant;
+      } | null)
+    | ({
+        relationTo: 'variantOptions';
+        value: number | VariantOption;
       } | null)
     | ({
         relationTo: 'carts';
@@ -1315,52 +1315,6 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "customers_select".
- */
-export interface CustomersSelect<T extends boolean = true> {
-  fullName?: T;
-  phone?: T;
-  active?: T;
-  addresses?: T;
-  orders?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variants_select".
- */
-export interface VariantsSelect<T extends boolean = true> {
-  product?: T;
-  nilperCode?: T;
-  title?: T;
-  options?: T;
-  combinationKey?: T;
-  shippingMode?: T;
-  availabilityMode?: T;
-  mainImage?: T;
-  parcelWeightInGrams?: T;
-  tapinBoxID?: T;
-  priceInTMNEnabled?: T;
-  priceInTMN?: T;
-  measurements?:
-    | T
-    | {
-        key?: T;
-        labelFa?: T;
-        value?: T;
-        unit?: T;
-        sortOrder?: T;
-        id?: T;
-      };
-  manufacturingNotesFa?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  deletedAt?: T;
-  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1595,21 +1549,14 @@ export interface TransactionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "brands_select".
+ * via the `definition` "customers_select".
  */
-export interface BrandsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  descriptionFa?: T;
-  taglineFa?: T;
-  storyFa?: T;
-  logo?: T;
-  heroMedia?: T;
-  heroAlt?: T;
-  heroCaption?: T;
-  featured?: T;
-  sortOrder?: T;
-  published?: T;
+export interface CustomersSelect<T extends boolean = true> {
+  fullName?: T;
+  phone?: T;
+  active?: T;
+  addresses?: T;
+  orders?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1631,6 +1578,26 @@ export interface CategoriesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  descriptionFa?: T;
+  taglineFa?: T;
+  storyFa?: T;
+  logo?: T;
+  heroMedia?: T;
+  heroAlt?: T;
+  heroCaption?: T;
+  featured?: T;
+  sortOrder?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variantTypes_select".
  */
 export interface VariantTypesSelect<T extends boolean = true> {
@@ -1640,24 +1607,6 @@ export interface VariantTypesSelect<T extends boolean = true> {
   active?: T;
   sortOrder?: T;
   helpTextFa?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantOptions_select".
- */
-export interface VariantOptionsSelect<T extends boolean = true> {
-  _variantOptions_options_order?: T;
-  variantType?: T;
-  label?: T;
-  value?: T;
-  active?: T;
-  sortOrder?: T;
-  code?: T;
-  groupLabel?: T;
-  image?: T;
-  colorHex?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1929,6 +1878,57 @@ export interface AddressesSelect<T extends boolean = true> {
   phone?: T;
   displayLabel?: T;
   isDefault?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants_select".
+ */
+export interface VariantsSelect<T extends boolean = true> {
+  product?: T;
+  nilperCode?: T;
+  title?: T;
+  options?: T;
+  combinationKey?: T;
+  shippingMode?: T;
+  availabilityMode?: T;
+  mainImage?: T;
+  parcelWeightInGrams?: T;
+  tapinBoxID?: T;
+  priceInTMNEnabled?: T;
+  priceInTMN?: T;
+  measurements?:
+    | T
+    | {
+        key?: T;
+        labelFa?: T;
+        value?: T;
+        unit?: T;
+        sortOrder?: T;
+        id?: T;
+      };
+  manufacturingNotesFa?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantOptions_select".
+ */
+export interface VariantOptionsSelect<T extends boolean = true> {
+  _variantOptions_options_order?: T;
+  variantType?: T;
+  label?: T;
+  value?: T;
+  active?: T;
+  sortOrder?: T;
+  code?: T;
+  groupLabel?: T;
+  image?: T;
+  colorHex?: T;
   updatedAt?: T;
   createdAt?: T;
 }
