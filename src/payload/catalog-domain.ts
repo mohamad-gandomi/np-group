@@ -168,6 +168,12 @@ export function attributeCollection(collection: CollectionConfig, option: boolea
         if (option && originalDoc?.id && data?.variantType !== undefined && relationID(data.variantType) !== relationID(originalDoc.variantType)) {
           await assertAttributeUnused(true, originalDoc.id, req);
         }
+        if (!option) {
+          const next = { ...originalDoc, ...data };
+          if (next.catalogFilterEnabled === true && next.catalogFilterScope === 'categories' && relationIDs(next.catalogFilterCategories).length === 0) {
+            fail(req, 'catalogFilterCategories', 'برای فیلتر محدود، دست‌کم یک دسته‌بندی انتخاب کنید.');
+          }
+        }
         return data;
       }] },
     fields: [
@@ -193,7 +199,78 @@ export function attributeCollection(collection: CollectionConfig, option: boolea
         { name: 'groupLabel', type: 'text', label: 'پالت / خانواده' },
         { name: 'image', type: 'upload', relationTo: 'media', label: 'تصویر نمونه' },
         { name: 'colorHex', type: 'text', label: 'رنگ HEX' },
-      ] satisfies Field[] : [{ name: 'helpTextFa', type: 'textarea', label: 'راهنمای انتخاب' }] satisfies Field[]),
+      ] satisfies Field[] : [
+        { name: 'helpTextFa', type: 'textarea', label: 'راهنمای انتخاب' },
+        {
+          name: 'catalogFilterEnabled',
+          type: 'checkbox',
+          label: 'نمایش به‌عنوان فیلتر فروشگاه',
+          defaultValue: false,
+          admin: { description: 'فقط ویژگی‌های مناسب برای جست‌وجوی محصول را فعال کنید؛ فعال‌سازی ویژگی مدل یا سفارش را تغییر نمی‌دهد.' },
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'catalogFilterLabel',
+              type: 'text',
+              label: 'عنوان فیلتر',
+              admin: { condition: (data) => data?.catalogFilterEnabled === true, width: '40%' },
+            },
+            {
+              name: 'catalogFilterPresentation',
+              type: 'select',
+              label: 'نوع نمایش',
+              defaultValue: 'checkbox',
+              options: [
+                { label: 'فهرست انتخابی', value: 'checkbox' },
+                { label: 'نمونه رنگ', value: 'swatch' },
+              ],
+              admin: { condition: (data) => data?.catalogFilterEnabled === true, width: '20%' },
+            },
+            {
+              name: 'catalogFilterPlacement',
+              type: 'select',
+              label: 'جایگاه',
+              defaultValue: 'more',
+              options: [
+                { label: 'فیلترهای اصلی', value: 'primary' },
+                { label: 'فیلترهای بیشتر', value: 'more' },
+              ],
+              admin: { condition: (data) => data?.catalogFilterEnabled === true, width: '20%' },
+            },
+            {
+              name: 'catalogFilterOrder',
+              type: 'number',
+              label: 'ترتیب فیلتر',
+              defaultValue: 0,
+              admin: { condition: (data) => data?.catalogFilterEnabled === true, width: '20%' },
+            },
+          ],
+        },
+        {
+          name: 'catalogFilterScope',
+          type: 'radio',
+          label: 'محدوده نمایش فیلتر',
+          defaultValue: 'all',
+          options: [
+            { label: 'فروشگاه عمومی و همه دسته‌ها', value: 'all' },
+            { label: 'فقط دسته‌های انتخابی', value: 'categories' },
+          ],
+          admin: { condition: (data) => data?.catalogFilterEnabled === true, layout: 'horizontal' },
+        },
+        {
+          name: 'catalogFilterCategories',
+          type: 'relationship',
+          relationTo: 'categories',
+          hasMany: true,
+          label: 'دسته‌های نمایش فیلتر',
+          admin: {
+            condition: (data) => data?.catalogFilterEnabled === true && data?.catalogFilterScope === 'categories',
+            description: 'این فیلتر در صفحه فروشگاه عمومی نمایش داده نمی‌شود و فقط در دسته‌های انتخابی دیده می‌شود.',
+          },
+        },
+      ] satisfies Field[]),
     ],
   };
 }

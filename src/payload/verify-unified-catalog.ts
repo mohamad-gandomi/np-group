@@ -86,7 +86,7 @@ try {
     shippingMode: 'parcel' as const, parcelWeightInGrams: 2000, tapinBoxID: 1, mainImage: media.id, _status: 'published' as const };
   const simple = remember('products', await payload.create({ collection: 'products', req, data: {
     ...common, title: 'Simple', slug: `${prefix}-simple`, productType: 'simple', catalogCode: `${prefix}-S`,
-    measurements: [{ labelFa: 'عرض', value: 10, unit: 'cm' }], technicalSpecs: [{ labelFa: 'جنس', valueFa: 'چوب', group: 'materials' }],
+    measurements: [{ labelFa: 'عرض', value: 10, unit: 'cm' }], technicalSpecs: [{ labelFa: 'جنس', valueFa: 'چوب' }],
   } as never }));
   assert(simple.measurements?.[0]?.key); assert.equal(simple.measurements?.[0]?.sortOrder, 0);
   const originalKey = simple.measurements![0].key;

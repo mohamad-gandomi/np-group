@@ -10,6 +10,7 @@ import type {
 
 import type {
   Product,
+  ProductCatalogFacet,
   ProductAttribute,
   ProductMeasurement,
   ProductVariant,
@@ -24,6 +25,7 @@ export type PayloadCatalogRelations = {
 };
 
 export type PayloadCatalogListingRelations = {
+  attributes: readonly VariantType[];
   attributeOptions: readonly VariantOption[];
   variants: readonly Variant[];
 };
@@ -112,15 +114,37 @@ const mapVariants = (product: PayloadProduct, variants: readonly Variant[]): Pro
   };
 });
 
-const listingColors = (
+const mapCatalogFacets = (
   product: PayloadProduct,
+  attributes: readonly VariantType[],
   attributeOptions: readonly VariantOption[],
-) => {
-  const allowedOptionIDs = new Set((product.attributes ?? []).flatMap((row) => relationIDs(row.allowedOptions)));
-  return [...new Set(attributeOptions
-    .filter((option) => allowedOptionIDs.has(option.id) && option.active !== false && Boolean(option.colorHex))
-    .map((option) => option.label))];
-};
+): ProductCatalogFacet[] => attributes
+  .filter((attribute) => attribute.active !== false && attribute.catalogFilterEnabled === true)
+  .map((attribute) => {
+    const assignment = product.attributes?.find((row) => relationID(row.attribute) === attribute.id);
+    const allowedOptionIDs = new Set(relationIDs(assignment?.allowedOptions));
+    return {
+      key: attribute.name,
+      label: attribute.catalogFilterLabel?.trim() || attribute.label,
+      presentation: attribute.catalogFilterPresentation === "swatch" ? "swatch" as const : "checkbox" as const,
+      placement: attribute.catalogFilterPlacement === "primary" ? "primary" as const : "more" as const,
+      sortOrder: attribute.catalogFilterOrder ?? 0,
+      scope: attribute.catalogFilterScope === "categories" ? "categories" as const : "all" as const,
+      categorySlugs: (attribute.catalogFilterCategories ?? [])
+        .filter((category): category is Category => isDocument(category))
+        .map((category) => storefrontTaxonomyForPayloadCategory(category.slug, category.title).slug),
+      options: attributeOptions
+        .filter((option) => option.active !== false && relationID(option.variantType) === attribute.id && allowedOptionIDs.has(option.id))
+        .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0) || left.label.localeCompare(right.label, "fa"))
+        .map((option) => ({
+          label: option.label,
+          value: option.value,
+          ...(option.colorHex ? { swatchColor: option.colorHex } : {}),
+        })),
+    };
+  })
+  .filter((facet) => facet.options.length > 0)
+  .sort((left, right) => left.sortOrder - right.sortOrder || left.label.localeCompare(right.label, "fa"));
 
 /** Maps only fields used by product cards, catalog filters, categories, and paths. */
 export function mapPayloadProductListing(
@@ -131,10 +155,7 @@ export function mapPayloadProductListing(
   const categories = product.categories.filter((value): value is Category => isDocument(value));
   const category = categories[0];
   const taxonomy = storefrontTaxonomyForPayloadCategory(category?.slug ?? "furniture", category?.title ?? "مبلمان خانگی");
-  const technicalSpecs = product.technicalSpecs ?? [];
-  const material = [...new Set(technicalSpecs
-    .filter((specification) => specification.group === "materials" || specification.group === "construction")
-    .map((specification) => specification.valueFa))];
+  const catalogFacets = mapCatalogFacets(product, relations.attributes, relations.attributeOptions);
   const productPrice = product.priceInTMNEnabled === true && typeof product.priceInTMN === "number"
     ? product.priceInTMN
     : null;
@@ -157,8 +178,10 @@ export function mapPayloadProductListing(
     categorySlugs: categories.map((value) => storefrontTaxonomyForPayloadCategory(value.slug, value.title).slug),
     categoryTitle: taxonomy.title,
     room: taxonomy.rooms,
-    material,
-    colors: listingColors(product, relations.attributeOptions),
+    colors: [...new Set(catalogFacets
+      .filter((facet) => facet.presentation === "swatch")
+      .flatMap((facet) => facet.options.map((option) => option.label)))],
+    catalogFacets,
     price: variantPrice ?? productPrice,
     shippingMode: product.shippingMode === "parcel" ? "parcel" : "freight",
     image: payloadMediaURL(product.mainImage) ?? "",
@@ -189,15 +212,10 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     key: specification.key,
     label: specification.labelFa,
     value: specification.valueFa,
-    group: specification.group,
   }));
-  const material = [...new Set(technicalSpecs
-    .filter((specification) => specification.group === "materials" || specification.group === "construction")
-    .map((specification) => specification.value))];
 
   return {
     ...listing,
-    material,
     colors: groups.find((group) => group.inputType === "swatch")?.options.map((option) => option.label) ?? [],
     price,
     shippingMode: product.shippingMode === "parcel" ? "parcel" : "freight",

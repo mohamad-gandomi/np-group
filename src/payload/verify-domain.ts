@@ -136,7 +136,7 @@ try {
       priceInTMN: 1_234_567,
       descriptionFa: richText("محصول آزمون مدل دامنه نیلپر."),
       measurements: [{ key: "total-height", labelFa: "ارتفاع کلی", value: 90, unit: "cm", sortOrder: 10 }],
-      technicalSpecs: [{ key: "frame", labelFa: "جنس اسکلت", valueFa: "چوب راش", group: "construction", sortOrder: 10 }],
+      technicalSpecs: [{ key: "frame", labelFa: "جنس اسکلت", valueFa: "چوب راش", sortOrder: 10 }],
       matchingProducts: [companion.id],
       productType: "variable",
       attributes: [{ attribute: variantType.id, allowedOptions: [variantOption.id] }],

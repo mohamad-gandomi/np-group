@@ -290,7 +290,6 @@ export interface Product {
         key: string;
         labelFa: string;
         valueFa: string;
-        group: 'identity' | 'construction' | 'materials' | 'comfort' | 'finish' | 'delivery' | 'care' | 'other';
         sortOrder?: number | null;
         id?: string | null;
       }[]
@@ -418,6 +417,19 @@ export interface VariantType {
   active?: boolean | null;
   sortOrder?: number | null;
   helpTextFa?: string | null;
+  /**
+   * فقط ویژگی‌های مناسب برای جست‌وجوی محصول را فعال کنید؛ فعال‌سازی ویژگی مدل یا سفارش را تغییر نمی‌دهد.
+   */
+  catalogFilterEnabled?: boolean | null;
+  catalogFilterLabel?: string | null;
+  catalogFilterPresentation?: ('checkbox' | 'swatch') | null;
+  catalogFilterPlacement?: ('primary' | 'more') | null;
+  catalogFilterOrder?: number | null;
+  catalogFilterScope?: ('all' | 'categories') | null;
+  /**
+   * این فیلتر در صفحه فروشگاه عمومی نمایش داده نمی‌شود و فقط در دسته‌های انتخابی دیده می‌شود.
+   */
+  catalogFilterCategories?: (number | Category)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1359,7 +1371,6 @@ export interface ProductsSelect<T extends boolean = true> {
         key?: T;
         labelFa?: T;
         valueFa?: T;
-        group?: T;
         sortOrder?: T;
         id?: T;
       };
@@ -1607,6 +1618,13 @@ export interface VariantTypesSelect<T extends boolean = true> {
   active?: T;
   sortOrder?: T;
   helpTextFa?: T;
+  catalogFilterEnabled?: T;
+  catalogFilterLabel?: T;
+  catalogFilterPresentation?: T;
+  catalogFilterPlacement?: T;
+  catalogFilterOrder?: T;
+  catalogFilterScope?: T;
+  catalogFilterCategories?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -5,17 +5,6 @@ const normalizeRows: FieldHook = ({ value }) => Array.isArray(value)
   ? value.map((row, index) => ({ ...row, key: row.key || row.id || randomUUID(), sortOrder: index }))
   : value;
 
-export const technicalSpecGroupOptions = [
-  { label: "هویت و کاربرد", value: "identity" },
-  { label: "ساخت", value: "construction" },
-  { label: "متریال و روکش", value: "materials" },
-  { label: "راحتی", value: "comfort" },
-  { label: "پرداخت و رنگ", value: "finish" },
-  { label: "بسته‌بندی و تحویل", value: "delivery" },
-  { label: "نگهداری و متعلقات", value: "care" },
-  { label: "سایر", value: "other" },
-] as const;
-
 export const measurementUnitOptions = [
   { label: "سانتی‌متر", value: "cm" },
   { label: "کیلوگرم", value: "kg" },
@@ -53,7 +42,6 @@ export function technicalSpecsField(): ArrayField {
       { name: "key", type: "text", required: true, admin: { hidden: true } },
       { name: "labelFa", type: "text", label: "عنوان فارسی", required: true, admin: { rtl: true } },
       { name: "valueFa", type: "textarea", label: "مقدار فارسی", required: true, index: true },
-      { name: "group", type: "select", label: "گروه", required: true, options: [...technicalSpecGroupOptions] },
       { name: "sortOrder", type: "number", defaultValue: 0, admin: { hidden: true } },
     ],
   };

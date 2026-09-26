@@ -43,26 +43,50 @@ export const catalogListingPopulate = {
 type CatalogPayload = Pick<Payload, "find">;
 
 const idsForListings = (products: readonly PayloadProduct[]) => ({
+  groupIDs: [...new Set(products.flatMap((product) =>
+    (product.attributes ?? []).map((row) => relationID(row.attribute)).filter((id): id is number => id !== undefined)))],
   optionIDs: [...new Set(products.flatMap((product) =>
     (product.attributes ?? []).flatMap((row) => relationIDs(row.allowedOptions))))],
   productIDs: products.filter((product) => product.productType === "variable").map((product) => product.id),
 });
 
-/** Adds card colors and variant-derived prices with two bulk reads per result set. */
+/** Adds storefront facets and variant-derived prices with three bulk reads per result set. */
 export async function mapCatalogProductListings(
   payload: CatalogPayload,
   products: readonly PayloadProduct[],
 ): Promise<Product[]> {
   if (!products.length) return [];
-  const { optionIDs, productIDs } = idsForListings(products);
-  const [options, variants] = await Promise.all([
+  const { groupIDs, optionIDs, productIDs } = idsForListings(products);
+  const [groups, options, variants] = await Promise.all([
+    groupIDs.length
+      ? payload.find({
+          collection: "variantTypes",
+          depth: 1,
+          overrideAccess: false,
+          pagination: false,
+          select: {
+            active: true,
+            catalogFilterCategories: true,
+            catalogFilterEnabled: true,
+            catalogFilterLabel: true,
+            catalogFilterOrder: true,
+            catalogFilterPlacement: true,
+            catalogFilterPresentation: true,
+            catalogFilterScope: true,
+            label: true,
+            name: true,
+          },
+          populate: { categories: { slug: true, title: true } },
+          where: { and: [{ id: { in: groupIDs } }, { active: { equals: true } }, { catalogFilterEnabled: { equals: true } }] },
+        })
+      : Promise.resolve({ docs: [] }),
     optionIDs.length
       ? payload.find({
           collection: "variantOptions",
           depth: 0,
           overrideAccess: false,
           pagination: false,
-          select: { active: true, colorHex: true, label: true },
+          select: { active: true, colorHex: true, label: true, sortOrder: true, value: true, variantType: true },
           where: { and: [{ id: { in: optionIDs } }, { active: { equals: true } }] },
         })
       : Promise.resolve({ docs: [] }),
@@ -86,6 +110,7 @@ export async function mapCatalogProductListings(
   ]);
 
   return products.map((product) => mapPayloadProductListing(product, {
+    attributes: groups.docs as VariantType[],
     attributeOptions: options.docs as VariantOption[],
     variants: variants.docs as Variant[],
   }));
@@ -158,9 +183,10 @@ export async function mapCatalogProductDetails(
     groupIDs.length
       ? payload.find({
           collection: "variantTypes",
-          depth: 0,
+          depth: 1,
           overrideAccess: false,
           pagination: false,
+          populate: { categories: { slug: true, title: true } },
           where: { id: { in: groupIDs } },
         })
       : Promise.resolve({ docs: [] }),

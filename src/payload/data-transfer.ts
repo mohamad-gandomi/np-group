@@ -361,6 +361,7 @@ export const makeExportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => asy
       replaceStable(row, original, "parent", "slug");
       replaceStable(row, original, "image", "filename");
     } else if (slug === "variantTypes") {
+      replaceStable(row, original, "catalogFilterCategories", "slug", true);
       delete row.options;
     } else if (slug === "variantOptions") {
       replaceStable(row, original, "variantType", "name");
@@ -498,6 +499,13 @@ export const makeImportHook = (slug: typeof TRANSFER_COLLECTIONS[number]) => asy
       row.parent = await resolveStable(req, "categories", "slug", row.parent, cache);
       row.image = await resolveMedia(req, row.image, cache);
     } else if (slug === "variantTypes") {
+      row.catalogFilterCategories = await resolveMany(
+        req,
+        "categories",
+        "slug",
+        row.catalogFilterCategories,
+        cache,
+      );
       delete row.options;
     } else if (slug === "variantOptions") {
       row.variantType = await resolveStable(req, "variantTypes", "name", row.variantType, cache);

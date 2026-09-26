@@ -1,22 +1,34 @@
 import Link from "next/link";
 import { RotateCcw, X } from "lucide-react";
 
-import { shopHref, type RawSearchParams } from "../catalog-query";
+import { CATALOG_FACET_PREFIX, shopHref, type RawSearchParams } from "../catalog-query";
 import type { CatalogFacets } from "../catalog-types";
 
-const filterKeys = ["category", "brand", "room", "material", "color", "availability"] as const;
+const filterKeys = ["category", "brand", "room", "color", "availability"] as const;
 type Chip = { key: string; value: string; label: string; remaining?: string[] };
 
 export function ActiveFilters({ facets, params, path }: { facets: CatalogFacets; params: RawSearchParams; path: string }) {
-  const labels: Record<string, string> = {
-    ...Object.fromEntries(facets.categories.map((category) => [category.slug, category.title])),
-    ...Object.fromEntries([facets.brand, facets.room, facets.material, facets.color, facets.availability].flat().map((option) => [option.value, option.label])),
+  const labelsByKey: Record<string, Record<string, string>> = {
+    category: Object.fromEntries(facets.categories.map((category) => [category.slug, category.title])),
+    brand: Object.fromEntries(facets.brand.map((option) => [option.value, option.label])),
+    room: Object.fromEntries(facets.room.map((option) => [option.value, option.label])),
+    availability: Object.fromEntries(facets.availability.map((option) => [option.value, option.label])),
+    color: Object.fromEntries(facets.attributes
+      .filter((facet) => facet.presentation === "swatch")
+      .flatMap((facet) => facet.options.map((option) => [option.label, option.label]))),
   };
   const chips: Chip[] = filterKeys.flatMap((key) => {
     const raw = params[key];
     const values = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
-    return values.map((value) => ({ key, value, label: labels[value] ?? value, remaining: values.filter((item) => item !== value) }));
+    return values.map((value) => ({ key, value, label: labelsByKey[key]?.[value] ?? value, remaining: values.filter((item) => item !== value) }));
   });
+  for (const facet of facets.attributes) {
+    const key = `${CATALOG_FACET_PREFIX}${facet.key}`;
+    const raw = params[key];
+    const values = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
+    const labels = Object.fromEntries(facet.options.map((option) => [option.value, option.label]));
+    chips.push(...values.map((value) => ({ key, value, label: labels[value] ?? value, remaining: values.filter((item) => item !== value) })));
+  }
   if (params.minPrice) chips.push({ key: "minPrice", value: String(params.minPrice), label: `از ${params.minPrice}` });
   if (params.maxPrice) chips.push({ key: "maxPrice", value: String(params.maxPrice), label: `تا ${params.maxPrice}` });
   if (!chips.length) return null;

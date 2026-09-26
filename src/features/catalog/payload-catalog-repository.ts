@@ -6,9 +6,11 @@ import { getPayload } from "payload";
 import type { Where } from "payload";
 
 import config from "../../../payload.config";
-import type { Category, Product as PayloadProduct } from "@/payload-types";
+import type { Category, Product as PayloadProduct, VariantOption, VariantType } from "@/payload-types";
+import { relationID } from "@/payload/catalog-domain";
 
 import { PAGE_SIZE, parseCatalogQuery, type RawSearchParams } from "./catalog-query";
+import { buildCatalogAttributeFacets } from "./catalog-facets";
 import {
   payloadCategorySlugsForRooms,
   payloadCategorySlugsForStorefront,
@@ -168,24 +170,26 @@ const buildCatalogCategories = (
     }));
 };
 
-export const getCatalogFacets = cache(async (): Promise<CatalogFacets> => {
+export const getCatalogFacets = cache(async (category?: string): Promise<CatalogFacets> => {
   const [products, categorySources] = await Promise.all([
     getCatalogProducts(),
     getCatalogCategorySources(),
   ]);
   const categories = buildCatalogCategories(products, categorySources, true);
+  const relevantProducts = category
+    ? products.filter((product) => product.category === category || product.categorySlugs?.includes(category))
+    : products;
 
   return {
     categories,
-    brand: valueOptions(products.map((product) => product.brand)),
-    room: valueOptions(products.flatMap((product) => product.room)),
-    material: valueOptions(products.flatMap((product) => product.material)),
-    color: valueOptions(products.flatMap((product) => product.colors)),
-    availability: valueOptions(products.map((product) => product.availability)).map((option) => ({
+    brand: valueOptions(relevantProducts.map((product) => product.brand)),
+    room: valueOptions(relevantProducts.flatMap((product) => product.room)),
+    availability: valueOptions(relevantProducts.map((product) => product.availability)).map((option) => ({
       ...option,
       label: option.value === "in-stock" ? "آماده ارسال" : "ساخت سفارشی",
     })),
-    hasPrices: products.some((product) => product.price !== null),
+    attributes: buildCatalogAttributeFacets(relevantProducts, category),
+    hasPrices: relevantProducts.some((product) => product.price !== null),
   };
 });
 
@@ -227,28 +231,61 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
     conditions.push(payloadSlugs.length ? { "categories.slug": { in: payloadSlugs } } : impossibleCondition());
   }
 
-  if (query.material.length) {
-    conditions.push({
-      and: [
-        { "technicalSpecs.group": { in: ["materials", "construction"] } },
-        { or: query.material.map((value) => ({ "technicalSpecs.valueFa": { equals: value } })) },
-      ],
-    });
-  }
-
-  if (query.color.length) {
+  const requestedAttributeFilters = Object.entries(query.attributeFilters);
+  if (requestedAttributeFilters.length || query.color.length) {
     const payload = await getCatalogPayload();
-    const options = await payload.find({
+    const requestedKeys = requestedAttributeFilters.map(([key]) => key);
+    const groupsResult = await payload.find({
+      collection: "variantTypes",
+      depth: 1,
+      overrideAccess: false,
+      pagination: false,
+      populate: { categories: { slug: true, title: true } },
+      where: {
+        and: [
+          { active: { equals: true } },
+          { catalogFilterEnabled: { equals: true } },
+          ...(query.color.length ? [] : [{ name: { in: requestedKeys } }]),
+        ],
+      },
+    });
+    const visibilityCategory = category ?? (query.category.length === 1 ? query.category[0] : undefined);
+    const groups = (groupsResult.docs as VariantType[]).filter((group) => {
+      if (group.catalogFilterScope !== "categories") return true;
+      if (!visibilityCategory) return false;
+      return (group.catalogFilterCategories ?? []).some((value) => {
+        if (typeof value === "number") return false;
+        return storefrontTaxonomyForPayloadCategory(value.slug, value.title).slug === visibilityCategory;
+      });
+    });
+    const groupIDs = groups.map((group) => group.id);
+    const optionsResult = groupIDs.length ? await payload.find({
       collection: "variantOptions",
       depth: 0,
       overrideAccess: false,
       pagination: false,
-      where: { label: { in: query.color } },
-    });
-    const groupIDs = [...new Set(options.docs.map((option) =>
-      option.id,
-    ))];
-    conditions.push(groupIDs.length ? { 'attributes.allowedOptions': { in: groupIDs } } : impossibleCondition());
+      where: { and: [{ active: { equals: true } }, { variantType: { in: groupIDs } }] },
+    }) : { docs: [] };
+    const options = optionsResult.docs as VariantOption[];
+
+    for (const [key, values] of requestedAttributeFilters) {
+      const group = groups.find((candidate) => candidate.name === key);
+      if (!group) continue;
+      const optionIDs = options
+        .filter((option) => relationID(option.variantType) === group.id && values.includes(option.value))
+        .map((option) => option.id);
+      conditions.push(optionIDs.length ? { "attributes.allowedOptions": { in: optionIDs } } : impossibleCondition());
+    }
+
+    if (query.color.length) {
+      const swatchGroupIDs = new Set(groups
+        .filter((group) => group.catalogFilterPresentation === "swatch")
+        .map((group) => group.id));
+      const optionIDs = options
+        .filter((option) => swatchGroupIDs.has(relationID(option.variantType) ?? -1) && query.color.includes(option.label))
+        .map((option) => option.id);
+      conditions.push(optionIDs.length ? { "attributes.allowedOptions": { in: optionIDs } } : impossibleCondition());
+    }
   }
 
   if (query.availability.length) {

@@ -6,7 +6,7 @@ import {
   findAllCatalogProductListings,
   findCatalogProductPage,
 } from "@/features/catalog/payload-catalog-queries";
-import type { Product, Variant, VariantOption } from "@/payload-types";
+import type { Product, Variant, VariantOption, VariantType } from "@/payload-types";
 
 const PRODUCT_COUNT = CATALOG_BATCH_SIZE * 2 + 1;
 const now = new Date().toISOString();
@@ -52,6 +52,21 @@ const mockPayload = {
     }
     const ids = ((args.where as { id?: { in?: number[] } })?.id?.in ??
       ((args.where as { and?: Array<{ id?: { in?: number[] } }> })?.and?.[0]?.id?.in ?? []));
+    if (collection === "variantTypes") {
+      return { docs: ids.map((id): VariantType => ({
+        id,
+        label: "Color",
+        name: "color",
+        active: true,
+        catalogFilterEnabled: true,
+        catalogFilterLabel: "Color",
+        catalogFilterPresentation: "swatch",
+        catalogFilterPlacement: "primary",
+        catalogFilterOrder: 10,
+        createdAt: now,
+        updatedAt: now,
+      })) };
+    }
     if (collection === "variantOptions") {
       return { docs: ids.map((id): VariantOption => ({
         id,
@@ -87,9 +102,10 @@ const listings = await findAllCatalogProductListings(mockPayload);
 assert.equal(listings.length, PRODUCT_COUNT, "all products beyond the first 100 must be returned");
 assert.equal(listings.at(-1)?.slug, `product-${PRODUCT_COUNT}`);
 assert.equal(calls.filter((call) => call === "products").length, 3);
+assert.equal(calls.filter((call) => call === "variantTypes").length, 3);
 assert.equal(calls.filter((call) => call === "variantOptions").length, 3);
 assert.equal(calls.filter((call) => call === "variants").length, 3);
-assert.equal(calls.length, 9, "relation reads must be per batch, not per product");
+assert.equal(calls.length, 12, "relation reads must be per batch, not per product");
 
 calls.length = 0;
 const page = await findCatalogProductPage(mockPayload, { limit: 6, page: 999, sort: "-createdAt", where: {} });
@@ -98,6 +114,6 @@ assert.equal(page.pageCount, Math.ceil(PRODUCT_COUNT / 6));
 assert.equal(page.page, page.pageCount, "out-of-range pages resolve to the final real page");
 assert.equal(page.products.length, PRODUCT_COUNT % 6);
 assert.equal(calls.filter((call) => call === "products").length, 2);
-assert.ok(calls.length <= 4, "page mapping must use a bounded number of relation reads");
+assert.ok(calls.length <= 5, "page mapping must use a bounded number of relation reads");
 
 console.info(`Catalog scalability regression passed for ${PRODUCT_COUNT} mocked products in batched queries.`);

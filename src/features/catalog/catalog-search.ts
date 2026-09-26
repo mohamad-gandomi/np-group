@@ -4,6 +4,6 @@ const normalize = (value: string) => value.toLocaleLowerCase("fa").normalize("NF
 
 // The menu preview and catalog must agree when a search is carried across.
 export function matchesProductSearch(product: Product, query: string) {
-  const text = normalize([product.name, product.brand, product.category, product.categoryTitle ?? "", ...product.room, ...product.material, ...product.colors].join(" "));
+  const text = normalize([product.name, product.brand, product.category, product.categoryTitle ?? "", ...product.room, ...product.colors].join(" "));
   return normalize(query).split(" ").filter(Boolean).every((word) => text.includes(word));
 }

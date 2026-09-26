@@ -10,7 +10,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const hasFilters = Object.keys(params).some((key) => key !== "page");
   return {
     title: "فروشگاه مبلمان و روشنایی",
-    description: "خرید مبلمان، روشنایی، میز، پارچه و اکسسوری منتخب با امکان فیلتر بر اساس فضا، متریال، رنگ و قیمت.",
+    description: "خرید مبلمان، روشنایی، میز، پارچه و اکسسوری منتخب با امکان فیلتر بر اساس فضا، ویژگی‌های قابل انتخاب، رنگ و قیمت.",
     alternates: { canonical: hasFilters ? "/shop" : shopHref("/shop", params, {}) },
     robots: hasFilters ? { index: false, follow: true } : undefined,
   };

@@ -11,7 +11,6 @@ export type ProductSpecification = {
   key: string;
   label: string;
   value: string;
-  group: string;
 };
 
 export type ProductAttributeOption = {
@@ -56,8 +55,8 @@ export type Product = {
   categorySlugs?: readonly string[];
   categoryTitle?: string;
   room: readonly string[];
-  material: readonly string[];
   colors: readonly string[];
+  catalogFacets?: readonly ProductCatalogFacet[];
   price: number | null;
   shippingMode?: "parcel" | "freight";
   image: string;
@@ -92,14 +91,31 @@ export type CatalogCategory = {
 export type CatalogFilterOption = {
   label: string;
   value: string;
+  count?: number;
+  swatchColor?: string;
 };
+
+export type CatalogFacetPresentation = "checkbox" | "swatch";
+export type CatalogFacetPlacement = "primary" | "more";
+
+export type ProductCatalogFacet = {
+  key: string;
+  label: string;
+  presentation: CatalogFacetPresentation;
+  placement: CatalogFacetPlacement;
+  sortOrder: number;
+  scope: "all" | "categories";
+  categorySlugs: readonly string[];
+  options: readonly CatalogFilterOption[];
+};
+
+export type CatalogAttributeFacet = ProductCatalogFacet;
 
 export type CatalogFacets = {
   categories: readonly CatalogCategory[];
   brand: readonly CatalogFilterOption[];
   room: readonly CatalogFilterOption[];
-  material: readonly CatalogFilterOption[];
-  color: readonly CatalogFilterOption[];
   availability: readonly CatalogFilterOption[];
+  attributes: readonly CatalogAttributeFacet[];
   hasPrices: boolean;
 };

@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import type { RawSearchParams } from "../catalog-query";
+import { CATALOG_FACET_PREFIX, type RawSearchParams } from "../catalog-query";
 import { getCatalogFacets, queryCatalogProducts } from "../payload-catalog-repository";
 import { ActiveFilters } from "./active-filters";
 import { CatalogFilters } from "./catalog-filters";
@@ -17,15 +17,21 @@ import { SortSelect } from "./sort-select";
 const countFormatter = new Intl.NumberFormat("fa-IR");
 
 export async function CatalogView({ params, categorySlug }: { params: RawSearchParams; categorySlug?: string }) {
+  const requestedCategories = params.category ? (Array.isArray(params.category) ? params.category : [params.category]) : [];
+  const facetCategory = categorySlug ?? (requestedCategories.length === 1 ? requestedCategories[0] : undefined);
   const [facets, results] = await Promise.all([
-    getCatalogFacets(),
+    getCatalogFacets(facetCategory),
     queryCatalogProducts(params, categorySlug),
   ]);
   const category = categorySlug ? facets.categories.find((item) => item.slug === categorySlug) : undefined;
   const path = category ? `/shop/${category.slug}` : "/shop";
   const rawSearch = params.q;
   const searchValue = (Array.isArray(rawSearch) ? rawSearch[0] : rawSearch) ?? "";
-  const activeFilterCount = ["category", "brand", "room", "material", "color", "availability", "minPrice", "maxPrice"].reduce((total, key) => {
+  const activeFilterKeys = [
+    "category", "brand", "room", "color", "availability", "minPrice", "maxPrice",
+    ...facets.attributes.map((facet) => `${CATALOG_FACET_PREFIX}${facet.key}`),
+  ];
+  const activeFilterCount = activeFilterKeys.reduce((total, key) => {
     const value = params[key];
     return total + (Array.isArray(value) ? value.length : value ? 1 : 0);
   }, 0);
@@ -43,7 +49,7 @@ export async function CatalogView({ params, categorySlug }: { params: RawSearchP
           <nav className="mb-6 flex items-center gap-2 text-xs text-muted-foreground" aria-label="مسیر صفحه"><Link href="/">خانه</Link><span>/</span>{category ? <><Link href="/shop">فروشگاه</Link><span>/</span><span className="text-foreground">{category.title}</span></> : <span className="text-foreground">فروشگاه</span>}</nav>
           <div className="grid gap-5 lg:grid-cols-[1fr_0.65fr] lg:items-end">
             <div><p className="mb-3 text-xs font-semibold tracking-[0.16em] text-wine">مجموعه محصولات</p><h1 className="text-balance text-4xl font-medium leading-[1.2] sm:text-6xl">{category?.title ?? "فروشگاه ان‌پی"}</h1></div>
-            <p className="max-w-xl text-sm leading-7 text-muted-foreground lg:justify-self-end">{category?.description || "محصولات منتخب را بر اساس فضا، متریال، رنگ و بودجه پیدا کنید؛ برای انتخاب دقیق‌تر نیز می‌توانید از مشاوره تخصصی استفاده کنید."}</p>
+            <p className="max-w-xl text-sm leading-7 text-muted-foreground lg:justify-self-end">{category?.description || "محصولات منتخب را بر اساس فضا، ویژگی‌های قابل انتخاب، رنگ و بودجه پیدا کنید؛ برای انتخاب دقیق‌تر نیز می‌توانید از مشاوره تخصصی استفاده کنید."}</p>
           </div>
         </div>
       </section>
