@@ -8,7 +8,6 @@ import type {
   Endpoint,
   Field,
   PayloadRequest,
-  TaskConfig,
 } from "payload";
 
 import {
@@ -19,7 +18,6 @@ import {
 type DataRecord = Record<string, unknown>;
 type TransferKind = "export" | "import";
 
-const TRANSFER_RETENTION_DAYS = 7;
 const TRANSFER_COLLECTIONS = [
   "brands",
   "categories",
@@ -309,7 +307,6 @@ const findDocs = async (
   const result = await req.payload.find({
     collection,
     depth,
-    limit: 1000,
     overrideAccess: true,
     pagination: false,
     req,
@@ -592,36 +589,4 @@ export const dataTransferPlugin = async (config: Config) => {
     });
   }
   return configured;
-};
-
-type CleanupTransferTask = {
-  input: Record<string, never>;
-  output: { deletedExports: number; deletedImports: number };
-};
-
-const deleteExpiredTransfers = async (req: PayloadRequest, collection: "exports" | "imports") => {
-  const cutoff = new Date(Date.now() - TRANSFER_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const result = await req.payload.delete({
-    collection: collection as CollectionSlug,
-    overrideAccess: true,
-    req,
-    where: { createdAt: { less_than: cutoff } },
-  } as never) as unknown as { docs?: unknown[] };
-  return result.docs?.length ?? 0;
-};
-
-export const cleanupDataTransferFilesTask: TaskConfig<CleanupTransferTask> = {
-  slug: "cleanupDataTransferFiles",
-  inputSchema: [],
-  outputSchema: [
-    { name: "deletedImports", type: "number", required: true },
-    { name: "deletedExports", type: "number", required: true },
-  ],
-  schedule: [{ cron: "15 3 * * *", queue: "default" }],
-  handler: async ({ req }) => ({
-    output: {
-      deletedExports: await deleteExpiredTransfers(req, "exports"),
-      deletedImports: await deleteExpiredTransfers(req, "imports"),
-    },
-  }),
 };

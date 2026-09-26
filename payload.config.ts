@@ -8,11 +8,8 @@ import sharp from "sharp";
 import { adminNavigationOrderPlugin } from "./src/payload/admin-navigation";
 import { ecommerce } from "./src/payload/commerce";
 import { collections } from "./src/payload/collections";
-import {
-  cleanupDataTransferFilesTask,
-  dataTransferPlugin,
-  isStrictAdminUser,
-} from "./src/payload/data-transfer";
+import { dataTransferPlugin, isStrictAdminUser } from "./src/payload/data-transfer";
+import { cleanupEphemeralRecordsTask } from "./src/payload/ephemeral-cleanup";
 import { canRunPayloadJobs } from "./src/payload/jobs-access";
 
 const nilperFa = {
@@ -127,7 +124,7 @@ export default buildConfig({
       queue: ({ req }) => isStrictAdminUser(req.user),
       run: canRunPayloadJobs,
     },
-    tasks: [cleanupDataTransferFilesTask],
+    tasks: [cleanupEphemeralRecordsTask],
   },
   plugins: [ecommerce, dataTransferPlugin, adminNavigationOrderPlugin],
   secret: payloadSecret,

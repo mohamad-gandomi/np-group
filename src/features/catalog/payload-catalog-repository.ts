@@ -6,8 +6,7 @@ import { getPayload } from "payload";
 import type { Where } from "payload";
 
 import config from "../../../payload.config";
-import type { Category, VariantType, VariantOption, Product as PayloadProduct, Variant } from "@/payload-types";
-import { relationIDs } from "@/payload/catalog-domain";
+import type { Category, Product as PayloadProduct } from "@/payload-types";
 
 import { PAGE_SIZE, parseCatalogQuery, type RawSearchParams } from "./catalog-query";
 import {
@@ -16,73 +15,22 @@ import {
   storefrontTaxonomyForPayloadCategory,
 } from "./catalog-taxonomy";
 import type { CatalogCategory, CatalogFacets, Product } from "./catalog-types";
-import { mapPayloadProduct, payloadMediaURL } from "./payload-catalog-mapper";
+import { payloadMediaURL } from "./payload-catalog-mapper";
+import {
+  catalogListingPopulate,
+  catalogListingSelect,
+  findAllCatalogProductListings,
+  findCatalogProductPage,
+  mapCatalogProductDetails,
+  mapCatalogProductListings,
+} from "./payload-catalog-queries";
 
 const CATALOG_REVALIDATE_SECONDS = 300;
 const getCatalogPayload = cache(() => getPayload({ config }));
 
-async function loadRelations(product: PayloadProduct) {
-  const payload = await getCatalogPayload();
-  const groupIDs = (product.attributes ?? []).map((row) => typeof row.attribute === 'number' ? row.attribute : row.attribute.id);
-  const optionIDs = (product.attributes ?? []).flatMap((row) => relationIDs(row.allowedOptions));
-
-  const [groups, options, variants] = await Promise.all([
-    groupIDs.length
-      ? payload.find({
-          collection: "variantTypes",
-          depth: 0,
-          limit: groupIDs.length,
-          overrideAccess: false,
-          pagination: false,
-          where: { id: { in: groupIDs } },
-        })
-      : Promise.resolve({ docs: [] }),
-    groupIDs.length
-      ? payload.find({
-          collection: "variantOptions",
-          depth: 1,
-          limit: 100,
-          overrideAccess: false,
-          pagination: false,
-          sort: "sortOrder",
-          where: { and: [{ id: { in: optionIDs } }, { active: { equals: true } }] },
-        })
-      : Promise.resolve({ docs: [] }),
-    product.productType === 'variable'
-      ? payload.find({
-          collection: "variants",
-          depth: 2,
-          limit: 100,
-          overrideAccess: false,
-          pagination: false,
-          sort: "createdAt",
-          where: { product: { equals: product.id } },
-        })
-      : Promise.resolve({ docs: [] }),
-  ]);
-
-  return {
-    attributes: groups.docs as VariantType[],
-    attributeOptions: options.docs as VariantOption[],
-    variants: variants.docs as Variant[],
-  };
-}
-
-async function mapProduct(product: PayloadProduct): Promise<Product> {
-  return mapPayloadProduct(product, await loadRelations(product));
-}
-
 async function findAllCatalogProducts(): Promise<Product[]> {
   const payload = await getCatalogPayload();
-  const result = await payload.find({
-    collection: "products",
-    depth: 2,
-    limit: 100,
-    overrideAccess: false,
-    pagination: false,
-    sort: "-createdAt",
-  });
-  return Promise.all(result.docs.map(mapProduct));
+  return findAllCatalogProductListings(payload);
 }
 
 const getCachedCatalogProducts = unstable_cache(
@@ -103,7 +51,8 @@ async function findProductBySlug(slug: string): Promise<Product | null> {
     pagination: false,
     where: { slug: { equals: slug } },
   });
-  return result.docs[0] ? mapProduct(result.docs[0]) : null;
+  if (!result.docs[0]) return null;
+  return (await mapCatalogProductDetails(payload, [result.docs[0] as PayloadProduct]))[0] ?? null;
 }
 
 const getCachedProductBySlug = unstable_cache(
@@ -136,7 +85,6 @@ async function findAllCatalogCategorySources(): Promise<CatalogCategorySource[]>
   const result = await payload.find({
     collection: "categories",
     depth: 1,
-    limit: 100,
     overrideAccess: false,
     pagination: false,
     sort: "sortOrder",
@@ -281,7 +229,10 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
 
   if (query.material.length) {
     conditions.push({
-      or: query.material.map((value) => ({ "technicalSpecs.valueFa": { equals: value } })),
+      and: [
+        { "technicalSpecs.group": { in: ["materials", "construction"] } },
+        { or: query.material.map((value) => ({ "technicalSpecs.valueFa": { equals: value } })) },
+      ],
     });
   }
 
@@ -290,7 +241,6 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
     const options = await payload.find({
       collection: "variantOptions",
       depth: 0,
-      limit: 100,
       overrideAccess: false,
       pagination: false,
       where: { label: { in: query.color } },
@@ -340,33 +290,15 @@ export async function queryCatalogProducts(params: RawSearchParams, category?: s
   const payload = await getCatalogPayload();
   const query = parseCatalogQuery(params, category);
   const where = await buildCatalogWhere(params, category);
-  let result = await payload.find({
-    collection: "products",
-    depth: 2,
+  const result = await findCatalogProductPage(payload, {
     limit: PAGE_SIZE,
-    overrideAccess: false,
     page: query.page,
     sort: payloadSort(query.sort),
     where,
   });
 
-  if (result.totalPages > 0 && query.page > result.totalPages) {
-    result = await payload.find({
-      collection: "products",
-      depth: 2,
-      limit: PAGE_SIZE,
-      overrideAccess: false,
-      page: result.totalPages,
-      sort: payloadSort(query.sort),
-      where,
-    });
-  }
-
   return {
-    products: await Promise.all(result.docs.map(mapProduct)),
-    total: result.totalDocs,
-    page: result.page ?? 1,
-    pageCount: Math.max(1, result.totalPages),
+    ...result,
     query,
   };
 }
@@ -385,14 +317,16 @@ export async function getRelatedProducts(product: Product, limit = 3): Promise<P
       };
   const result = await payload.find({
     collection: "products",
-    depth: 2,
+    depth: 1,
     limit,
     overrideAccess: false,
     pagination: false,
+    populate: catalogListingPopulate,
+    select: catalogListingSelect,
     sort: "-createdAt",
     where: relatedWhere,
   });
-  return Promise.all(result.docs.map(mapProduct));
+  return mapCatalogProductListings(payload, result.docs as PayloadProduct[]);
 }
 
 export const getCatalogProductPaths = cache(async () =>

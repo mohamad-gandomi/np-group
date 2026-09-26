@@ -29,7 +29,37 @@ export function resolveCommerce(product: RecordData, variant?: RecordData | null
   };
 }
 
-export async function validateVariantDefinition(product: RecordData, options: unknown, req: PayloadRequest) {
+export type VariantDefinitionRelations = {
+  attributesByID: ReadonlyMap<number, RecordData>;
+  optionsByID: ReadonlyMap<number, RecordData>;
+};
+
+const loadVariantDefinitionRelations = async (
+  optionIDs: readonly number[],
+  attributeIDs: readonly number[],
+  req: PayloadRequest,
+): Promise<VariantDefinitionRelations> => {
+  // Hooks share a transaction-bound request; keep its small fixed query set sequential.
+  const options = optionIDs.length ? await req.payload.find({
+      collection: 'variantOptions', depth: 0, pagination: false, req,
+      where: { id: { in: [...new Set(optionIDs)] } },
+    }) : { docs: [] };
+  const attributes = attributeIDs.length ? await req.payload.find({
+      collection: 'variantTypes', depth: 0, pagination: false, req,
+      where: { id: { in: [...new Set(attributeIDs)] } },
+    }) : { docs: [] };
+  return {
+    optionsByID: new Map(options.docs.map((option) => [option.id, option as unknown as RecordData])),
+    attributesByID: new Map(attributes.docs.map((attribute) => [attribute.id, attribute as unknown as RecordData])),
+  };
+};
+
+export function validateVariantDefinitionRecords(
+  product: RecordData,
+  options: unknown,
+  relations: VariantDefinitionRelations,
+  req: PayloadRequest,
+) {
   if (product.productType !== 'variable') fail(req, 'product', 'مدل فقط برای محصول متغیر قابل ثبت است.');
   const required = relationIDs(product.variantAttributes);
   const ids = relationIDs(options);
@@ -38,18 +68,27 @@ export async function validateVariantDefinition(product: RecordData, options: un
   }
   const seen = new Set<number>();
   for (const id of ids) {
-    const option = await req.payload.findByID({ collection: 'variantOptions', id, depth: 0, req });
+    const option = relations.optionsByID.get(id) ?? fail(req, 'options', 'گزینه‌های مدل باید معتبر باشند.');
     const attributeID = relationID(option.variantType)!;
     const assignment = assignments(product.attributes).find((row) => relationID(row.attribute) === attributeID);
     if (!required.includes(attributeID) || seen.has(attributeID) || !relationIDs(assignment?.allowedOptions).includes(id)) {
       fail(req, 'options', 'گزینه‌های مدل باید مجاز و متعلق به ویژگی‌های سازنده مدل باشند.');
     }
     if (option.active === false) fail(req, 'options', 'گزینه غیرفعال قابل انتخاب نیست.');
-    const attribute = await req.payload.findByID({ collection: 'variantTypes', id: attributeID, depth: 0, req });
+    const attribute = relations.attributesByID.get(attributeID) ?? fail(req, 'options', 'ویژگی مدل معتبر نیست.');
     if (attribute.active === false) fail(req, 'options', 'ویژگی غیرفعال قابل انتخاب نیست.');
     seen.add(attributeID);
   }
   return ids.sort((a, b) => a - b).join(':');
+}
+
+export async function validateVariantDefinition(product: RecordData, options: unknown, req: PayloadRequest) {
+  const relations = await loadVariantDefinitionRelations(
+    relationIDs(options),
+    relationIDs(product.variantAttributes),
+    req,
+  );
+  return validateVariantDefinitionRecords(product, options, relations, req);
 }
 
 export const validateProduct: CollectionBeforeValidateHook = async ({ data, originalDoc, req }) => {
@@ -58,9 +97,20 @@ export const validateProduct: CollectionBeforeValidateHook = async ({ data, orig
   const rows = assignments(product.attributes);
   const ids = rows.map((row) => relationID(row.attribute));
   if (new Set(ids).size !== ids.length || ids.includes(undefined)) fail(req, 'attributes', 'ویژگی تکراری یا نامعتبر است.');
+  const variants = originalDoc?.id
+    ? (await req.payload.find({ collection: 'variants', where: { product: { equals: originalDoc.id } }, pagination: false, depth: 0, draft: true, req })).docs
+    : [];
+  const relations = await loadVariantDefinitionRelations(
+    [
+      ...rows.flatMap((row) => relationIDs(row.allowedOptions)),
+      ...variants.flatMap((variant) => relationIDs(variant.options)),
+    ],
+    variants.length ? relationIDs(product.variantAttributes) : [],
+    req,
+  );
   for (const row of rows) {
     for (const id of relationIDs(row.allowedOptions)) {
-      const option = await req.payload.findByID({ collection: 'variantOptions', id, depth: 0, req });
+      const option = relations.optionsByID.get(id) ?? fail(req, 'attributes', 'گزینه ویژگی معتبر نیست.');
       if (relationID(option.variantType) !== relationID(row.attribute)) fail(req, 'attributes', 'گزینه متعلق به ویژگی انتخاب‌شده نیست.');
     }
   }
@@ -69,11 +119,10 @@ export const validateProduct: CollectionBeforeValidateHook = async ({ data, orig
     fail(req, 'variantAttributes', 'ویژگی سازنده مدل باید در ویژگی‌های محصول باشد.');
   }
   if (originalDoc?.id) {
-    const variants = await req.payload.find({ collection: 'variants', where: { product: { equals: originalDoc.id } }, pagination: false, depth: 0, draft: true, req });
-    if (variants.docs.length && product.productType !== 'variable') fail(req, 'productType', 'ابتدا مدل‌های وابسته را به‌روزرسانی یا حذف کنید.');
-    for (const variant of variants.docs) {
+    if (variants.length && product.productType !== 'variable') fail(req, 'productType', 'ابتدا مدل‌های وابسته را به‌روزرسانی یا حذف کنید.');
+    for (const variant of variants) {
       if (variant._status === 'draft' && !relationIDs(variant.options).length) continue;
-      await validateVariantDefinition(product, variant.options, req);
+      validateVariantDefinitionRecords(product, variant.options, relations, req);
     }
   }
   if (product.productType === 'simple' && variantAttributes.length) fail(req, 'variantAttributes', 'محصول ساده ویژگی سازنده مدل ندارد.');

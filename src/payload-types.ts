@@ -159,7 +159,7 @@ export interface Config {
   user: Customer | User;
   jobs: {
     tasks: {
-      cleanupDataTransferFiles: TaskCleanupDataTransferFiles;
+      cleanupEphemeralRecords: TaskCleanupEphemeralRecords;
       createCollectionExport: TaskCreateCollectionExport;
       createCollectionImport: TaskCreateCollectionImport;
       inline: {
@@ -1136,7 +1136,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'cleanupDataTransferFiles' | 'createCollectionExport' | 'createCollectionImport';
+        taskSlug: 'inline' | 'cleanupEphemeralRecords' | 'createCollectionExport' | 'createCollectionImport';
         taskID: string;
         input?:
           | {
@@ -1169,7 +1169,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'cleanupDataTransferFiles' | 'createCollectionExport' | 'createCollectionImport') | null;
+  taskSlug?: ('inline' | 'cleanupEphemeralRecords' | 'createCollectionExport' | 'createCollectionImport') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -2085,13 +2085,16 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCleanupDataTransferFiles".
+ * via the `definition` "TaskCleanupEphemeralRecords".
  */
-export interface TaskCleanupDataTransferFiles {
+export interface TaskCleanupEphemeralRecords {
   input?: unknown;
   output: {
-    deletedImports: number;
+    deletedCarts: number;
     deletedExports: number;
+    deletedImports: number;
+    deletedOtpChallenges: number;
+    deletedSessions: number;
   };
 }
 /**

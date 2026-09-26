@@ -183,7 +183,6 @@ export async function getPayloadAccountOrders(user: AuthUser): Promise<AccountOr
   const result = await payload.find({
     collection: "orders",
     depth: 2,
-    limit: 100,
     overrideAccess: true,
     pagination: false,
     sort: "-createdAt",

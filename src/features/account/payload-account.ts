@@ -31,7 +31,6 @@ export async function getPayloadAccountAddresses(user: AuthUser): Promise<Accoun
   const result = await payload.find({
     collection: "addresses",
     depth: 0,
-    limit: 100,
     overrideAccess: true,
     pagination: false,
     sort: "-updatedAt",

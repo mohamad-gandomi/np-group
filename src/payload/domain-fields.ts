@@ -52,7 +52,7 @@ export function technicalSpecsField(): ArrayField {
     fields: [
       { name: "key", type: "text", required: true, admin: { hidden: true } },
       { name: "labelFa", type: "text", label: "عنوان فارسی", required: true, admin: { rtl: true } },
-      { name: "valueFa", type: "textarea", label: "مقدار فارسی", required: true },
+      { name: "valueFa", type: "textarea", label: "مقدار فارسی", required: true, index: true },
       { name: "group", type: "select", label: "گروه", required: true, options: [...technicalSpecGroupOptions] },
       { name: "sortOrder", type: "number", defaultValue: 0, admin: { hidden: true } },
     ],

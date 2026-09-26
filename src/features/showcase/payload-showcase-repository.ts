@@ -93,7 +93,6 @@ async function findShowcaseContent() {
     payload.find({
       collection: "brands",
       depth: 2,
-      limit: 100,
       overrideAccess: false,
       pagination: false,
       sort: ["sortOrder", "title"],
@@ -102,7 +101,6 @@ async function findShowcaseContent() {
     payload.find({
       collection: "projects",
       depth: 2,
-      limit: 100,
       overrideAccess: false,
       pagination: false,
       sort: ["-featured", "sortOrder", "-updatedAt"],

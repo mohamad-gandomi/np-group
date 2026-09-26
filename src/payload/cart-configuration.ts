@@ -9,7 +9,7 @@ import type {
 import { ValidationError } from "payload";
 
 import { NILPER_COMMERCE_CURRENCY, assertTomanAmount, validateTomanAmount } from "./money";
-import { relationIDs, resolveCommerce, validateVariantDefinition } from "./catalog-domain";
+import { relationIDs, resolveCommerce, validateVariantDefinitionRecords } from "./catalog-domain";
 
 type CommerceDocumentKind = "cart" | "order" | "transaction";
 type RecordValue = Record<string, unknown>;
@@ -229,26 +229,6 @@ const validationError = (req: PayloadRequest, message: string, path = "items"): 
   throw new ValidationError({ errors: [{ message, path }], req });
 };
 
-const findByID = async (
-  req: PayloadRequest,
-  collection: "variantTypes" | "variantOptions" | "products" | "variants",
-  id: DefaultDocumentIDType,
-  path: string,
-): Promise<RecordValue> => {
-  try {
-    return await req.payload.findByID({
-      collection,
-      id,
-      depth: 0,
-      draft: false,
-      overrideAccess: true,
-      req,
-    }) as unknown as RecordValue;
-  } catch {
-    return validationError(req, `رکورد معتبر ${collection} یافت نشد.`, path);
-  }
-};
-
 const requiredString = (value: unknown, req: PayloadRequest, message: string, path: string) => {
   if (typeof value !== "string" || !value.trim()) return validationError(req, message, path);
   return value.trim();
@@ -261,6 +241,46 @@ const itemIdentityKey = (
 ) => JSON.stringify([String(productID), variantID === undefined ? null : String(variantID), configurationKey]);
 
 export const validateNilperCommerceItems = async (items: unknown[], req: PayloadRequest) => {
+  const productIDs = [...new Set(items.map((item) => isRecord(item) ? relationshipID(item.product) : undefined)
+    .filter((id): id is DefaultDocumentIDType => id !== undefined))];
+  const variantIDs = [...new Set(items.map((item) => isRecord(item) ? relationshipID(item.variant) : undefined)
+    .filter((id): id is DefaultDocumentIDType => id !== undefined))];
+  // These hooks run inside Payload transactions; avoid concurrent use of one pg client.
+  const productResult = productIDs.length ? await req.payload.find({
+      collection: "products", depth: 0, draft: false, overrideAccess: true, pagination: false, req,
+      where: { id: { in: productIDs } },
+    }) : { docs: [] };
+  const variantResult = variantIDs.length ? await req.payload.find({
+      collection: "variants", depth: 0, draft: false, overrideAccess: true, pagination: false, req,
+      where: { id: { in: variantIDs } },
+    }) : { docs: [] };
+  const productsByID = new Map(productResult.docs.map((product) => [String(product.id), product as unknown as RecordValue]));
+  const variantsByID = new Map(variantResult.docs.map((variant) => [String(variant.id), variant as unknown as RecordValue]));
+  const groupIDs = [...new Set(productResult.docs.flatMap((product) =>
+    (Array.isArray(product.attributes) ? product.attributes : [])
+      .map((row) => relationshipID(row.attribute))
+      .filter((id): id is DefaultDocumentIDType => id !== undefined)))];
+  const requestedOptionIDs = items.flatMap((item) => isRecord(item) && Array.isArray(item.configuration)
+    ? item.configuration.map((selection) => isRecord(selection) ? relationshipID(selection.option) : undefined)
+    : []).filter((id): id is DefaultDocumentIDType => id !== undefined);
+  const optionIDs = [...new Set([
+    ...variantResult.docs.flatMap((variant) => relationIDs(variant.options)),
+    ...requestedOptionIDs,
+  ])];
+  const groupResult = groupIDs.length ? await req.payload.find({
+      collection: "variantTypes", depth: 0, overrideAccess: true, pagination: false, req,
+      where: { id: { in: groupIDs } },
+    }) : { docs: [] };
+  const optionResult = optionIDs.length ? await req.payload.find({
+      collection: "variantOptions", depth: 0, overrideAccess: true, pagination: false, req,
+      where: { id: { in: optionIDs } },
+    }) : { docs: [] };
+  const groupsByID = new Map(groupResult.docs.map((group) => [String(group.id), group as unknown as RecordValue]));
+  const optionsByID = new Map(optionResult.docs.map((option) => [String(option.id), option as unknown as RecordValue]));
+  const variantRelations = {
+    attributesByID: new Map(groupResult.docs.map((group) => [Number(group.id), group as unknown as RecordValue])),
+    optionsByID: new Map(optionResult.docs.map((option) => [Number(option.id), option as unknown as RecordValue])),
+  };
   const hydratedItems: RecordValue[] = [];
   const itemKeys = new Set<string>();
   let amount = 0;
@@ -274,7 +294,8 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     const productID = relationshipID(item.product) ??
       validationError(req, "محصول الزامی است.", `${path}.product`);
 
-    const product = await findByID(req, "products", productID, `${path}.product`);
+    const product = productsByID.get(String(productID)) ??
+      validationError(req, "رکورد معتبر products یافت نشد.", `${path}.product`);
     if (product._status !== "published") {
       validationError(req, "محصول باید منتشرشده باشد.", `${path}.product`);
     }
@@ -288,7 +309,8 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     if (product.productType === 'simple' && variantID !== undefined) validationError(req, 'محصول ساده مدل ندارد.', `${path}.variant`);
 
     if (variantID !== undefined) {
-      const variant = await findByID(req, "variants", variantID, `${path}.variant`);
+      const variant = variantsByID.get(String(variantID)) ??
+        validationError(req, "رکورد معتبر variants یافت نشد.", `${path}.variant`);
       if (variant._status !== "published") {
         validationError(req, "مدل باید منتشرشده باشد.", `${path}.variant`);
       }
@@ -298,7 +320,7 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
 
       variantCode = requiredString(variant.nilperCode, req, "کد ثبت مدل معتبر نیست.", `${path}.variant`);
       variantTitle = typeof variant.title === 'string' ? variant.title : variantCode;
-      await validateVariantDefinition(product, variant.options, req);
+      validateVariantDefinitionRecords(product, variant.options, variantRelations, req);
       resolved = resolveCommerce(product, variant);
     }
     const { priceInTMN: unitPrice, priceInTMNEnabled: priceEnabled, shippingMode, parcelWeightInGrams, tapinBoxID } = resolved;
@@ -334,10 +356,8 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     const assignments = (Array.isArray(product.attributes) ? product.attributes : []) as RecordValue[];
     const customerAssignments = assignments.filter((row) => !variantAttributes.includes(Number(relationshipID(row.attribute))));
     const allowedGroupIDs = customerAssignments.map((row) => relationshipID(row.attribute)).filter((id): id is DefaultDocumentIDType => id !== undefined);
-    const allowedGroups: RecordValue[] = [];
-    for (const id of allowedGroupIDs) {
-      allowedGroups.push(await findByID(req, "variantTypes", id, `${path}.configuration`));
-    }
+    const allowedGroups = allowedGroupIDs.map((id) => groupsByID.get(String(id)) ??
+      validationError(req, "رکورد معتبر variantTypes یافت نشد.", `${path}.configuration`));
     const allowedGroupsByKey = new Map(
       allowedGroups.map((group) => [requiredString(group.name, req, "کلید ویژگی معتبر نیست.", `${path}.configuration`), group]),
     );
@@ -371,7 +391,8 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
 
       const optionID = relationshipID(rawSelection.option) ??
         validationError(req, "گزینه ویژگی الزامی است.", `${selectionPath}.option`);
-      const option = await findByID(req, "variantOptions", optionID, `${selectionPath}.option`);
+      const option = optionsByID.get(String(optionID)) ??
+        validationError(req, "رکورد معتبر variantOptions یافت نشد.", `${selectionPath}.option`);
       const assignment = customerAssignments.find((row) => sameID(relationshipID(row.attribute), relationshipID(group)));
       if (!relationIDs(assignment?.allowedOptions).includes(Number(optionID))) validationError(req, 'گزینه برای این محصول مجاز نیست.', selectionPath);
       if (!sameID(relationshipID(option.variantType), relationshipID(group))) {

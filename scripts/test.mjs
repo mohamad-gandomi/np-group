@@ -10,6 +10,7 @@ const tests = [
   ["payments", "src/payload/verify-payments.ts"],
   ["shipping", "src/payload/verify-shipping.ts"],
   ["catalog", "src/payload/verify-unified-catalog.ts"],
+  ["catalog scalability", "src/payload/verify-catalog-scalability.ts"],
   ["curated catalog", "src/payload/verify-manual-catalog.ts"],
   ["content", "src/payload/verify-content.ts"],
   ["optional import media", "src/payload/verify-optional-import-images.ts"],

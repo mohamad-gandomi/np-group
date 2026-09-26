@@ -253,10 +253,10 @@ try {
   assert.equal(firstCart.items?.[0]?.productTitleSnapshot, product.title);
   assert.equal(firstCart.items?.[0]?.variantCodeSnapshot, variant.nilperCode);
   assert.equal(firstCart.items?.[0]?.unitPriceInTMN, 250_000);
+  assert.equal(firstCart.items?.[0]?.configurationKey, buildConfigurationKey(walnutFabric));
   assert.equal(firstCart.items?.[0]?.configuration?.[0]?.labelFaSnapshot, "LAVENDAR");
   assert.equal(firstCart.items?.[0]?.configuration?.[1]?.labelFaSnapshot, "گردویی");
   assert.equal(firstCart.subtotal, 250_000);
-  assert.equal(firstCart.items?.[0]?.configurationKey, buildConfigurationKey(walnutFabric));
 
   const sameConfigurationReordered = [...walnutFabric].reverse();
   const combined = await addItem({

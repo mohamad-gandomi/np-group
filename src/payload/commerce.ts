@@ -56,6 +56,19 @@ const hiddenAdminField = (field: Field): Field => ({
   admin: { ...field.admin, hidden: true },
 } as Field);
 
+const withQueryIndex = (names: ReadonlySet<string>) => (field: Field): Field => {
+  if (field.type === "tabs") {
+    return { ...field, tabs: field.tabs.map((tab) => ({ ...tab, fields: tab.fields.map(withQueryIndex(names)) })) };
+  }
+  if (field.type === "group" || field.type === "row" || field.type === "collapsible" || field.type === "array") {
+    return { ...field, fields: field.fields.map(withQueryIndex(names)) };
+  }
+  return "name" in field && names.has(field.name) ? { ...field, index: true } as Field : field;
+};
+
+const withProductQueryIndexes = withQueryIndex(new Set(["priceInTMN"]));
+const withCartQueryIndexes = withQueryIndex(new Set(["purchasedAt"]));
+
 const relationshipID = (value: unknown): number | undefined => {
   if (typeof value === "number") return value;
   if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);
@@ -258,7 +271,8 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
   const variantField = (name: string) => defaults.find((field) => fieldNamed(field, name));
   const priceFields = defaults
     .filter((field) => !("name" in field) || !field.name)
-    .map(withCommerceValidation);
+    .map(withCommerceValidation)
+    .map(withProductQueryIndexes);
 
   return [
     {
@@ -293,6 +307,7 @@ const productFields = (defaultCollection: CollectionConfig): Field[] => {
             {
               name: "availabilityMode",
               defaultValue: "orderable",
+              index: true,
               type: "select",
               label: "وضعیت موجودی",
               required: true,
@@ -513,7 +528,7 @@ export const ecommerce = ecommercePlugin({
       ...defaultCollection,
       admin: { ...defaultCollection.admin, hidden: true },
       fields: [
-        ...defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation),
+        ...defaultCollection.fields.map(withNilperCommerceItemFields).map(withCommerceValidation).map(withCartQueryIndexes),
       ],
       hooks: {
         ...defaultCollection.hooks,

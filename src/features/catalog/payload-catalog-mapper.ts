@@ -23,6 +23,11 @@ export type PayloadCatalogRelations = {
   variants: readonly Variant[];
 };
 
+export type PayloadCatalogListingRelations = {
+  attributeOptions: readonly VariantOption[];
+  variants: readonly Variant[];
+};
+
 const isDocument = <T extends { id: number }>(value: number | T | null | undefined): value is T =>
   Boolean(value) && typeof value === "object";
 
@@ -107,10 +112,66 @@ const mapVariants = (product: PayloadProduct, variants: readonly Variant[]): Pro
   };
 });
 
-export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCatalogRelations): Product {
+const listingColors = (
+  product: PayloadProduct,
+  attributeOptions: readonly VariantOption[],
+) => {
+  const allowedOptionIDs = new Set((product.attributes ?? []).flatMap((row) => relationIDs(row.allowedOptions)));
+  return [...new Set(attributeOptions
+    .filter((option) => allowedOptionIDs.has(option.id) && option.active !== false && Boolean(option.colorHex))
+    .map((option) => option.label))];
+};
+
+/** Maps only fields used by product cards, catalog filters, categories, and paths. */
+export function mapPayloadProductListing(
+  product: PayloadProduct,
+  relations: PayloadCatalogListingRelations,
+): Product {
   const brand = isDocument<Brand>(product.brand) ? product.brand : undefined;
-  const category = product.categories.find((value): value is Category => isDocument(value));
+  const categories = product.categories.filter((value): value is Category => isDocument(value));
+  const category = categories[0];
   const taxonomy = storefrontTaxonomyForPayloadCategory(category?.slug ?? "furniture", category?.title ?? "مبلمان خانگی");
+  const technicalSpecs = product.technicalSpecs ?? [];
+  const material = [...new Set(technicalSpecs
+    .filter((specification) => specification.group === "materials" || specification.group === "construction")
+    .map((specification) => specification.valueFa))];
+  const productPrice = product.priceInTMNEnabled === true && typeof product.priceInTMN === "number"
+    ? product.priceInTMN
+    : null;
+  const variantPrice = relations.variants
+    .filter((variant) => relationID(variant.product) === product.id)
+    .map((variant) => resolveCommerce(product as unknown as Record<string, unknown>, variant as unknown as Record<string, unknown>))
+    .find((resolved) => resolved.availabilityMode !== "unavailable" && resolved.priceInTMNEnabled === true && typeof resolved.priceInTMN === "number")
+    ?.priceInTMN as number | undefined;
+
+  return {
+    id: `payload-${product.id}`,
+    payloadProductId: product.id,
+    productType: product.productType,
+    ...(category?.slug ? { payloadCategorySlug: category.slug } : {}),
+    slug: product.slug,
+    name: product.title,
+    brand: brand?.title ?? "نیلپر",
+    ...(brand?.slug ? { brandSlug: brand.slug } : {}),
+    category: taxonomy.slug,
+    categorySlugs: categories.map((value) => storefrontTaxonomyForPayloadCategory(value.slug, value.title).slug),
+    categoryTitle: taxonomy.title,
+    room: taxonomy.rooms,
+    material,
+    colors: listingColors(product, relations.attributeOptions),
+    price: variantPrice ?? productPrice,
+    shippingMode: product.shippingMode === "parcel" ? "parcel" : "freight",
+    image: payloadMediaURL(product.mainImage) ?? "",
+    width: null,
+    availability: product.availabilityMode === "in_stock" ? "in-stock" : "made-to-order",
+    isNew: false,
+    isSale: false,
+    createdAt: product.createdAt,
+  };
+}
+
+export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCatalogRelations): Product {
+  const listing = mapPayloadProductListing(product, relations);
   const mainImage = payloadMediaURL(product.mainImage) ?? "";
   const gallery = [
     mainImage,
@@ -135,18 +196,7 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
     .map((specification) => specification.value))];
 
   return {
-    id: `payload-${product.id}`,
-    payloadProductId: product.id,
-    productType: product.productType,
-    ...(category?.slug ? { payloadCategorySlug: category.slug } : {}),
-    slug: product.slug,
-    name: product.title,
-    brand: brand?.title ?? "نیلپر",
-    ...(brand?.slug ? { brandSlug: brand.slug } : {}),
-    category: taxonomy.slug,
-    categorySlugs: product.categories.filter((value): value is Category => isDocument(value)).map((value) => storefrontTaxonomyForPayloadCategory(value.slug, value.title).slug),
-    categoryTitle: taxonomy.title,
-    room: taxonomy.rooms,
+    ...listing,
     material,
     colors: groups.find((group) => group.inputType === "swatch")?.options.map((option) => option.label) ?? [],
     price,

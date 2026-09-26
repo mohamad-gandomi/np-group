@@ -88,7 +88,6 @@ async function findJournalPosts() {
   const result = await payload.find({
     collection: "posts",
     depth: 2,
-    limit: 100,
     overrideAccess: false,
     pagination: false,
     sort: ["-featured", "-sortOrder", "-publishedAt"],
