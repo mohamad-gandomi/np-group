@@ -1,6 +1,20 @@
 import { MigrateDownArgs, MigrateUpArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db }: MigrateUpArgs): Promise<void> {
+  const existingColumns = await db.execute(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'variant_types'
+        AND column_name = 'catalog_filter_enabled'
+    ) AS "exists";
+  `)
+
+  if (existingColumns.rows[0]?.exists) {
+    return
+  }
+
   await db.execute(sql`
     CREATE TYPE "public"."enum_variant_types_catalog_filter_presentation" AS ENUM('checkbox', 'swatch');
     CREATE TYPE "public"."enum_variant_types_catalog_filter_placement" AS ENUM('primary', 'more');

@@ -1,6 +1,20 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+  const existingColumns = await db.execute(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'variant_types'
+        AND column_name = 'catalog_filter_scope'
+    ) AS "exists";
+  `)
+
+  if (existingColumns.rows[0]?.exists) {
+    return
+  }
+
   await db.execute(sql`
    CREATE TYPE "public"."enum_variant_types_catalog_filter_scope" AS ENUM('all', 'categories');
   CREATE TABLE "variant_types_rels" (
