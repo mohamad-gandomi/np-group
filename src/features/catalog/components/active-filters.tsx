@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { RotateCcw, X } from "lucide-react";
 
-import { CATALOG_FACET_PREFIX, shopHref, type RawSearchParams } from "../catalog-query";
+import { CATALOG_FACET_PREFIX, catalogAttributeFilters, shopHref, type RawSearchParams } from "../catalog-query";
 import type { CatalogFacets } from "../catalog-types";
 
 const filterKeys = ["category", "brand", "room", "color", "availability"] as const;
@@ -28,6 +28,12 @@ export function ActiveFilters({ facets, params, path }: { facets: CatalogFacets;
     const values = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
     const labels = Object.fromEntries(facet.options.map((option) => [option.value, option.label]));
     chips.push(...values.map((value) => ({ key, value, label: labels[value] ?? value, remaining: values.filter((item) => item !== value) })));
+  }
+  const knownFacetKeys = new Set(facets.attributes.map((facet) => facet.key));
+  for (const [facetKey, values] of Object.entries(catalogAttributeFilters(params))) {
+    if (knownFacetKeys.has(facetKey)) continue;
+    const key = `${CATALOG_FACET_PREFIX}${facetKey}`;
+    chips.push(...values.map((value) => ({ key, value, label: value, remaining: values.filter((item) => item !== value) })));
   }
   if (params.minPrice) chips.push({ key: "minPrice", value: String(params.minPrice), label: `از ${params.minPrice}` });
   if (params.maxPrice) chips.push({ key: "maxPrice", value: String(params.maxPrice), label: `تا ${params.maxPrice}` });

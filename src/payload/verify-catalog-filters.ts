@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { catalogAttributeFilters, parseCatalogQuery, shopHref } from "@/features/catalog/catalog-query";
 import { buildCatalogAttributeFacets } from "@/features/catalog/catalog-facets";
 import { mapPayloadProductListing } from "@/features/catalog/payload-catalog-mapper";
+import { catalogListingSelect } from "@/features/catalog/payload-catalog-queries";
 import type { Product, VariantOption, VariantType } from "@/payload-types";
 
 assert.deepEqual(catalogAttributeFilters({
@@ -21,6 +22,7 @@ const parsed = parseCatalogQuery({
 });
 assert.deepEqual(parsed.color, ["گردویی"], "legacy color URLs remain accepted");
 assert.deepEqual(parsed.attributeFilters, { "wood-finish": ["walnut", "oak"] });
+assert.equal("technicalSpecs" in catalogListingSelect, false, "listing reads must not fetch display-only specifications");
 
 assert.equal(
   shopHref("/shop", { "f_wood-finish": ["walnut", "oak"], page: "3" }, { page: undefined }),
@@ -77,7 +79,7 @@ const groups = [
 
 const options = [
   { id: 11, variantType: 1, label: "Walnut", value: "walnut", active: true, colorHex: "#76513c", createdAt: now, updatedAt: now },
-  { id: 12, variantType: 2, label: "Hidden", value: "hidden", active: true, createdAt: now, updatedAt: now },
+  { id: 12, variantType: 2, label: "Black", value: "black", active: true, colorHex: "#111111", createdAt: now, updatedAt: now },
 ] as VariantOption[];
 
 const listing = mapPayloadProductListing(product, { attributes: groups, attributeOptions: options, variants: [] });
@@ -89,9 +91,10 @@ assert.deepEqual(listing.catalogFacets, [{
   sortOrder: 10,
   scope: "categories",
   categorySlugs: ["furniture"],
-  options: [{ label: "Walnut", value: "walnut", swatchColor: "#76513c" }],
+  options: [{ label: "Walnut", value: "walnut", sortOrder: 0, swatchColor: "#76513c" }],
 }]);
-assert.deepEqual(listing.colors, ["Walnut"]);
+assert.deepEqual(listing.colors, ["Black", "Walnut"], "card colors do not depend on filter visibility");
+assert.deepEqual(listing.colorSwatches, { Walnut: "#76513c", Black: "#111111" });
 assert.deepEqual(
   buildCatalogAttributeFacets([listing]),
   [],

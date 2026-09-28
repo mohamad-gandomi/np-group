@@ -6,7 +6,7 @@ export function buildCatalogAttributeFacets(
 ): CatalogAttributeFacet[] {
   const facets = new Map<string, {
     definition: Omit<CatalogAttributeFacet, "options">;
-    options: Map<string, { label: string; value: string; count: number; swatchColor?: string }>;
+    options: Map<string, { label: string; value: string; count: number; sortOrder: number; swatchColor?: string }>;
   }>();
 
   for (const product of products) {
@@ -31,6 +31,7 @@ export function buildCatalogAttributeFacets(
           label: option.label,
           value: option.value,
           count: (current?.count ?? 0) + 1,
+          sortOrder: Math.min(current?.sortOrder ?? Number.MAX_SAFE_INTEGER, option.sortOrder ?? 0),
           ...(option.swatchColor ? { swatchColor: option.swatchColor } : {}),
         });
       }
@@ -40,7 +41,7 @@ export function buildCatalogAttributeFacets(
   return [...facets.values()]
     .map(({ definition, options }) => ({
       ...definition,
-      options: [...options.values()].sort((left, right) => left.label.localeCompare(right.label, "fa")),
+      options: [...options.values()].sort((left, right) => left.sortOrder - right.sortOrder || left.label.localeCompare(right.label, "fa")),
     }))
     .sort((left, right) => left.sortOrder - right.sortOrder || left.label.localeCompare(right.label, "fa"));
 }

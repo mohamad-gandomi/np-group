@@ -22,7 +22,7 @@ export function ProductCard({ product, linkToDetail = true }: { product: Product
         </div>
         <h3 className="mt-2 line-clamp-2 min-h-12 text-sm font-medium leading-6 sm:min-h-14 sm:text-lg sm:leading-7">{product.name}</h3>
         <p className="mt-2.5 whitespace-nowrap text-sm font-semibold text-wine sm:text-base">{product.price === null ? "استعلام قیمت" : <>{priceFormatter.format(product.price)} <span className="text-[0.62rem] font-normal text-muted-foreground sm:text-xs">تومان</span></>}</p>
-        <div className="mt-auto flex min-h-7 items-end gap-1.5 pt-3" aria-label={`رنگ‌های ${product.name}`}>{product.colors.map((color) => <span key={color} title={color} className="size-3 rounded-full border border-black/15 ring-1 ring-white sm:size-3.5" style={{ backgroundColor: colorValues[color] ?? "#d8d2ca" }} />)}</div>
+        <div className="mt-auto flex min-h-7 items-end gap-1.5 pt-3" aria-label={`رنگ‌های ${product.name}`}>{product.colors.map((color) => <span key={color} title={color} className="size-3 rounded-full border border-black/15 ring-1 ring-white sm:size-3.5" style={{ backgroundColor: product.colorSwatches?.[color] ?? colorValues[color] ?? "#d8d2ca" }} />)}</div>
       </div>
     </>
   );

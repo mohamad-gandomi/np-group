@@ -56,6 +56,7 @@ export type Product = {
   categoryTitle?: string;
   room: readonly string[];
   colors: readonly string[];
+  colorSwatches?: Readonly<Record<string, string>>;
   catalogFacets?: readonly ProductCatalogFacet[];
   price: number | null;
   shippingMode?: "parcel" | "freight";
@@ -92,6 +93,7 @@ export type CatalogFilterOption = {
   label: string;
   value: string;
   count?: number;
+  sortOrder?: number;
   swatchColor?: string;
 };
 

@@ -24,7 +24,6 @@ export const catalogListingSelect = {
   productType: true,
   brand: true,
   categories: true,
-  technicalSpecs: true,
   attributes: true,
   priceInTMNEnabled: true,
   priceInTMN: true,

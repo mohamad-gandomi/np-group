@@ -168,8 +168,12 @@ export function attributeCollection(collection: CollectionConfig, option: boolea
         if (option && originalDoc?.id && data?.variantType !== undefined && relationID(data.variantType) !== relationID(originalDoc.variantType)) {
           await assertAttributeUnused(true, originalDoc.id, req);
         }
-        if (!option) {
+        if (!option && data) {
           const next = { ...originalDoc, ...data };
+          if (next.catalogFilterEnabled !== true || next.catalogFilterScope !== 'categories') {
+            data.catalogFilterCategories = [];
+            next.catalogFilterCategories = [];
+          }
           if (next.catalogFilterEnabled === true && next.catalogFilterScope === 'categories' && relationIDs(next.catalogFilterCategories).length === 0) {
             fail(req, 'catalogFilterCategories', 'برای فیلتر محدود، دست‌کم یک دسته‌بندی انتخاب کنید.');
           }

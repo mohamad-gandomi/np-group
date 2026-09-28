@@ -130,15 +130,16 @@ const mapCatalogFacets = (
       placement: attribute.catalogFilterPlacement === "primary" ? "primary" as const : "more" as const,
       sortOrder: attribute.catalogFilterOrder ?? 0,
       scope: attribute.catalogFilterScope === "categories" ? "categories" as const : "all" as const,
-      categorySlugs: (attribute.catalogFilterCategories ?? [])
+      categorySlugs: [...new Set((attribute.catalogFilterCategories ?? [])
         .filter((category): category is Category => isDocument(category))
-        .map((category) => storefrontTaxonomyForPayloadCategory(category.slug, category.title).slug),
+        .map((category) => storefrontTaxonomyForPayloadCategory(category.slug, category.title).slug))],
       options: attributeOptions
         .filter((option) => option.active !== false && relationID(option.variantType) === attribute.id && allowedOptionIDs.has(option.id))
         .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0) || left.label.localeCompare(right.label, "fa"))
         .map((option) => ({
           label: option.label,
           value: option.value,
+          sortOrder: option.sortOrder ?? 0,
           ...(option.colorHex ? { swatchColor: option.colorHex } : {}),
         })),
     };
@@ -156,6 +157,10 @@ export function mapPayloadProductListing(
   const category = categories[0];
   const taxonomy = storefrontTaxonomyForPayloadCategory(category?.slug ?? "furniture", category?.title ?? "مبلمان خانگی");
   const catalogFacets = mapCatalogFacets(product, relations.attributes, relations.attributeOptions);
+  const allowedOptionIDs = new Set((product.attributes ?? []).flatMap((row) => relationIDs(row.allowedOptions)));
+  const colorOptions = relations.attributeOptions.filter((option) =>
+    option.active !== false && allowedOptionIDs.has(option.id) && Boolean(option.colorHex))
+    .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0) || left.label.localeCompare(right.label, "fa"));
   const productPrice = product.priceInTMNEnabled === true && typeof product.priceInTMN === "number"
     ? product.priceInTMN
     : null;
@@ -178,9 +183,8 @@ export function mapPayloadProductListing(
     categorySlugs: categories.map((value) => storefrontTaxonomyForPayloadCategory(value.slug, value.title).slug),
     categoryTitle: taxonomy.title,
     room: taxonomy.rooms,
-    colors: [...new Set(catalogFacets
-      .filter((facet) => facet.presentation === "swatch")
-      .flatMap((facet) => facet.options.map((option) => option.label)))],
+    colors: [...new Set(colorOptions.map((option) => option.label))],
+    colorSwatches: Object.fromEntries(colorOptions.map((option) => [option.label, option.colorHex!])),
     catalogFacets,
     price: variantPrice ?? productPrice,
     shippingMode: product.shippingMode === "parcel" ? "parcel" : "freight",
@@ -216,7 +220,6 @@ export function mapPayloadProduct(product: PayloadProduct, relations: PayloadCat
 
   return {
     ...listing,
-    colors: groups.find((group) => group.inputType === "swatch")?.options.map((option) => option.label) ?? [],
     price,
     shippingMode: product.shippingMode === "parcel" ? "parcel" : "freight",
     image: mainImage,

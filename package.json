@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "dev:payload": "npm run payload:db:start && next dev",
+    "dev": "npm run payload:migrate && next dev",
+    "dev:payload": "npm run payload:db:start && npm run payload:migrate && next dev",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",

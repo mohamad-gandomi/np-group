@@ -38,10 +38,11 @@ Without Kavenegar credentials, development login exposes OTP `123456`; productio
 
 ## Development
 
-The PostgreSQL adapter pushes the current Payload schema automatically outside production.
+Payload migrations are authoritative in every environment. Apply them before seeding or starting the application; `npm run dev` also runs pending migrations automatically.
 
 ```bash
 npm run payload:db:start
+npm run payload:migrate
 npm run payload:seed
 npm run dev
 ```
@@ -83,15 +84,15 @@ Prefer an `Authorization: Bearer` header where the scheduler supports it. Treat 
 
 ## Database deployment
 
-Development schema push is explicitly disabled when `NODE_ENV=production`. This pre-production repository intentionally has no historical migrations.
+Automatic schema push is disabled in every environment. Schema changes must be represented by reviewed Payload migrations in `src/payload/migrations`.
 
-Before the first production deployment:
+For each schema release:
 
-1. Create and review a clean initial migration with `npm run payload:migrate:create -- initial-production-schema`.
+1. Create and review a migration with `npm run payload:migrate:create -- descriptive-name`.
 2. Commit the generated migration.
 3. Back up PostgreSQL and run `npm run payload:migrate` before serving the release.
 
-Repeat the backup/migrate step for later schema changes. Never enable schema push in production.
+Never enable schema push in a shared or production environment.
 
 ## Operational rules
 

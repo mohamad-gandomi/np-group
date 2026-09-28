@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { CATALOG_FACET_PREFIX, type RawSearchParams } from "../catalog-query";
+import { catalogAttributeFilters, type RawSearchParams } from "../catalog-query";
 import { getCatalogFacets, queryCatalogProducts } from "../payload-catalog-repository";
 import { ActiveFilters } from "./active-filters";
 import { CatalogFilters } from "./catalog-filters";
@@ -29,9 +29,9 @@ export async function CatalogView({ params, categorySlug }: { params: RawSearchP
   const searchValue = (Array.isArray(rawSearch) ? rawSearch[0] : rawSearch) ?? "";
   const activeFilterKeys = [
     "category", "brand", "room", "color", "availability", "minPrice", "maxPrice",
-    ...facets.attributes.map((facet) => `${CATALOG_FACET_PREFIX}${facet.key}`),
   ];
-  const activeFilterCount = activeFilterKeys.reduce((total, key) => {
+  const activeFilterCount = Object.values(catalogAttributeFilters(params)).reduce((total, values) => total + values.length, 0)
+    + activeFilterKeys.reduce((total, key) => {
     const value = params[key];
     return total + (Array.isArray(value) ? value.length : value ? 1 : 0);
   }, 0);

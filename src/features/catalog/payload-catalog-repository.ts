@@ -28,6 +28,7 @@ import {
 } from "./payload-catalog-queries";
 
 const CATALOG_REVALIDATE_SECONDS = 300;
+const CATALOG_CACHE_VERSION = "v2";
 const getCatalogPayload = cache(() => getPayload({ config }));
 
 async function findAllCatalogProducts(): Promise<Product[]> {
@@ -37,7 +38,7 @@ async function findAllCatalogProducts(): Promise<Product[]> {
 
 const getCachedCatalogProducts = unstable_cache(
   findAllCatalogProducts,
-  ["nilper-payload-catalog-products"],
+  [`nilper-payload-catalog-products-${CATALOG_CACHE_VERSION}`],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: ["payload-catalog"] },
 );
 
@@ -59,7 +60,7 @@ async function findProductBySlug(slug: string): Promise<Product | null> {
 
 const getCachedProductBySlug = unstable_cache(
   findProductBySlug,
-  ["nilper-payload-product-by-slug"],
+  [`nilper-payload-product-by-slug-${CATALOG_CACHE_VERSION}`],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: ["payload-catalog"] },
 );
 
@@ -270,7 +271,10 @@ async function buildCatalogWhere(params: RawSearchParams, category?: string): Pr
 
     for (const [key, values] of requestedAttributeFilters) {
       const group = groups.find((candidate) => candidate.name === key);
-      if (!group) continue;
+      if (!group) {
+        conditions.push(impossibleCondition());
+        continue;
+      }
       const optionIDs = options
         .filter((option) => relationID(option.variantType) === group.id && values.includes(option.value))
         .map((option) => option.id);
