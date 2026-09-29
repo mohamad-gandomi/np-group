@@ -16,7 +16,7 @@ import type {
   ProductVariant,
 } from "./catalog-types";
 import { storefrontTaxonomyForPayloadCategory } from "./catalog-taxonomy";
-import { relationID, relationIDs, resolveCommerce } from "@/payload/catalog-domain";
+import { productAttributeAssignmentKey, relationID, relationIDs, resolveCommerce } from "@/payload/catalog-domain";
 
 export type PayloadCatalogRelations = {
   attributes: readonly VariantType[];
@@ -69,22 +69,30 @@ const mapMeasurements = (measurements: PayloadProduct["measurements"] | Variant[
   (measurements ?? [])
     .map((measurement) => ({
       key: measurement.key,
+      ...(measurement.groupLabelFa?.trim() ? { groupLabel: measurement.groupLabelFa.trim() } : {}),
       label: measurement.labelFa,
       value: measurement.value,
       unit: measurement.unit,
     }))
     .sort((left, right) => left.label.localeCompare(right.label, "fa"));
 
-const mapGroups = (product: PayloadProduct, { attributes, attributeOptions }: PayloadCatalogRelations): ProductAttribute[] =>
-  attributes.filter((group) => group.active !== false && !relationIDs(product.variantAttributes).includes(group.id)).map((group) => ({
+const mapGroups = (product: PayloadProduct, { attributes, attributeOptions }: PayloadCatalogRelations): ProductAttribute[] => {
+  const assignments = (product.attributes ?? []) as NonNullable<PayloadProduct["attributes"]>;
+  const variantAttributeIDs = relationIDs(product.variantAttributes);
+  return assignments
+    .filter((assignment) => !variantAttributeIDs.includes(relationID(assignment.attribute)!))
+    .flatMap((assignment) => {
+      const group = attributes.find((candidate) => candidate.id === relationID(assignment.attribute));
+      if (!group || group.active === false) return [];
+      return [{
     id: group.id,
-    key: group.name,
-    label: group.label,
+    key: productAttributeAssignmentKey(assignments as unknown as Record<string, unknown>[], assignment as unknown as Record<string, unknown>, group.name),
+    label: assignment.displayLabelFa?.trim() || group.label,
     inputType: attributeOptions.some((option) => relationID(option.variantType) === group.id && option.colorHex) ? 'swatch' : 'select',
-    required: product.attributes?.find((row) => relationID(row.attribute) === group.id)?.required === true,
+    required: assignment.required === true,
     ...(group.helpTextFa ? { helpText: group.helpTextFa } : {}),
     options: attributeOptions
-      .filter((option) => option.active !== false && relationID(option.variantType) === group.id && relationIDs(product.attributes?.find((row) => relationID(row.attribute) === group.id)?.allowedOptions).includes(option.id))
+      .filter((option) => option.active !== false && relationID(option.variantType) === group.id && relationIDs(assignment.allowedOptions).includes(option.id))
       .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0))
       .map((option) => ({
         id: option.id,
@@ -94,7 +102,9 @@ const mapGroups = (product: PayloadProduct, { attributes, attributeOptions }: Pa
         ...(option.groupLabel ? { groupLabel: option.groupLabel } : {}),
         ...(payloadMediaURL(option.image) ? { image: payloadMediaURL(option.image) } : {}),
       })),
-  }));
+      }];
+    });
+};
 
 const mapVariants = (product: PayloadProduct, variants: readonly Variant[]): ProductVariant[] => variants.map((variant) => {
   const resolved = resolveCommerce(product as unknown as Record<string, unknown>, variant as unknown as Record<string, unknown>);
@@ -121,8 +131,9 @@ const mapCatalogFacets = (
 ): ProductCatalogFacet[] => attributes
   .filter((attribute) => attribute.active !== false && attribute.catalogFilterEnabled === true)
   .map((attribute) => {
-    const assignment = product.attributes?.find((row) => relationID(row.attribute) === attribute.id);
-    const allowedOptionIDs = new Set(relationIDs(assignment?.allowedOptions));
+    const allowedOptionIDs = new Set((product.attributes ?? [])
+      .filter((row) => relationID(row.attribute) === attribute.id)
+      .flatMap((row) => relationIDs(row.allowedOptions)));
     return {
       key: attribute.name,
       label: attribute.catalogFilterLabel?.trim() || attribute.label,

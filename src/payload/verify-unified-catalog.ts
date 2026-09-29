@@ -86,7 +86,7 @@ try {
     shippingMode: 'parcel' as const, parcelWeightInGrams: 2000, tapinBoxID: 1, mainImage: media.id, _status: 'published' as const };
   const simple = remember('products', await payload.create({ collection: 'products', req, data: {
     ...common, title: 'Simple', slug: `${prefix}-simple`, productType: 'simple', catalogCode: `${prefix}-S`,
-    measurements: [{ labelFa: 'عرض', value: 10, unit: 'cm' }], technicalSpecs: [{ labelFa: 'جنس', valueFa: 'چوب' }],
+    measurements: [{ groupLabelFa: 'ابعاد کلی', labelFa: 'عرض', value: 10, unit: 'cm' }], technicalSpecs: [{ labelFa: 'جنس', valueFa: 'چوب' }],
   } as never }));
   assert(simple.measurements?.[0]?.key); assert.equal(simple.measurements?.[0]?.sortOrder, 0);
   const originalKey = simple.measurements![0].key;
@@ -95,7 +95,12 @@ try {
   await assert.rejects(payload.create({ collection: 'variants', req, data: { product: simple.id, nilperCode: `${prefix}-bad`, options: [small.id], _status: 'published' } }));
   const simpleQuote = await validateNilperCommerceItems([{ product: simple.id, quantity: 2, unitPriceInTMN: 1, variantCodeSnapshot: 'fake' }], req);
   assert.equal(simpleQuote.amount, 24000); assert.equal(simpleQuote.items[0].variantCodeSnapshot, `${prefix}-S`);
-  const attributes = [{ attribute: size.id, allowedOptions: [small.id, large.id] }, { attribute: base.id, allowedOptions: [fixed.id, lift.id] }, { attribute: fabric.id, allowedOptions: [a01.id, a02.id], required: true }];
+  const attributes = [
+    { key: 'size', attribute: size.id, allowedOptions: [small.id, large.id] },
+    { key: 'base', attribute: base.id, allowedOptions: [fixed.id, lift.id] },
+    { key: 'fabric-base', attribute: fabric.id, displayLabelFa: 'رنگ پایه', allowedOptions: [a01.id, a02.id], required: true },
+    { key: 'fabric-body', attribute: fabric.id, displayLabelFa: 'رنگ بدنه', allowedOptions: [a01.id], required: true },
+  ];
   const product = remember('products', await payload.create({ collection: 'products', req, data: { ...common, title: 'Variable', slug: `${prefix}-variable`, productType: 'variable', attributes, variantAttributes: [size.id, base.id] } }));
   assert.equal((await payload.count({ collection: 'variants', req, where: { product: { equals: product.id } } })).totalDocs, 0, 'Attributes never generate variants.');
   const variant = remember('variants', await payload.create({ collection: 'variants', req, data: { product: product.id, nilperCode: `${prefix}-V1`, options: [small.id, fixed.id], _status: 'published' } }));
@@ -118,13 +123,16 @@ try {
   await assert.rejects(payload.delete({ collection: 'variantTypes', id: fabric.id, req }));
   await assert.rejects(payload.delete({ collection: 'variantOptions', id: a01.id, req }));
   await assert.rejects(payload.update({ collection: 'variantOptions', id: a01.id, req, data: { variantType: size.id } }));
-  const line = { product: product.id, variant: variant.id, quantity: 2, configuration: [{ groupKey: fabric.name, option: a01.id }] };
+  const fabricBaseKey = `${fabric.name}:fabric-base`;
+  const fabricBodyKey = `${fabric.name}:fabric-body`;
+  const line = { product: product.id, variant: variant.id, quantity: 2, configuration: [{ groupKey: fabricBaseKey, option: a01.id }, { groupKey: fabricBodyKey, option: a01.id }] };
   await assert.rejects(validateNilperCommerceItems([{ ...line, variant: null }], req));
-  await assert.rejects(validateNilperCommerceItems([{ ...line, configuration: [{ groupKey: fabric.name, option: disallowed.id }] }], req));
+  await assert.rejects(validateNilperCommerceItems([{ ...line, configuration: [{ groupKey: fabricBaseKey, option: disallowed.id }] }], req));
   await payload.update({ collection: 'variantOptions', id: a02.id, req, data: { active: false } });
-  await assert.rejects(validateNilperCommerceItems([{ ...line, configuration: [{ groupKey: fabric.name, option: a02.id }] }], req));
+  await assert.rejects(validateNilperCommerceItems([{ ...line, configuration: [{ groupKey: fabricBaseKey, option: a02.id }] }], req));
   const quote = await validateNilperCommerceItems([line], req);
   assert.equal(quote.amount, 24000); assert.equal(quote.items[0].shippingModeSnapshot, 'parcel'); assert.equal(quote.items[0].parcelWeightInGramsSnapshot, 2000);
+  assert.deepEqual((quote.items[0].configuration as { groupLabelFaSnapshot: string }[]).map((selection) => selection.groupLabelFaSnapshot).sort(), ['رنگ بدنه', 'رنگ پایه'].sort());
   const cart = remember('carts', await payload.create({ collection: 'carts', req, data: { currency: 'TMN', items: [line, { product: simple.id, quantity: 1 }] } as never }));
   assert.equal(cart.subtotal, 36000, 'Plugin cart hook must preserve inherited prices.');
   const order = remember('orders', await payload.create({ collection: 'orders', req, depth: 0, data: { currency: 'TMN', items: cart.items, contactName: 'Test', contactPhone: '09120000000', deliveryMethod: 'advisor', paymentMethod: 'invoice', status: 'pending_review' } as never }));
@@ -136,7 +144,8 @@ try {
   assert.deepEqual(history.items, snapshots); assert.equal(history.amount, 36000);
   const mapped = mapPayloadProduct(product, { attributes: [size, base, fabric], attributeOptions: [a01, a02], variants: [variant] });
   assert.equal(mapped.variants?.length, 1); assert.equal(mapped.variants?.[0].price, 12000);
-  assert.equal(mapped.attributes?.length, 1); assert.equal(mapped.attributes?.[0].options[0].groupLabel, 'Verona');
+  assert.equal(mapped.attributes?.length, 2); assert.deepEqual(mapped.attributes?.map((attribute) => attribute.label), ['رنگ پایه', 'رنگ بدنه']);
+  assert.equal(mapped.attributes?.[0].options[0].groupLabel, 'Verona');
   const inherited = resolveCommerce({ priceInTMNEnabled: true, priceInTMN: 100, availabilityMode: 'in_stock', mainImage: media.id }, { priceInTMNEnabled: false });
   assert.equal(inherited.priceInTMN, 100); assert.equal(inherited.mainImage, media.id);
   await payload.update({ collection: 'variants', id: variant.id, req, data: { priceInTMNEnabled: true, priceInTMN: 25000, shippingMode: 'freight', availabilityMode: 'unavailable' } });

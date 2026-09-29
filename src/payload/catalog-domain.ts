@@ -1,4 +1,5 @@
-import type { CollectionBeforeValidateHook, CollectionBeforeDeleteHook, CollectionConfig, Field, PayloadRequest } from 'payload';
+import { randomUUID } from 'node:crypto';
+import type { CollectionBeforeValidateHook, CollectionBeforeDeleteHook, CollectionConfig, Field, FieldHook, PayloadRequest } from 'payload';
 import { ValidationError } from 'payload';
 
 export const relationID = (value: unknown): number | undefined => {
@@ -11,6 +12,26 @@ export const relationIDs = (values: unknown): number[] => Array.isArray(values)
 type RecordData = Record<string, unknown>;
 type Assignment = { attribute: unknown; allowedOptions?: unknown; required?: boolean | null };
 const assignments = (value: unknown): Assignment[] => Array.isArray(value) ? value : [];
+
+const normalizeProductAttributeRows: FieldHook = ({ value }) => Array.isArray(value)
+  ? value.map((row) => ({ ...row, key: row.key || row.id || randomUUID() }))
+  : value;
+
+export const productAttributeAssignmentKey = (
+  allAssignments: readonly Record<string, unknown>[],
+  assignment: Record<string, unknown>,
+  groupName: string,
+) => {
+  const attributeID = relationID(assignment.attribute);
+  const duplicateCount = allAssignments.filter((row) => relationID(row.attribute) === attributeID).length;
+  if (duplicateCount <= 1) return groupName;
+  const rowKey = typeof assignment.key === 'string' && assignment.key.trim()
+    ? assignment.key.trim()
+    : typeof assignment.id === 'string' && assignment.id.trim()
+      ? assignment.id.trim()
+      : String(allAssignments.indexOf(assignment) + 1);
+  return `${groupName}:${rowKey}`;
+};
 const fail = (req: PayloadRequest, path: string, message: string): never => {
   throw new ValidationError({ req, errors: [{ path, message }] });
 };
@@ -96,7 +117,7 @@ export const validateProduct: CollectionBeforeValidateHook = async ({ data, orig
   const product = { ...originalDoc, ...data };
   const rows = assignments(product.attributes);
   const ids = rows.map((row) => relationID(row.attribute));
-  if (new Set(ids).size !== ids.length || ids.includes(undefined)) fail(req, 'attributes', 'ویژگی تکراری یا نامعتبر است.');
+  if (ids.includes(undefined)) fail(req, 'attributes', 'ویژگی نامعتبر است.');
   const variants = originalDoc?.id
     ? (await req.payload.find({ collection: 'variants', where: { product: { equals: originalDoc.id } }, pagination: false, depth: 0, draft: true, req })).docs
     : [];
@@ -115,7 +136,7 @@ export const validateProduct: CollectionBeforeValidateHook = async ({ data, orig
     }
   }
   const variantAttributes = relationIDs(product.variantAttributes);
-  if (new Set(variantAttributes).size !== variantAttributes.length || variantAttributes.some((id) => !ids.includes(id))) {
+  if (new Set(variantAttributes).size !== variantAttributes.length || variantAttributes.some((id) => ids.filter((rowID) => rowID === id).length !== 1)) {
     fail(req, 'variantAttributes', 'ویژگی سازنده مدل باید در ویژگی‌های محصول باشد.');
   }
   if (originalDoc?.id) {
@@ -280,8 +301,13 @@ export function attributeCollection(collection: CollectionConfig, option: boolea
 }
 
 export const productAttributeFields: Field[] = [
-  { name: 'attributes', type: 'array', label: 'ویژگی‌های محصول', labels: { singular: 'ویژگی', plural: 'ویژگی‌ها' }, fields: [
+  { name: 'attributes', type: 'array', label: 'ویژگی‌های محصول', labels: { singular: 'ویژگی', plural: 'ویژگی‌ها' },
+    hooks: { beforeValidate: [normalizeProductAttributeRows] },
+    admin: { description: 'یک ویژگی را می‌توانید چند بار اضافه کنید و برای هر بار عنوان نمایشی مستقلی مانند «رنگ پایه» یا «رنگ بدنه» بنویسید.' },
+    fields: [
+    { name: 'key', type: 'text', admin: { hidden: true } },
     { name: 'attribute', type: 'relationship', relationTo: 'variantTypes', required: true, label: 'ویژگی' },
+    { name: 'displayLabelFa', type: 'text', label: 'عنوان نمایشی در فروشگاه', admin: { rtl: true, description: 'اختیاری؛ اگر خالی باشد عنوان اصلی ویژگی نمایش داده می‌شود.' } },
     { name: 'allowedOptions', type: 'relationship', relationTo: 'variantOptions', hasMany: true, label: 'گزینه‌های مجاز',
       filterOptions: ({ siblingData }) => ({ variantType: { equals: relationID((siblingData as { attribute?: unknown })?.attribute) ?? -1 } }) },
     { name: 'required', type: 'checkbox', label: 'انتخاب مشتری الزامی است', defaultValue: false },

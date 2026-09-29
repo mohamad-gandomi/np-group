@@ -9,7 +9,7 @@ import type {
 import { ValidationError } from "payload";
 
 import { NILPER_COMMERCE_CURRENCY, assertTomanAmount, validateTomanAmount } from "./money";
-import { relationIDs, resolveCommerce, validateVariantDefinitionRecords } from "./catalog-domain";
+import { productAttributeAssignmentKey, relationIDs, resolveCommerce, validateVariantDefinitionRecords } from "./catalog-domain";
 
 type CommerceDocumentKind = "cart" | "order" | "transaction";
 type RecordValue = Record<string, unknown>;
@@ -355,12 +355,17 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     const variantAttributes = relationIDs(product.variantAttributes);
     const assignments = (Array.isArray(product.attributes) ? product.attributes : []) as RecordValue[];
     const customerAssignments = assignments.filter((row) => !variantAttributes.includes(Number(relationshipID(row.attribute))));
-    const allowedGroupIDs = customerAssignments.map((row) => relationshipID(row.attribute)).filter((id): id is DefaultDocumentIDType => id !== undefined);
-    const allowedGroups = allowedGroupIDs.map((id) => groupsByID.get(String(id)) ??
-      validationError(req, "رکورد معتبر variantTypes یافت نشد.", `${path}.configuration`));
-    const allowedGroupsByKey = new Map(
-      allowedGroups.map((group) => [requiredString(group.name, req, "کلید ویژگی معتبر نیست.", `${path}.configuration`), group]),
-    );
+    const allowedAssignments = customerAssignments.map((assignment) => {
+      const group = groupsByID.get(String(relationshipID(assignment.attribute))) ??
+        validationError(req, "رکورد معتبر variantTypes یافت نشد.", `${path}.configuration`);
+      const groupName = requiredString(group.name, req, "کلید ویژگی معتبر نیست.", `${path}.configuration`);
+      return {
+        assignment,
+        group,
+        key: productAttributeAssignmentKey(assignments, assignment, groupName),
+      };
+    });
+    const allowedAssignmentsByKey = new Map(allowedAssignments.map((entry) => [entry.key, entry]));
 
     const requestedConfigurationValue = item.configuration ?? [];
     const requestedConfiguration = Array.isArray(requestedConfigurationValue)
@@ -383,8 +388,9 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
         validationError(req, "از هر ویژگی فقط یک گزینه قابل انتخاب است.", selectionPath);
       }
 
-      const group = allowedGroupsByKey.get(requestedGroupKey) ??
+      const allowedAssignment = allowedAssignmentsByKey.get(requestedGroupKey) ??
         validationError(req, "این ویژگی برای محصول مجاز نیست.", `${selectionPath}.groupKey`);
+      const { assignment, group } = allowedAssignment;
       if (group.active !== true) {
         validationError(req, "ویژگی غیرفعال است.", `${selectionPath}.groupKey`);
       }
@@ -393,7 +399,6 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
         validationError(req, "گزینه ویژگی الزامی است.", `${selectionPath}.option`);
       const option = optionsByID.get(String(optionID)) ??
         validationError(req, "رکورد معتبر variantOptions یافت نشد.", `${selectionPath}.option`);
-      const assignment = customerAssignments.find((row) => sameID(relationshipID(row.attribute), relationshipID(group)));
       if (!relationIDs(assignment?.allowedOptions).includes(Number(optionID))) validationError(req, 'گزینه برای این محصول مجاز نیست.', selectionPath);
       if (!sameID(relationshipID(option.variantType), relationshipID(group))) {
         validationError(req, "گزینه انتخاب‌شده متعلق به این ویژگی نیست.", `${selectionPath}.option`);
@@ -407,17 +412,19 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
         ...(typeof rawSelection.id === "string" ? { id: rawSelection.id } : {}),
         groupKey: requestedGroupKey,
         group: relationshipID(group),
-        groupLabelFaSnapshot: requiredString(group.label, req, "عنوان ویژگی معتبر نیست.", selectionPath),
+        groupLabelFaSnapshot: typeof assignment.displayLabelFa === "string" && assignment.displayLabelFa.trim()
+          ? assignment.displayLabelFa.trim()
+          : requiredString(group.label, req, "عنوان ویژگی معتبر نیست.", selectionPath),
         option: optionID,
         ...(typeof option.code === "string" && option.code.trim() ? { optionCodeSnapshot: option.code.trim() } : {}),
         labelFaSnapshot: requiredString(option.label, req, "عنوان گزینه معتبر نیست.", selectionPath),
       });
     }
 
-    for (const group of allowedGroups) {
-      const assignment = customerAssignments.find((row) => sameID(relationshipID(row.attribute), relationshipID(group)));
-      if (group.active === true && assignment?.required === true && !seenGroups.has(String(group.name))) {
-        validationError(req, `انتخاب ویژگی «${String(group.label)}» الزامی است.`, `${path}.configuration`);
+    for (const { assignment, group, key } of allowedAssignments) {
+      if (group.active === true && assignment.required === true && !seenGroups.has(key)) {
+        const label = typeof assignment.displayLabelFa === "string" && assignment.displayLabelFa.trim() ? assignment.displayLabelFa.trim() : String(group.label);
+        validationError(req, `انتخاب ویژگی «${label}» الزامی است.`, `${path}.configuration`);
       }
     }
 

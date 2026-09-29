@@ -2,6 +2,7 @@ export type Availability = "in-stock" | "made-to-order";
 
 export type ProductMeasurement = {
   key: string;
+  groupLabel?: string;
   label: string;
   value: number;
   unit: "cm" | "kg" | "m" | "unit";

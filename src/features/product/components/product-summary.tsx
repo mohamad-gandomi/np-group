@@ -6,7 +6,7 @@ import { ArrowLeft, Check, PackageCheck, Ruler, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { Product } from "@/features/catalog/catalog-types";
+import type { Product, ProductMeasurement } from "@/features/catalog/catalog-types";
 import type { CartConfigurationSelection } from "@/features/cart/cart-context";
 import { QuantityControl, useCart } from "@/features/cart/cart-context";
 import { ProductSaveButton } from "@/features/saved/saved-context";
@@ -15,6 +15,7 @@ import type { SalesContact } from "../payload-sales-contacts";
 import { SalesConsultationDialog } from "./sales-consultation-dialog";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const measurementUnitLabels = { cm: "سانتی‌متر", kg: "کیلوگرم", m: "متر", unit: "عدد" } as const;
 const colorValues: Record<string, string> = { "کرم": "#d8cbb7", "قهوه‌ای": "#76543c", "مشکی": "#1f2022", "طلایی": "#b69a59", "سبز": "#677565", "طوسی": "#aaa8a4", "قرمز": "#8f3035" };
 
 type QuoteResponse = {
@@ -49,10 +50,22 @@ export function ProductSummary({ product, description, depth, height, leadTime, 
   const priceUnavailable = !awaitingVariant && effectivePrice === null;
   const groupsComplete = (product.attributes ?? []).every((group) => !group.required || configuration[group.key]);
   const variantComplete = product.productType !== "variable" || Boolean(selectedVariant);
-  const dimensions = useMemo(() => {
-    const measurements = selectedVariant?.measurements ?? product.measurements ?? [];
-    const find = (key: string) => measurements.find((measurement) => measurement.key === key)?.value;
-    return { width: find("width") ?? product.width, depth: find("depth") ?? depth, height: find("height") ?? height };
+  const measurementGroups = useMemo(() => {
+    const merged = new Map((product.measurements ?? []).map((measurement) => [measurement.key, measurement]));
+    for (const measurement of selectedVariant?.measurements ?? []) merged.set(measurement.key, measurement);
+    if (!merged.size) {
+      if (product.width != null) merged.set("width", { key: "width", label: "عرض", value: product.width, unit: "cm" });
+      if (depth != null) merged.set("depth", { key: "depth", label: "عمق", value: depth, unit: "cm" });
+      if (height != null) merged.set("height", { key: "height", label: "ارتفاع", value: height, unit: "cm" });
+    }
+    const grouped = new Map<string, ProductMeasurement[]>();
+    for (const measurement of merged.values()) {
+      const label = measurement.groupLabel?.trim() || "ابعاد کلی";
+      const group = grouped.get(label) ?? [];
+      group.push(measurement);
+      grouped.set(label, group);
+    }
+    return [...grouped.entries()].map(([label, measurements]) => ({ label, measurements }));
   }, [depth, height, product.measurements, product.width, selectedVariant]);
 
   const addToCart = async () => {
@@ -116,7 +129,10 @@ export function ProductSummary({ product, description, depth, height, leadTime, 
 
       <div className="mt-7 border-y border-black/10 py-5">
         <div className="flex items-center justify-between gap-4 text-sm"><span className="flex items-center gap-2"><PackageCheck className="size-4 text-wine" />وضعیت سفارش</span><span className="font-medium">{product.availability === "in-stock" ? "آماده ارسال" : `ساخت سفارشی · ${leadTime}`}</span></div>
-        <div className="mt-4 flex items-center justify-between gap-4 text-sm"><span className="flex items-center gap-2"><Ruler className="size-4 text-wine" />ابعاد کلی</span><span className="font-medium" dir="rtl">{dimensions.width != null && dimensions.depth != null && dimensions.height != null ? `${dimensions.width} × ${dimensions.depth} × ${dimensions.height} سانتی‌متر` : "وابسته به مدل انتخابی"}</span></div>
+        <div className="mt-4 flex items-start justify-between gap-4 text-sm">
+          <span className="flex shrink-0 items-center gap-2 pt-2"><Ruler className="size-4 text-wine" />ابعاد کلی</span>
+          {measurementGroups.length ? <div className="flex max-w-[72%] flex-wrap justify-end gap-2">{measurementGroups.map((group) => <div key={group.label} className="min-w-28 border border-black/10 bg-secondary/25 px-3 py-2 text-end"><span className="block text-[10px] text-muted-foreground">{group.label}</span><div className="mt-1 flex flex-wrap justify-end gap-x-2 gap-y-0.5 text-xs font-medium">{group.measurements.map((measurement) => <span key={measurement.key}>{measurement.label}: {priceFormatter.format(measurement.value)} {measurementUnitLabels[measurement.unit]}</span>)}</div></div>)}</div> : <span className="pt-2 text-xs text-muted-foreground">با انتخاب مدل مشخص می‌شود</span>}
+        </div>
       </div>
 
       {product.variants?.length ? <fieldset className="mt-6"><legend className="text-sm font-medium">مدل محصول</legend><div className="mt-3 grid gap-2">{product.variants.map((variant) => <label key={variant.id} className="cursor-pointer"><input type="radio" name={`variant-${product.id}`} value={variant.id} checked={variantId === variant.id} onChange={() => { setVariantId(variant.id); onVariantChange?.(variant.id); }} className="peer sr-only" /><span className="flex items-center justify-between border border-black/10 bg-white px-4 py-3 text-sm transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-wine peer-checked:border-wine peer-checked:bg-wine/5 peer-checked:text-wine"><span>{variant.label}</span><span dir="ltr" className="text-xs">{variant.code}</span></span></label>)}</div></fieldset> : null}

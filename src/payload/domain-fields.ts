@@ -22,6 +22,15 @@ export function measurementsField(description: string): ArrayField {
     admin: { description },
     fields: [
       { name: "key", type: "text", required: true, admin: { hidden: true } },
+      {
+        name: "groupLabelFa",
+        type: "text",
+        label: "عنوان گروه",
+        admin: {
+          description: "برای نمایش چند مقدار کنار هم یک عنوان یکسان وارد کنید؛ مانند «ابعاد کلی» یا «مشخصات بسته‌بندی».",
+          rtl: true,
+        },
+      },
       { name: "labelFa", type: "text", label: "عنوان فارسی", required: true, admin: { rtl: true } },
       { name: "value", type: "number", label: "مقدار", required: true, min: 0 },
       { name: "unit", type: "select", label: "واحد", required: true, options: [...measurementUnitOptions] },

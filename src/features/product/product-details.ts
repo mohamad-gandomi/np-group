@@ -19,7 +19,7 @@ export function getProductPresentation(product: Product): ProductPresentation {
     height: measurement("height"),
     leadTime: product.leadTime ?? "پس از بررسی مدل و پیکربندی",
     warranty: "طبق شرایط رسمی نیلپر",
-    assembly: product.technicalSpecs?.find((item) => item.key === "delivery")?.value ?? "پس از ثبت سفارش هماهنگ می‌شود",
+    assembly: product.technicalSpecs?.find((item) => item.key === "delivery")?.value ?? "زمان و شیوه تحویل و نصب، پس از ثبت سفارش توسط مشاور با شما هماهنگ می‌شود.",
     care: product.technicalSpecs?.find((item) => item.key === "care")?.value ?? "راهنمای نگهداری هنگام ثبت سفارش اعلام می‌شود",
     gallery: product.gallery?.length ? product.gallery : product.image ? [product.image] : [],
   };

@@ -275,6 +275,10 @@ export interface Product {
   measurements?:
     | {
         key: string;
+        /**
+         * برای نمایش چند مقدار کنار هم یک عنوان یکسان وارد کنید؛ مانند «ابعاد کلی» یا «مشخصات بسته‌بندی».
+         */
+        groupLabelFa?: string | null;
         labelFa: string;
         value: number;
         unit: 'cm' | 'kg' | 'm' | 'unit';
@@ -296,9 +300,17 @@ export interface Product {
     | null;
   orderNotesFa?: string | null;
   leadTimeFa?: string | null;
+  /**
+   * یک ویژگی را می‌توانید چند بار اضافه کنید و برای هر بار عنوان نمایشی مستقلی مانند «رنگ پایه» یا «رنگ بدنه» بنویسید.
+   */
   attributes?:
     | {
+        key?: string | null;
         attribute: number | VariantType;
+        /**
+         * اختیاری؛ اگر خالی باشد عنوان اصلی ویژگی نمایش داده می‌شود.
+         */
+        displayLabelFa?: string | null;
         allowedOptions?: (number | VariantOption)[] | null;
         required?: boolean | null;
         id?: string | null;
@@ -504,6 +516,10 @@ export interface Variant {
   measurements?:
     | {
         key: string;
+        /**
+         * برای نمایش چند مقدار کنار هم یک عنوان یکسان وارد کنید؛ مانند «ابعاد کلی» یا «مشخصات بسته‌بندی».
+         */
+        groupLabelFa?: string | null;
         labelFa: string;
         value: number;
         unit: 'cm' | 'kg' | 'm' | 'unit';
@@ -1359,6 +1375,7 @@ export interface ProductsSelect<T extends boolean = true> {
     | T
     | {
         key?: T;
+        groupLabelFa?: T;
         labelFa?: T;
         value?: T;
         unit?: T;
@@ -1379,7 +1396,9 @@ export interface ProductsSelect<T extends boolean = true> {
   attributes?:
     | T
     | {
+        key?: T;
         attribute?: T;
+        displayLabelFa?: T;
         allowedOptions?: T;
         required?: T;
         id?: T;
@@ -1920,6 +1939,7 @@ export interface VariantsSelect<T extends boolean = true> {
     | T
     | {
         key?: T;
+        groupLabelFa?: T;
         labelFa?: T;
         value?: T;
         unit?: T;

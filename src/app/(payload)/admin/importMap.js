@@ -1,7 +1,5 @@
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
-import { AdminOnlyExportListMenuItem as AdminOnlyExportListMenuItem_7546db7980130d78a6359f7decdbb297 } from '../../../../src/components/payload/data-transfer-menu'
-import { AdminOnlyImportListMenuItem as AdminOnlyImportListMenuItem_7546db7980130d78a6359f7decdbb297 } from '../../../../src/components/payload/data-transfer-menu'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -25,6 +23,8 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { AdminOnlyExportListMenuItem as AdminOnlyExportListMenuItem_7546db7980130d78a6359f7decdbb297 } from '../../../../src/components/payload/data-transfer-menu'
+import { AdminOnlyImportListMenuItem as AdminOnlyImportListMenuItem_7546db7980130d78a6359f7decdbb297 } from '../../../../src/components/payload/data-transfer-menu'
 import { OrderCustomerAddressField as OrderCustomerAddressField_668cfbc790a5620014b0d6d5560b5ead } from '../../../../src/components/payload/order-customer-address-field'
 import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { TableFeatureClient as TableFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
@@ -55,8 +55,6 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 export const importMap = {
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
-  "./src/components/payload/data-transfer-menu#AdminOnlyExportListMenuItem": AdminOnlyExportListMenuItem_7546db7980130d78a6359f7decdbb297,
-  "./src/components/payload/data-transfer-menu#AdminOnlyImportListMenuItem": AdminOnlyImportListMenuItem_7546db7980130d78a6359f7decdbb297,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -80,6 +78,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "./src/components/payload/data-transfer-menu#AdminOnlyExportListMenuItem": AdminOnlyExportListMenuItem_7546db7980130d78a6359f7decdbb297,
+  "./src/components/payload/data-transfer-menu#AdminOnlyImportListMenuItem": AdminOnlyImportListMenuItem_7546db7980130d78a6359f7decdbb297,
   "./src/components/payload/order-customer-address-field#OrderCustomerAddressField": OrderCustomerAddressField_668cfbc790a5620014b0d6d5560b5ead,
   "@payloadcms/richtext-lexical/client#FixedToolbarFeatureClient": FixedToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#TableFeatureClient": TableFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
