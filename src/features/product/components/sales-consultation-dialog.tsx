@@ -19,9 +19,15 @@ const whatsappHref = (value: string) => {
   return `https://wa.me/${international}`;
 };
 
-export function SalesConsultationDialog({ contacts }: { contacts: readonly SalesContact[] }) {
+type Props = {
+  contacts: readonly SalesContact[];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
+
+export function SalesConsultationDialog({ contacts, open, onOpenChange }: Props) {
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Trigger asChild>
         <Button variant="outline" className="mt-3 h-11 w-full rounded-none border-black/15 bg-white hover:border-wine hover:text-wine">
           <Phone className="size-4" />گفت‌وگو با مشاور

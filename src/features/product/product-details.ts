@@ -2,8 +2,6 @@ import type { Product } from "@/features/catalog/catalog-types";
 
 type ProductPresentation = {
   description: string;
-  depth: number | null;
-  height: number | null;
   leadTime: string;
   warranty: string;
   assembly: string;
@@ -12,11 +10,8 @@ type ProductPresentation = {
 };
 
 export function getProductPresentation(product: Product): ProductPresentation {
-  const measurement = (key: string) => product.measurements?.find((item) => item.key === key)?.value ?? null;
   return {
     description: product.description ?? "",
-    depth: measurement("depth"),
-    height: measurement("height"),
     leadTime: product.leadTime ?? "پس از بررسی مدل و پیکربندی",
     warranty: "طبق شرایط رسمی نیلپر",
     assembly: product.technicalSpecs?.find((item) => item.key === "delivery")?.value ?? "زمان و شیوه تحویل و نصب، پس از ثبت سفارش توسط مشاور با شما هماهنگ می‌شود.",

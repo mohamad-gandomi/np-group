@@ -28,10 +28,10 @@ export function ProductView({ product, relatedProducts = [], salesContacts = [] 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />
       <div className="container-shell py-6 sm:py-9">
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground" aria-label="مسیر صفحه"><Link href="/">خانه</Link><span>/</span><Link href="/shop">فروشگاه</Link><span>/</span><Link href={`/shop/${product.category}`}>{categoryTitle}</Link><span>/</span><span className="text-foreground">{product.name}</span></nav>
-        <ProductPurchase product={product} gallery={details.gallery} description={details.description} depth={details.depth} height={details.height} leadTime={details.leadTime} salesContacts={salesContacts} />
+        <ProductPurchase product={product} gallery={details.gallery} description={details.description} leadTime={details.leadTime} salesContacts={salesContacts} />
       </div>
 
-      <section className="border-y bg-card py-14 sm:py-20"><div className="container-shell"><div className="mb-8 max-w-2xl"><p className="text-xs font-semibold tracking-[0.16em] text-wine">جزئیات محصول</p><h2 className="mt-3 text-3xl font-medium sm:text-4xl">اطلاعاتی برای انتخاب مطمئن‌تر</h2></div><ProductSpecifications product={product} warranty={details.warranty} assembly={details.assembly} care={details.care} /></div></section>
+      <section className="border-y bg-card py-14 sm:py-20"><div className="container-shell"><div className="mb-9 flex flex-col gap-4 border-b border-black/10 pb-7 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold tracking-[0.16em] text-wine">جزئیات محصول</p><h2 className="mt-3 text-3xl font-medium sm:text-4xl">اطلاعاتی برای انتخاب مطمئن‌تر</h2></div><p className="max-w-md text-sm leading-7 text-muted-foreground">ابعاد، متریال، نکات سفارش و شرایط خدمات را یک‌جا و شفاف بررسی کنید.</p></div><ProductSpecifications product={product} warranty={details.warranty} assembly={details.assembly} care={details.care} /></div></section>
 
       {relatedProducts.length ? <section className="py-16 sm:py-24"><div className="container-shell"><SectionHeading eyebrow="انتخاب‌های نزدیک" title="محصولات مرتبط" link="مشاهده مجموعه" href={`/shop/${product.category}`} /><div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div></div></section> : null}
     </main>
