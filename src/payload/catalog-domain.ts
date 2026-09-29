@@ -32,6 +32,27 @@ export const productAttributeAssignmentKey = (
       : String(allAssignments.indexOf(assignment) + 1);
   return `${groupName}:${rowKey}`;
 };
+
+/**
+ * A variant attribute used once is only a model discriminator. Repeating that
+ * attribute creates independently labelled customer choices while the same
+ * option family can still identify the model.
+ */
+export const customerAttributeAssignments = <T extends Record<string, unknown>>(
+  allAssignments: readonly T[],
+  variantAttributes: unknown,
+) => {
+  const variantAttributeIDs = new Set(relationIDs(variantAttributes));
+  const counts = new Map<number, number>();
+  for (const assignment of allAssignments) {
+    const id = relationID(assignment.attribute);
+    if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return allAssignments.filter((assignment) => {
+    const id = relationID(assignment.attribute);
+    return !id || !variantAttributeIDs.has(id) || (counts.get(id) ?? 0) > 1;
+  });
+};
 const fail = (req: PayloadRequest, path: string, message: string): never => {
   throw new ValidationError({ req, errors: [{ path, message }] });
 };
@@ -91,8 +112,10 @@ export function validateVariantDefinitionRecords(
   for (const id of ids) {
     const option = relations.optionsByID.get(id) ?? fail(req, 'options', 'گزینه‌های مدل باید معتبر باشند.');
     const attributeID = relationID(option.variantType)!;
-    const assignment = assignments(product.attributes).find((row) => relationID(row.attribute) === attributeID);
-    if (!required.includes(attributeID) || seen.has(attributeID) || !relationIDs(assignment?.allowedOptions).includes(id)) {
+    const allowedOptionIDs = assignments(product.attributes)
+      .filter((row) => relationID(row.attribute) === attributeID)
+      .flatMap((row) => relationIDs(row.allowedOptions));
+    if (!required.includes(attributeID) || seen.has(attributeID) || !allowedOptionIDs.includes(id)) {
       fail(req, 'options', 'گزینه‌های مدل باید مجاز و متعلق به ویژگی‌های سازنده مدل باشند.');
     }
     if (option.active === false) fail(req, 'options', 'گزینه غیرفعال قابل انتخاب نیست.');
@@ -136,7 +159,7 @@ export const validateProduct: CollectionBeforeValidateHook = async ({ data, orig
     }
   }
   const variantAttributes = relationIDs(product.variantAttributes);
-  if (new Set(variantAttributes).size !== variantAttributes.length || variantAttributes.some((id) => ids.filter((rowID) => rowID === id).length !== 1)) {
+  if (new Set(variantAttributes).size !== variantAttributes.length || variantAttributes.some((id) => !ids.includes(id))) {
     fail(req, 'variantAttributes', 'ویژگی سازنده مدل باید در ویژگی‌های محصول باشد.');
   }
   if (originalDoc?.id) {

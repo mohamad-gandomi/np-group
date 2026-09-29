@@ -16,7 +16,7 @@ import type {
   ProductVariant,
 } from "./catalog-types";
 import { storefrontTaxonomyForPayloadCategory } from "./catalog-taxonomy";
-import { productAttributeAssignmentKey, relationID, relationIDs, resolveCommerce } from "@/payload/catalog-domain";
+import { customerAttributeAssignments, productAttributeAssignmentKey, relationID, relationIDs, resolveCommerce } from "@/payload/catalog-domain";
 
 export type PayloadCatalogRelations = {
   attributes: readonly VariantType[];
@@ -78,9 +78,7 @@ const mapMeasurements = (measurements: PayloadProduct["measurements"] | Variant[
 
 const mapGroups = (product: PayloadProduct, { attributes, attributeOptions }: PayloadCatalogRelations): ProductAttribute[] => {
   const assignments = (product.attributes ?? []) as NonNullable<PayloadProduct["attributes"]>;
-  const variantAttributeIDs = relationIDs(product.variantAttributes);
-  return assignments
-    .filter((assignment) => !variantAttributeIDs.includes(relationID(assignment.attribute)!))
+  return customerAttributeAssignments(assignments, product.variantAttributes)
     .flatMap((assignment) => {
       const group = attributes.find((candidate) => candidate.id === relationID(assignment.attribute));
       if (!group || group.active === false) return [];

@@ -9,7 +9,7 @@ import type {
 import { ValidationError } from "payload";
 
 import { NILPER_COMMERCE_CURRENCY, assertTomanAmount, validateTomanAmount } from "./money";
-import { productAttributeAssignmentKey, relationIDs, resolveCommerce, validateVariantDefinitionRecords } from "./catalog-domain";
+import { customerAttributeAssignments, productAttributeAssignmentKey, relationIDs, resolveCommerce, validateVariantDefinitionRecords } from "./catalog-domain";
 
 type CommerceDocumentKind = "cart" | "order" | "transaction";
 type RecordValue = Record<string, unknown>;
@@ -352,9 +352,8 @@ export const validateNilperCommerceItems = async (items: unknown[], req: Payload
     }
     const trustedQuantity = quantity as number;
 
-    const variantAttributes = relationIDs(product.variantAttributes);
     const assignments = (Array.isArray(product.attributes) ? product.attributes : []) as RecordValue[];
-    const customerAssignments = assignments.filter((row) => !variantAttributes.includes(Number(relationshipID(row.attribute))));
+    const customerAssignments = customerAttributeAssignments(assignments, product.variantAttributes);
     const allowedAssignments = customerAssignments.map((assignment) => {
       const group = groupsByID.get(String(relationshipID(assignment.attribute))) ??
         validationError(req, "رکورد معتبر variantTypes یافت نشد.", `${path}.configuration`);

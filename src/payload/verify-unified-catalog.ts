@@ -104,6 +104,25 @@ try {
   const product = remember('products', await payload.create({ collection: 'products', req, data: { ...common, title: 'Variable', slug: `${prefix}-variable`, productType: 'variable', attributes, variantAttributes: [size.id, base.id] } }));
   assert.equal((await payload.count({ collection: 'variants', req, where: { product: { equals: product.id } } })).totalDocs, 0, 'Attributes never generate variants.');
   const variant = remember('variants', await payload.create({ collection: 'variants', req, data: { product: product.id, nilperCode: `${prefix}-V1`, options: [small.id, fixed.id], _status: 'published' } }));
+  const repeatedAttributes = [
+    { key: 'repeated-base', attribute: fabric.id, displayLabelFa: 'رنگ پایه', allowedOptions: [a01.id, a02.id], required: true },
+    { key: 'repeated-body', attribute: fabric.id, displayLabelFa: 'رنگ بدنه', allowedOptions: [a01.id], required: true },
+    { key: 'repeated-size', attribute: size.id, allowedOptions: [small.id, large.id] },
+  ];
+  const repeatedProduct = remember('products', await payload.create({ collection: 'products', req, data: { ...common, title: 'Repeated builder attribute', slug: `${prefix}-repeated-builder`, productType: 'variable', attributes: repeatedAttributes, variantAttributes: [fabric.id, size.id] } }));
+  const repeatedVariant = remember('variants', await payload.create({ collection: 'variants', req, data: { product: repeatedProduct.id, nilperCode: `${prefix}-RV1`, options: [a01.id, small.id], _status: 'published' } }));
+  const repeatedMapped = mapPayloadProduct(repeatedProduct, { attributes: [fabric, size], attributeOptions: [a01, a02, small, large], variants: [repeatedVariant] });
+  assert.deepEqual(repeatedMapped.attributes?.map((attribute) => attribute.label), ['رنگ پایه', 'رنگ بدنه']);
+  const repeatedQuote = await validateNilperCommerceItems([{
+    product: repeatedProduct.id,
+    variant: repeatedVariant.id,
+    quantity: 1,
+    configuration: [
+      { groupKey: `${fabric.name}:repeated-base`, option: a01.id },
+      { groupKey: `${fabric.name}:repeated-body`, option: a01.id },
+    ],
+  }], req);
+  assert.deepEqual((repeatedQuote.items[0].configuration as { groupLabelFaSnapshot: string }[]).map((selection) => selection.groupLabelFaSnapshot).sort(), ['رنگ پایه', 'رنگ بدنه'].sort());
   const rawProduct = await payload.findByID({ collection: 'products', id: product.id, depth: 0, req });
   const portable = await makeExportHook('products')({ data: [rawProduct as unknown as Record<string, unknown>], originalData: [rawProduct], req });
   const portableAttributes = portable[0].attributes as { attribute: string; allowedOptions: string[] }[];
