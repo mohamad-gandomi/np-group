@@ -6,7 +6,12 @@ import {
   forceContentAgentDraft,
   forceContentAgentUnpublished,
 } from "./access";
-import { mcpExposedCollections, mcpRawOperationAccess, normalizeContentIdentity } from "./mcp";
+import {
+  mcpExposedCollections,
+  mcpRawOperationAccess,
+  normalizeContentIdentity,
+  normalizeMcpRichText,
+} from "./mcp";
 
 const resolved = await config;
 const collections = new Map<string, NonNullable<typeof resolved.collections>[number]>(
@@ -31,6 +36,12 @@ assert.deepEqual([...mcpExposedCollections].sort(), [
 
 assert.equal(normalizeContentIdentity("Wenge"), normalizeContentIdentity("wenge"));
 assert.equal(normalizeContentIdentity("Wenge"), normalizeContentIdentity("ونگه"));
+const normalizedRichText = normalizeMcpRichText("پاراگراف اول\n\nپاراگراف دوم") as {
+  root: { type: string; children: Array<{ children: Array<{ text: string }> }> };
+};
+assert.equal(normalizedRichText.root.type, "root");
+assert.equal(normalizedRichText.root.children.length, 2);
+assert.equal(normalizedRichText.root.children[0]?.children[0]?.text, "پاراگراف اول");
 
 const contentAgent = { id: 100, collection: "users", role: "content-agent" };
 const admin = { id: 1, collection: "users", role: "admin" };

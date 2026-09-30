@@ -8,13 +8,16 @@ import { isContentAgentUser, isStrictAdminUser } from "./access";
 type EntityID = number | string;
 type DataRecord = Record<string, unknown>;
 type ChangeResult = {
-  status: "draft-created" | "existing-found" | "needs-review";
+  status: "draft-created" | "draft-updated" | "existing-found" | "needs-review";
   interpretedStructure?: {
     attributes: number;
     categories: number;
     options: number;
     productFields: string[];
     realVariants: number;
+    sections: string[];
+    sourceType: string;
+    summary: string;
   };
   created: string[];
   reused: string[];
@@ -119,6 +122,48 @@ export const normalizeContentIdentity = (value: string) => {
   return aliases[normalized] ?? normalized;
 };
 
+const lexicalDocumentSchema = z.object({
+  root: z.object({
+    type: z.literal("root"),
+    children: z.array(z.unknown()),
+  }).passthrough(),
+}).passthrough();
+
+const richTextInputSchema = z.union([
+  z.string().trim().min(1),
+  lexicalDocumentSchema,
+]);
+
+export const normalizeMcpRichText = (value: z.infer<typeof richTextInputSchema>) => {
+  if (typeof value !== "string") return value;
+  const paragraphs = value.split(/\r?\n+/).map((paragraph) => paragraph.trim()).filter(Boolean);
+  return {
+    root: {
+      type: "root",
+      direction: "rtl",
+      format: "",
+      indent: 0,
+      version: 1,
+      children: paragraphs.map((paragraph) => ({
+        type: "paragraph",
+        direction: "rtl",
+        format: "",
+        indent: 0,
+        version: 1,
+        children: [{
+          type: "text",
+          text: paragraph,
+          detail: 0,
+          format: 0,
+          mode: "normal",
+          style: "",
+          version: 1,
+        }],
+      })),
+    },
+  };
+};
+
 const searchableFields: Record<(typeof exposedCollections)[number], readonly string[]> = {
   products: ["slug", "catalogCode", "title"],
   variants: ["nilperCode", "title"],
@@ -171,6 +216,12 @@ const entityRefSchema = z.object({
   title: z.string().min(1).optional(),
 }).refine((value) => value.slug || value.title, "A slug or title is required.");
 
+const productRefSchema = z.object({
+  slug: z.string().min(1).optional(),
+  title: z.string().min(1).optional(),
+  catalogCode: z.string().min(1).optional(),
+}).refine((value) => value.slug || value.title || value.catalogCode, "A slug, title, or catalog code is required.");
+
 const resolveSimpleEntity = async ({
   collection,
   createData,
@@ -216,10 +267,14 @@ const resolveSimpleEntity = async ({
 const resolveExisting = async (
   req: PayloadRequest,
   collection: "products" | "posts" | "brands",
-  reference: z.infer<typeof entityRefSchema>,
+  reference: z.infer<typeof entityRefSchema> | z.infer<typeof productRefSchema>,
   output: ChangeResult,
 ) => {
-  const values = [reference.slug, reference.title].filter((value): value is string => Boolean(value));
+  const values = [
+    reference.slug,
+    reference.title,
+    "catalogCode" in reference ? reference.catalogCode : undefined,
+  ].filter((value): value is string => Boolean(value));
   const matches = await findNormalized(req, collection, values);
   if (matches.length !== 1) {
     output.needsReview.push(`${collection} reference "${values.join(" / ")}" ${matches.length ? "is ambiguous" : "was not found"}.`);
@@ -235,12 +290,44 @@ const findExistingSchema = z.object({
   query: z.string().min(1),
 });
 
+const measurementSchema = z.object({
+  groupLabelFa: z.string().min(1).optional(),
+  labelFa: z.string().min(1),
+  value: z.number().nonnegative(),
+  unit: z.enum(["cm", "kg", "m", "unit"]),
+});
+
+const technicalSpecSchema = z.object({
+  labelFa: z.string().min(1),
+  valueFa: z.string().min(1),
+});
+
 const productSchema = z.object({
+  sourceAnalysis: z.object({
+    sourceType: z.string().min(1).describe("Detected source type, such as Excel workbook, CSV, PDF, Word, JSON, or plain text."),
+    summary: z.string().min(1).describe("Short explanation of how the source is organized and what one product/model/row represents."),
+    sections: z.array(z.string().min(1)).min(1).describe("Detected sheets, tables, headings, or logical sections that were mapped."),
+    unmapped: z.array(z.string().min(1)).optional().default([]).describe("Source values intentionally not stored, with a short reason."),
+    ambiguities: z.array(z.string().min(1)).optional().default([]).describe("Conflicts or unclear values. Any entry stops the write and is returned in needsReview."),
+  }),
+  updateExistingDraft: z.boolean().optional().default(false).describe(
+    "Set true only when intentionally repairing or refreshing the single product matched by slug/catalogCode. The existing record is updated as a draft and is never published.",
+  ),
   product: z.object({
     title: z.string().min(1),
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     catalogCode: z.string().min(1).optional(),
-    descriptionFa: z.unknown(),
+    descriptionFa: z.string().trim().min(1).describe(
+      "Persian introduction as plain text. The tool converts it to a valid serialized Lexical document automatically.",
+    ),
+    measurements: z.array(measurementSchema).optional().describe(
+      "Only measurements shared by every SKU/model. Put differing dimensions and fabric consumption on each variant.",
+    ),
+    technicalSpecs: z.array(technicalSpecSchema).optional().describe(
+      "Technical facts shared by every SKU/model, such as frame, suspension, materials, packing, and assembly.",
+    ),
+    orderNotesFa: z.string().optional(),
+    leadTimeFa: z.string().optional(),
     salesMode: z.enum(["direct", "inquiry", "made_to_order"]).optional().default("made_to_order"),
     availabilityMode: z.enum(["orderable", "in_stock", "unavailable"]).optional().default("orderable"),
     shippingMode: z.enum(["parcel", "freight"]).optional().default("freight"),
@@ -248,6 +335,10 @@ const productSchema = z.object({
   }),
   brand: entityRefSchema,
   categories: z.array(entityRefSchema).min(1),
+  relatedProducts: z.array(productRefSchema).optional().default([]),
+  matchingProducts: z.array(productRefSchema).optional().default([]).describe(
+    "Existing products explicitly identified by the source as a matching set or coordinated item.",
+  ),
   attributes: z.array(z.object({
     name: z.string().min(1),
     label: z.string().min(1),
@@ -263,6 +354,10 @@ const productSchema = z.object({
     nilperCode: z.string().min(1),
     title: z.string().optional(),
     options: z.array(z.object({ attribute: z.string().min(1), value: z.string().min(1) })).min(1),
+    measurements: z.array(measurementSchema).optional().describe(
+      "Dimensions, weight, fabric consumption, or other physical values specific to this SKU/model.",
+    ),
+    manufacturingNotesFa: z.string().optional(),
     data: z.record(z.string(), z.unknown()).optional(),
   })).optional().default([]),
 });
@@ -273,7 +368,9 @@ const articleSchema = z.object({
   topic: z.string().min(1),
   description: z.string().min(1).max(240),
   summary: z.string().min(1),
-  content: z.unknown(),
+  content: richTextInputSchema.describe(
+    "Article body as plain text or a valid serialized Lexical document. Plain text is converted automatically.",
+  ),
   takeaway: z.string().min(1),
   category: entityRefSchema,
   seo: z.object({
@@ -282,7 +379,7 @@ const articleSchema = z.object({
     primaryTopic: z.string().min(1),
     noIndex: z.boolean().optional(),
   }),
-  relatedProducts: z.array(entityRefSchema).max(6).optional().default([]),
+  relatedProducts: z.array(productRefSchema).max(6).optional().default([]),
   relatedPosts: z.array(entityRefSchema).max(3).optional().default([]),
   relatedBrands: z.array(entityRefSchema).max(3).optional().default([]),
   heroImage: z.union([z.string(), z.number()]).optional(),
@@ -296,7 +393,7 @@ const projectSchema = z.object({
   sector: z.enum(["residential", "hospitality", "commercial", "workplace", "healthcare"]),
   descriptionFa: z.string().min(1),
   briefFa: z.string().min(1),
-  products: z.array(entityRefSchema).optional().default([]),
+  products: z.array(productRefSchema).optional().default([]),
   article: entityRefSchema.optional(),
   data: z.record(z.string(), z.unknown()).optional(),
 });
@@ -334,20 +431,54 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
       "salesMode",
       "availabilityMode",
       "shippingMode",
+      ...(input.product.measurements ? ["measurements"] : []),
+      ...(input.product.technicalSpecs ? ["technicalSpecs"] : []),
+      ...(input.product.orderNotesFa ? ["orderNotesFa"] : []),
+      ...(input.product.leadTimeFa ? ["leadTimeFa"] : []),
+      ...(input.relatedProducts.length ? ["relatedProducts"] : []),
+      ...(input.matchingProducts.length ? ["matchingProducts"] : []),
       ...Object.keys(input.product.data ?? {}),
     ],
     realVariants: input.variants.length,
+    sections: input.sourceAnalysis.sections,
+    sourceType: input.sourceAnalysis.sourceType,
+    summary: input.sourceAnalysis.summary,
   };
+  output.skipped.push(...input.sourceAnalysis.unmapped);
+  if (input.sourceAnalysis.ambiguities.length) {
+    output.status = "needs-review";
+    output.skipped.push(`product:${input.product.slug}`);
+    output.needsReview.push(...input.sourceAnalysis.ambiguities);
+    return textResponse(output);
+  }
   const existing = await findNormalized(
     req,
     "products",
     [input.product.slug, input.product.catalogCode ?? ""],
     ["slug", "catalogCode"],
   );
-  if (existing.length) {
+  if (existing.length && (!input.updateExistingDraft || existing.length !== 1)) {
     output.status = existing.length === 1 ? "existing-found" : "needs-review";
     output.skipped.push(`product:${input.product.slug}`);
-    output.needsReview.push(`Product slug/catalog code already matched ${existing.length} record(s); no product was created.`);
+    output.needsReview.push(existing.length === 1
+      ? "The product already exists. No write was made; set updateExistingDraft=true only after confirming this draft should be repaired or refreshed."
+      : `Product slug/catalog code matched ${existing.length} records; no write was made.`);
+    return textResponse(output);
+  }
+  const existingProduct = input.updateExistingDraft ? existing[0] : undefined;
+
+  const relatedProductIDs = (await Promise.all(input.relatedProducts.map((reference) => (
+    resolveExisting(req, "products", reference, output)
+  )))).filter((id): id is EntityID => id !== undefined);
+  const matchingProductIDs = (await Promise.all(input.matchingProducts.map((reference) => (
+    resolveExisting(req, "products", reference, output)
+  )))).filter((id): id is EntityID => id !== undefined);
+  if (
+    relatedProductIDs.length !== input.relatedProducts.length
+    || matchingProductIDs.length !== input.matchingProducts.length
+  ) {
+    output.status = "needs-review";
+    output.skipped.push(`product:${input.product.slug}`);
     return textResponse(output);
   }
 
@@ -444,40 +575,74 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
     return textResponse(output);
   }
 
-  const product = await req.payload.create({
-    collection: "products",
-    data: {
-      ...input.product.data,
-      title: input.product.title,
-      slug: input.product.slug,
-      catalogCode: input.product.catalogCode,
-      descriptionFa: input.product.descriptionFa,
-      salesMode: input.product.salesMode,
-      availabilityMode: input.product.availabilityMode,
-      shippingMode: input.product.shippingMode,
-      brand: brandID,
-      categories: categoryIDs,
-      productType: input.variants.length ? "variable" : "simple",
-      attributes: assignments,
-      variantAttributes: discriminatorIDs,
-      _status: "draft",
-    },
-    depth: 0,
-    draft: true,
-    overrideAccess: false,
-    req,
-    user: req.user,
-  } as never) as unknown as DataRecord;
+  const productData = {
+    ...input.product.data,
+    title: input.product.title,
+    slug: input.product.slug,
+    catalogCode: input.product.catalogCode,
+    descriptionFa: normalizeMcpRichText(input.product.descriptionFa),
+    ...(input.product.measurements ? { measurements: input.product.measurements } : {}),
+    ...(input.product.technicalSpecs ? { technicalSpecs: input.product.technicalSpecs } : {}),
+    ...(input.product.orderNotesFa !== undefined ? { orderNotesFa: input.product.orderNotesFa } : {}),
+    ...(input.product.leadTimeFa !== undefined ? { leadTimeFa: input.product.leadTimeFa } : {}),
+    salesMode: input.product.salesMode,
+    availabilityMode: input.product.availabilityMode,
+    shippingMode: input.product.shippingMode,
+    brand: brandID,
+    categories: categoryIDs,
+    relatedProducts: relatedProductIDs,
+    matchingProducts: matchingProductIDs,
+    productType: input.variants.length ? "variable" : existingProduct?.productType ?? "simple",
+    attributes: assignments,
+    variantAttributes: discriminatorIDs,
+    _status: "draft",
+  };
+  const product = existingProduct
+    ? await req.payload.update({
+        collection: "products",
+        id: relationID(existingProduct.id)!,
+        data: productData,
+        depth: 0,
+        draft: true,
+        overrideAccess: false,
+        req,
+        user: req.user,
+      } as never) as unknown as DataRecord
+    : await req.payload.create({
+        collection: "products",
+        data: productData,
+        depth: 0,
+        draft: true,
+        overrideAccess: false,
+        req,
+        user: req.user,
+      } as never) as unknown as DataRecord;
   const productID = relationID(product.id)!;
-  output.created.push(`product:${input.product.slug}`);
+  if (existingProduct) {
+    output.status = "draft-updated";
+    output.updated.push(`product:${input.product.slug}`);
+  } else {
+    output.created.push(`product:${input.product.slug}`);
+  }
   output.document = { collection: "products", id: productID, slug: input.product.slug };
 
   for (const variant of input.variants) {
     const existingVariant = await findNormalized(req, "variants", [variant.nilperCode], ["nilperCode"]);
     if (existingVariant.length) {
-      output.skipped.push(`variant:${variant.nilperCode}`);
-      output.needsReview.push(`Variant SKU "${variant.nilperCode}" already exists; it was not created.`);
-      continue;
+      const existingVariantProduct = relationID(existingVariant[0]?.product);
+      if (
+        !input.updateExistingDraft
+        || existingVariant.length !== 1
+        || existingVariantProduct !== productID
+      ) {
+        output.skipped.push(`variant:${variant.nilperCode}`);
+        output.needsReview.push(
+          existingVariant.length !== 1
+            ? `Variant SKU "${variant.nilperCode}" is ambiguous and was not changed.`
+            : `Variant SKU "${variant.nilperCode}" already belongs to ${existingVariantProduct === productID ? "this product" : "another product"}; it was not changed.`,
+        );
+        continue;
+      }
     }
     const selectedOptions = variant.options.map(({ attribute, value }) => (
       optionIDs.get(`${normalizeContentIdentity(attribute)}:${normalizeContentIdentity(value)}`)
@@ -487,25 +652,44 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
       output.needsReview.push(`Variant "${variant.nilperCode}" references an unresolved attribute option.`);
       continue;
     }
-    await req.payload.create({
-      collection: "variants",
-      data: {
-        ...variant.data,
-        product: productID,
-        nilperCode: variant.nilperCode,
-        title: variant.title,
-        options: selectedOptions,
-        _status: "draft",
-      },
-      depth: 0,
-      draft: true,
-      overrideAccess: false,
-      req,
-      user: req.user,
-    } as never);
-    output.created.push(`variant:${variant.nilperCode}`);
+    const variantData = {
+      ...variant.data,
+      product: productID,
+      nilperCode: variant.nilperCode,
+      title: variant.title,
+      options: selectedOptions,
+      ...(variant.measurements ? { measurements: variant.measurements } : {}),
+      ...(variant.manufacturingNotesFa !== undefined
+        ? { manufacturingNotesFa: variant.manufacturingNotesFa }
+        : {}),
+      _status: "draft",
+    };
+    if (existingVariant.length === 1) {
+      await req.payload.update({
+        collection: "variants",
+        id: relationID(existingVariant[0].id)!,
+        data: variantData,
+        depth: 0,
+        draft: true,
+        overrideAccess: false,
+        req,
+        user: req.user,
+      } as never);
+      output.updated.push(`variant:${variant.nilperCode}`);
+    } else {
+      await req.payload.create({
+        collection: "variants",
+        data: variantData,
+        depth: 0,
+        draft: true,
+        overrideAccess: false,
+        req,
+        user: req.user,
+      } as never);
+      output.created.push(`variant:${variant.nilperCode}`);
+    }
   }
-  if (output.needsReview.length) output.warnings.push("The product draft was created, but one or more variants require review.");
+  if (output.needsReview.length) output.warnings.push("The product draft was saved, but one or more variants require review.");
   return textResponse(output);
 };
 
@@ -546,7 +730,7 @@ const contentCreateArticleDraft = async (args: Record<string, unknown>, req: Pay
       category: categoryID,
       description: input.description,
       summary: input.summary,
-      content: input.content,
+      content: normalizeMcpRichText(input.content),
       takeaway: input.takeaway,
       seo: input.seo,
       relatedProducts,
@@ -755,11 +939,14 @@ export const payloadMcp = mcpPlugin({
     serverOptions: {
       instructions: [
         "For product input from Excel, CSV, text, Word, PDF, JSON, or any other source, first understand the source's structure and meaning; never assume a fixed format.",
+        "Before writing, populate sourceAnalysis with the detected structure, every unmapped value, and every conflict. Any ambiguity stops the product write and must be resolved by a human.",
         "Map only understood data to the existing Payload product, brand, category, attribute, option, measurement, technical specification, SKU, variant, media, and relationship fields.",
+        "Send product introductions and article bodies as plain text or valid Lexical JSON; plain text is converted safely. Use explicit measurements and technicalSpecs fields, and put SKU-specific dimensions or fabric consumption in variant measurements.",
         "Search Payload before every create or update and reuse normalized existing entities. Treat colors, fabrics, finishes, and wood choices as attributes by default.",
         "Create a variant only for a real SKU/model identity backed by catalog code, dimensions, price, inventory, shipping, or manufacturing differences; never generate Cartesian combinations.",
         "Do not guess when data is ambiguous. Put unresolved items in needsReview and skipped. Use only MCP tools, keep new content draft or unpublished, and never delete or publish.",
         "Raw collection tools are read-only. All content and catalog writes must use the high-level domain tools so validation, reuse, duplicate checks, draft enforcement, and ambiguity reporting cannot be skipped.",
+        "After a write, use raw find tools to verify the saved draft. Never claim a field, relationship, media item, or variant was stored unless the returned data confirms it.",
         "Return a short report containing interpretedStructure, created, reused, updated, skipped, and needsReview.",
       ].join(" "),
       serverInfo: { name: "NPGroup Payload Content MCP", version: "1.0.0" },
@@ -773,7 +960,7 @@ export const payloadMcp = mcpPlugin({
       },
       {
         name: "catalogCreateProductDraft",
-        description: "After the agent interprets and normalizes any source format, search and reuse catalog taxonomy, then create one product draft and only explicitly supplied real SKU variants. Returns interpreted structure and change reporting; never publishes.",
+        description: "Require a source analysis, stop on declared ambiguity, search and reuse catalog taxonomy, then create or explicitly repair one product draft and real SKU variants. Plain descriptions become valid Lexical content. Never publishes.",
         parameters: productSchema.shape,
         handler: catalogCreateProductDraft,
       },
