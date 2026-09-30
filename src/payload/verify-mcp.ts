@@ -7,6 +7,7 @@ import {
   forceContentAgentUnpublished,
 } from "./access";
 import {
+  canRepairVariantOwnership,
   mcpExposedCollections,
   mcpRawOperationAccess,
   normalizeContentIdentity,
@@ -36,6 +37,9 @@ assert.deepEqual([...mcpExposedCollections].sort(), [
 
 assert.equal(normalizeContentIdentity("Wenge"), normalizeContentIdentity("wenge"));
 assert.equal(normalizeContentIdentity("Wenge"), normalizeContentIdentity("ونگه"));
+assert.equal(canRepairVariantOwnership(null, 4), true);
+assert.equal(canRepairVariantOwnership({ id: 4 }, 4), true);
+assert.equal(canRepairVariantOwnership({ id: 9 }, 4), false);
 const normalizedRichText = normalizeMcpRichText("پاراگراف اول\n\nپاراگراف دوم") as {
   root: { type: string; children: Array<{ children: Array<{ text: string }> }> };
 };

@@ -69,7 +69,7 @@ Never add `overrideAccess=true` to a production URL. Payload access rules and ho
 
 ### Repair an existing product draft
 
-> Re-read the source and inspect the existing product and variants first. Prepare a complete corrected mapping, including valid Persian introduction text, shared technical specs, and SKU-specific dimensions/fabric consumption. Report every source conflict before writing. If there is exactly one product match and no unresolved ambiguity, call `catalogCreateProductDraft` with `updateExistingDraft: true`. Do not create a second product, publish, delete, or remove existing variants that are absent from the source. Verify the repaired draft with read-only find tools and report the stored values.
+> Re-read the source and inspect the existing product and variants first. Prepare a complete corrected mapping, including valid Persian introduction text, shared technical specs, and SKU-specific dimensions/fabric consumption. Report every source conflict before writing. If there is exactly one product match and no unresolved ambiguity, call `catalogCreateProductDraft` with `updateExistingDraft: true`. Existing SKU drafts whose product is null may be adopted by the matched product; a SKU owned by any other product must remain unchanged. Do not create a second product, publish, delete, or remove existing variants that are absent from the source. Verify the repaired draft with read-only find tools and report the stored values. Report incomplete linked variant drafts for human cleanup instead of deleting them.
 
 ### SEO article
 

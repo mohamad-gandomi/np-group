@@ -106,6 +106,11 @@ const relationID = (value: unknown): EntityID | undefined => {
   return undefined;
 };
 
+export const canRepairVariantOwnership = (variantProduct: unknown, targetProductID: EntityID) => {
+  const currentProductID = relationID(variantProduct);
+  return currentProductID === undefined || currentProductID === targetProductID;
+};
+
 const aliases: Record<string, string> = {
   wenge: "wenge",
   "ونگه": "wenge",
@@ -633,7 +638,7 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
       if (
         !input.updateExistingDraft
         || existingVariant.length !== 1
-        || existingVariantProduct !== productID
+        || !canRepairVariantOwnership(existingVariant[0]?.product, productID)
       ) {
         output.skipped.push(`variant:${variant.nilperCode}`);
         output.needsReview.push(
@@ -642,6 +647,9 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
             : `Variant SKU "${variant.nilperCode}" already belongs to ${existingVariantProduct === productID ? "this product" : "another product"}; it was not changed.`,
         );
         continue;
+      }
+      if (existingVariantProduct === undefined) {
+        output.warnings.push(`Variant SKU "${variant.nilperCode}" was an orphan draft and will be attached to this product.`);
       }
     }
     const selectedOptions = variant.options.map(({ attribute, value }) => (
@@ -688,6 +696,30 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
       } as never);
       output.created.push(`variant:${variant.nilperCode}`);
     }
+  }
+  const linkedVariants = await req.payload.find({
+    collection: "variants",
+    depth: 0,
+    draft: true,
+    overrideAccess: false,
+    pagination: false,
+    req,
+    user: req.user,
+    where: { product: { equals: productID } },
+  } as never) as unknown as { docs: DataRecord[] };
+  const incompleteVariantIDs = linkedVariants.docs
+    .filter((variant) => (
+      typeof variant.nilperCode !== "string"
+      || !variant.nilperCode.trim()
+      || !Array.isArray(variant.options)
+      || variant.options.length === 0
+    ))
+    .map((variant) => relationID(variant.id))
+    .filter((id): id is EntityID => id !== undefined);
+  if (incompleteVariantIDs.length) {
+    output.needsReview.push(
+      `Incomplete linked variant draft(s) ${incompleteVariantIDs.join(", ")} were left untouched and require human cleanup in Payload Admin.`,
+    );
   }
   if (output.needsReview.length) output.warnings.push("The product draft was saved, but one or more variants require review.");
   return textResponse(output);
