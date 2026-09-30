@@ -6,20 +6,16 @@ export const EPHEMERAL_RETENTION_DAYS = {
   abandonedCarts: 90,
   authChallenges: 1,
   authSessions: 7,
-  dataTransfers: 7,
 } as const;
 
 export const ephemeralRetentionCutoffs = (now = Date.now()) => ({
   abandonedCarts: new Date(now - EPHEMERAL_RETENTION_DAYS.abandonedCarts * DAY_MS).toISOString(),
   authChallenges: new Date(now - EPHEMERAL_RETENTION_DAYS.authChallenges * DAY_MS).toISOString(),
   authSessions: new Date(now - EPHEMERAL_RETENTION_DAYS.authSessions * DAY_MS).toISOString(),
-  dataTransfers: new Date(now - EPHEMERAL_RETENTION_DAYS.dataTransfers * DAY_MS).toISOString(),
 });
 
 type CleanupOutput = {
   deletedCarts: number;
-  deletedExports: number;
-  deletedImports: number;
   deletedOtpChallenges: number;
   deletedSessions: number;
 };
@@ -51,8 +47,6 @@ export async function cleanupEphemeralRecords(
       { updatedAt: { less_than: cutoff.abandonedCarts } },
     ],
   });
-  const deletedExports = await deleteMatching(req, "exports", { createdAt: { less_than: cutoff.dataTransfers } });
-  const deletedImports = await deleteMatching(req, "imports", { createdAt: { less_than: cutoff.dataTransfers } });
   const deletedOtpChallenges = await deleteMatching(req, "customer-otp-challenges", { expiresAt: { less_than: cutoff.authChallenges } });
   const deletedSessions = await deleteMatching(req, "customer-sessions", {
     or: [
@@ -60,7 +54,7 @@ export async function cleanupEphemeralRecords(
       { revokedAt: { less_than: cutoff.authSessions } },
     ],
   });
-  return { deletedCarts, deletedExports, deletedImports, deletedOtpChallenges, deletedSessions };
+  return { deletedCarts, deletedOtpChallenges, deletedSessions };
 }
 
 export const cleanupEphemeralRecordsTask: TaskConfig<CleanupTask> = {
@@ -68,8 +62,6 @@ export const cleanupEphemeralRecordsTask: TaskConfig<CleanupTask> = {
   inputSchema: [],
   outputSchema: [
     { name: "deletedCarts", type: "number", required: true },
-    { name: "deletedExports", type: "number", required: true },
-    { name: "deletedImports", type: "number", required: true },
     { name: "deletedOtpChallenges", type: "number", required: true },
     { name: "deletedSessions", type: "number", required: true },
   ],

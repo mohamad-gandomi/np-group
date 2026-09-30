@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { PayloadRequest, RunJobAccess } from "payload";
 
-import { isStrictAdminUser } from "./data-transfer";
+import { isStrictAdminUser } from "./access";
 
 const MINIMUM_CRON_SECRET_LENGTH = 32;
 

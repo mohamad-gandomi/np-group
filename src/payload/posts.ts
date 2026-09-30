@@ -9,7 +9,12 @@ import {
 import type { FeatureProviderServer } from "@payloadcms/richtext-lexical";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
-import { adminOrPublishedStatus, isAdmin } from "./access";
+import {
+  contentAgentOrPublishedStatus,
+  forceContentAgentDraft,
+  isAdmin,
+  isContentAuthor,
+} from "./access";
 import { withStorefrontRevalidation } from "./storefront-revalidation";
 import { journalReadingStats } from "../features/journal/content";
 import type { JournalRichText } from "../features/journal/types";
@@ -53,10 +58,10 @@ export const Posts: CollectionConfig = {
   slug: "posts",
   labels: { singular: "مطلب", plural: "مطالب مجله" },
   access: {
-    create: isAdmin,
+    create: isContentAuthor,
     delete: isAdmin,
-    read: adminOrPublishedStatus,
-    update: isAdmin,
+    read: contentAgentOrPublishedStatus,
+    update: isContentAuthor,
   },
   admin: {
     group: "مجله",
@@ -66,7 +71,7 @@ export const Posts: CollectionConfig = {
   },
   defaultSort: "-publishedAt",
   hooks: withStorefrontRevalidation(
-    { beforeChange: [calculateReadingStats] },
+    { beforeChange: [forceContentAgentDraft, calculateReadingStats] },
     ["journal", "showcase"],
     "status",
   ),
@@ -133,6 +138,8 @@ export const Posts: CollectionConfig = {
               ],
             },
             { name: "relatedPosts", type: "relationship", relationTo: "posts", label: "مطالب مرتبط", hasMany: true, maxRows: 3 },
+            { name: "relatedProducts", type: "relationship", relationTo: "products", label: "محصولات مرتبط", hasMany: true, maxRows: 6 },
+            { name: "relatedBrands", type: "relationship", relationTo: "brands", label: "برندهای مرتبط", hasMany: true, maxRows: 3 },
           ],
         },
         {

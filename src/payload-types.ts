@@ -71,6 +71,7 @@ export interface Config {
   auth: {
     customers: CustomerAuthOperations;
     users: UserAuthOperations;
+    'payload-mcp-api-keys': PayloadMcpApiKeyAuthOperations;
   };
   blocks: {};
   collections: {
@@ -86,8 +87,7 @@ export interface Config {
     'blog-categories': BlogCategory;
     posts: Post;
     users: User;
-    exports: Export;
-    imports: Import;
+    'payload-mcp-api-keys': PayloadMcpApiKey;
     'customer-otp-challenges': CustomerOtpChallenge;
     'customer-sessions': CustomerSession;
     addresses: Address;
@@ -128,8 +128,7 @@ export interface Config {
     'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    exports: ExportsSelect<false> | ExportsSelect<true>;
-    imports: ImportsSelect<false> | ImportsSelect<true>;
+    'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     'customer-otp-challenges': CustomerOtpChallengesSelect<false> | CustomerOtpChallengesSelect<true>;
     'customer-sessions': CustomerSessionsSelect<false> | CustomerSessionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -156,12 +155,10 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: Customer | User;
+  user: Customer | User | PayloadMcpApiKey;
   jobs: {
     tasks: {
       cleanupEphemeralRecords: TaskCleanupEphemeralRecords;
-      createCollectionExport: TaskCreateCollectionExport;
-      createCollectionImport: TaskCreateCollectionImport;
       inline: {
         input: unknown;
         output: unknown;
@@ -205,6 +202,24 @@ export interface CustomerAuthOperations {
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface PayloadMcpApiKeyAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -898,6 +913,8 @@ export interface Post {
     href: string;
   };
   relatedPosts?: (number | Post)[] | null;
+  relatedProducts?: (number | Product)[] | null;
+  relatedBrands?: (number | Brand)[] | null;
   authorName: string;
   authorUrl?: string | null;
   authorBio?: string | null;
@@ -961,7 +978,7 @@ export interface User {
   id: number;
   fullName: string;
   phone?: string | null;
-  role: 'admin' | 'editor' | 'seller';
+  role: 'admin' | 'editor' | 'seller' | 'content-agent';
   contactTitle?: string | null;
   contactDescription?: string | null;
   whatsappPhone?: string | null;
@@ -986,82 +1003,113 @@ export interface User {
   collection: 'users';
 }
 /**
- * هر ردیف، سابقه یک عملیات خروجی و فایل قابل دانلود آن است. می‌توانید از رکوردهای انتخاب‌شده، فیلتر فعلی یا همه رکوردهای همان بخش JSON بگیرید؛ سوابق پس از ۷ روز خودکار حذف می‌شوند.
+ * کلیدهای اختصاصی اتصال عامل هوش مصنوعی به محتوای Payload و سطح دسترسی هر کلید.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "exports".
+ * via the `definition` "payload-mcp-api-keys".
  */
-export interface Export {
+export interface PayloadMcpApiKey {
   id: number;
-  name?: string | null;
-  format: 'csv' | 'json';
-  limit?: number | null;
-  page?: number | null;
-  sort?: string | null;
-  sortOrder?: ('asc' | 'desc') | null;
-  drafts?: ('yes' | 'no') | null;
-  selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
-  fields?: string[] | null;
-  collectionSlug: string;
-  where?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * هر ردیف، سابقه یک عملیات ورود داده و نتیجه یا خطاهای آن است. فایل JSON را برای ایجاد یا به‌روزرسانی گروهی بارگذاری کنید؛ تصاویر باید پیش‌تر در رسانه‌ها باشند. سوابق پس از ۷ روز خودکار حذف می‌شوند.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "imports".
- */
-export interface Import {
-  id: number;
-  collectionSlug: string;
-  importMode?: ('create' | 'update' | 'upsert') | null;
-  matchField?: string | null;
-  status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
-  summary?: {
-    imported?: number | null;
-    updated?: number | null;
-    total?: number | null;
-    issues?: number | null;
-    issueDetails?:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
+  /**
+   * کاربر اختصاصی با نقش عامل محتوای هوش مصنوعی.
+   */
+  user: number | User;
+  /**
+   * نامی روشن برای شناسایی این کلید.
+   */
+  label?: string | null;
+  /**
+   * هدف و محل استفاده از این کلید.
+   */
+  description?: string | null;
+  products?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش محصولات.
+     */
+    find?: boolean | null;
+  };
+  variants?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش مدل‌های محصول.
+     */
+    find?: boolean | null;
+  };
+  variantTypes?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش ویژگی‌ها.
+     */
+    find?: boolean | null;
+  };
+  variantOptions?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش گزینه‌های ویژگی.
+     */
+    find?: boolean | null;
+  };
+  categories?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش دسته‌بندی‌های محصولات.
+     */
+    find?: boolean | null;
+  };
+  brands?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش برندها.
+     */
+    find?: boolean | null;
+  };
+  posts?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش مقاله‌ها.
+     */
+    find?: boolean | null;
+  };
+  blogCategories?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش دسته‌بندی‌های مجله.
+     */
+    find?: boolean | null;
+  };
+  projects?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش پروژه‌ها.
+     */
+    find?: boolean | null;
+  };
+  media?: {
+    /**
+     * اجازه مشاهده و جست‌وجو در بخش رسانه‌ها.
+     */
+    find?: boolean | null;
+  };
+  'payload-mcp-tool'?: {
+    /**
+     * اجازه «جست‌وجوی محتوای موجود» به عامل محتوایی.
+     */
+    catalogFindExisting?: boolean | null;
+    /**
+     * اجازه «ساخت پیش‌نویس محصول» به عامل محتوایی.
+     */
+    catalogCreateProductDraft?: boolean | null;
+    /**
+     * اجازه «ساخت پیش‌نویس مقاله» به عامل محتوایی.
+     */
+    contentCreateArticleDraft?: boolean | null;
+    /**
+     * اجازه «ساخت پیش‌نویس پروژه» به عامل محتوایی.
+     */
+    contentCreateProjectDraft?: boolean | null;
+    /**
+     * اجازه «ساخت پیش‌نویس برند» به عامل محتوایی.
+     */
+    contentCreateBrandDraft?: boolean | null;
   };
   updatedAt: string;
   createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  collection: 'payload-mcp-api-keys';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1164,7 +1212,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'cleanupEphemeralRecords' | 'createCollectionExport' | 'createCollectionImport';
+        taskSlug: 'inline' | 'cleanupEphemeralRecords';
         taskID: string;
         input?:
           | {
@@ -1197,7 +1245,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'cleanupEphemeralRecords' | 'createCollectionExport' | 'createCollectionImport') | null;
+  taskSlug?: ('inline' | 'cleanupEphemeralRecords') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1269,6 +1317,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'payload-mcp-api-keys';
+        value: number | PayloadMcpApiKey;
+      } | null)
+    | ({
         relationTo: 'customer-otp-challenges';
         value: number | CustomerOtpChallenge;
       } | null)
@@ -1301,6 +1353,10 @@ export interface PayloadLockedDocument {
     | {
         relationTo: 'users';
         value: number | User;
+      }
+    | {
+        relationTo: 'payload-mcp-api-keys';
+        value: number | PayloadMcpApiKey;
       };
   updatedAt: string;
   createdAt: string;
@@ -1319,6 +1375,10 @@ export interface PayloadPreference {
     | {
         relationTo: 'users';
         value: number | User;
+      }
+    | {
+        relationTo: 'payload-mcp-api-keys';
+        value: number | PayloadMcpApiKey;
       };
   key?: string | null;
   value?:
@@ -1758,6 +1818,8 @@ export interface PostsSelect<T extends boolean = true> {
         href?: T;
       };
   relatedPosts?: T;
+  relatedProducts?: T;
+  relatedBrands?: T;
   authorName?: T;
   authorUrl?: T;
   authorBio?: T;
@@ -1810,61 +1872,76 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "exports_select".
+ * via the `definition` "payload-mcp-api-keys_select".
  */
-export interface ExportsSelect<T extends boolean = true> {
-  name?: T;
-  format?: T;
-  limit?: T;
-  page?: T;
-  sort?: T;
-  sortOrder?: T;
-  drafts?: T;
-  selectionToUse?: T;
-  fields?: T;
-  collectionSlug?: T;
-  where?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "imports_select".
- */
-export interface ImportsSelect<T extends boolean = true> {
-  collectionSlug?: T;
-  importMode?: T;
-  matchField?: T;
-  status?: T;
-  summary?:
+export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
+  user?: T;
+  label?: T;
+  description?: T;
+  products?:
     | T
     | {
-        imported?: T;
-        updated?: T;
-        total?: T;
-        issues?: T;
-        issueDetails?: T;
+        find?: T;
+      };
+  variants?:
+    | T
+    | {
+        find?: T;
+      };
+  variantTypes?:
+    | T
+    | {
+        find?: T;
+      };
+  variantOptions?:
+    | T
+    | {
+        find?: T;
+      };
+  categories?:
+    | T
+    | {
+        find?: T;
+      };
+  brands?:
+    | T
+    | {
+        find?: T;
+      };
+  posts?:
+    | T
+    | {
+        find?: T;
+      };
+  blogCategories?:
+    | T
+    | {
+        find?: T;
+      };
+  projects?:
+    | T
+    | {
+        find?: T;
+      };
+  media?:
+    | T
+    | {
+        find?: T;
+      };
+  'payload-mcp-tool'?:
+    | T
+    | {
+        catalogFindExisting?: T;
+        catalogCreateProductDraft?: T;
+        contentCreateArticleDraft?: T;
+        contentCreateProjectDraft?: T;
+        contentCreateBrandDraft?: T;
       };
   updatedAt?: T;
   createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2129,81 +2206,9 @@ export interface TaskCleanupEphemeralRecords {
   input?: unknown;
   output: {
     deletedCarts: number;
-    deletedExports: number;
-    deletedImports: number;
     deletedOtpChallenges: number;
     deletedSessions: number;
   };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCreateCollectionExport".
- */
-export interface TaskCreateCollectionExport {
-  input: {
-    id: string;
-    name: string;
-    batchSize?: number | null;
-    collectionSlug:
-      | 'users'
-      | 'customers'
-      | 'customer-otp-challenges'
-      | 'customer-sessions'
-      | 'media'
-      | 'blog-categories'
-      | 'posts'
-      | 'brands'
-      | 'projects'
-      | 'categories'
-      | 'addresses'
-      | 'variants'
-      | 'variantTypes'
-      | 'variantOptions'
-      | 'products'
-      | 'carts'
-      | 'orders'
-      | 'transactions'
-      | 'exports'
-      | 'imports';
-    drafts?: ('yes' | 'no') | null;
-    exportCollection: string;
-    fields?: string[] | null;
-    format: 'csv' | 'json';
-    limit?: number | null;
-    locale?: string | null;
-    maxLimit?: number | null;
-    page?: number | null;
-    sort?: string | null;
-    userCollection?: string | null;
-    userID?: string | null;
-    where?:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-  };
-  output?: unknown;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskCreateCollectionImport".
- */
-export interface TaskCreateCollectionImport {
-  input: {
-    importId: string;
-    importCollection: string;
-    userID?: string | null;
-    userCollection?: string | null;
-    batchSize?: number | null;
-    debug?: boolean | null;
-    defaultVersionStatus?: ('draft' | 'published') | null;
-    maxLimit?: number | null;
-  };
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

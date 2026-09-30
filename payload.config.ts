@@ -6,68 +6,12 @@ import { buildConfig } from "payload";
 import sharp from "sharp";
 
 import { adminNavigationOrderPlugin } from "./src/payload/admin-navigation";
+import { isStrictAdminUser } from "./src/payload/access";
 import { ecommerce } from "./src/payload/commerce";
 import { collections } from "./src/payload/collections";
-import { dataTransferPlugin, isStrictAdminUser } from "./src/payload/data-transfer";
 import { cleanupEphemeralRecordsTask } from "./src/payload/ephemeral-cleanup";
 import { canRunPayloadJobs } from "./src/payload/jobs-access";
-
-const nilperFa = {
-  ...fa,
-  translations: {
-    ...fa.translations,
-    general: {
-      ...fa.translations.general,
-      column: "ستون",
-      columns: "ستون‌ها",
-      row: "سطر",
-      rows: "سطرها",
-    },
-    "plugin-import-export": {
-      allLocales: "همه زبان‌ها",
-      collectionRequired: "برای نمایش پیش‌نمایش، نوع داده را انتخاب کنید.",
-      documentsToExport: "{{count}} رکورد برای خروجی",
-      documentsToImport: "{{count}} رکورد برای ورود",
-      exportDocumentLabel: "خروجی {{label}}",
-      exportOptions: "تنظیمات خروجی",
-      "field-collectionSlug-label": "نوع داده",
-      "field-depth-label": "عمق",
-      "field-drafts-label": "شامل پیش‌نویس‌ها",
-      "field-fields-label": "فیلدها",
-      "field-format-label": "فرمت خروجی",
-      "field-importMode-create-label": "فقط ایجاد رکوردهای جدید",
-      "field-importMode-label": "روش ورود",
-      "field-importMode-update-label": "فقط به‌روزرسانی رکوردهای موجود",
-      "field-importMode-upsert-label": "ایجاد یا به‌روزرسانی",
-      "field-limit-label": "حداکثر تعداد",
-      "field-locale-label": "زبان",
-      "field-matchField-description": "فیلد پایدار برای پیدا کردن رکورد موجود؛ مانند slug یا nilperCode.",
-      "field-matchField-label": "کلید تطبیق",
-      "field-name-label": "نام فایل",
-      "field-page-label": "صفحه",
-      "field-selectionToUse-label": "محدوده خروجی",
-      "field-sort-label": "مرتب‌سازی بر اساس",
-      "field-sort-order-label": "جهت مرتب‌سازی",
-      "field-status-label": "وضعیت",
-      "field-summary-label": "نتیجه ورود",
-      importDocumentLabel: "ورود {{label}}",
-      importResults: "نتیجه ورود",
-      limitCapped: "حداکثر مجاز {{limit}} رکورد است.",
-      limitExceededExport: "خروجی به {{limit}} رکورد محدود شد.",
-      limitExceededImport: "فایل {{count}} رکورد دارد، اما حداکثر مجاز {{limit}} است.",
-      matchBy: "تطبیق با",
-      mode: "روش",
-      noDataToPreview: "داده‌ای برای پیش‌نمایش وجود ندارد.",
-      previewPageInfo: "{{start}} تا {{end}} از {{total}}",
-      "selectionToUse-allDocuments": "همه رکوردها",
-      "selectionToUse-currentFilters": "نتیجه فیلتر فعلی",
-      "selectionToUse-currentSelection": "رکوردهای انتخاب‌شده",
-      startImport: "شروع ورود",
-      totalDocumentsCount: "مجموع {{count}} رکورد",
-      uploadFileToSeePreview: "برای دیدن پیش‌نمایش، فایل JSON را بارگذاری کنید.",
-    },
-  },
-};
+import { payloadMcp } from "./src/payload/mcp";
 
 const projectRoot = process.cwd();
 const databaseURI = process.env.DATABASE_URI;
@@ -115,7 +59,7 @@ export default buildConfig({
   editor: lexicalEditor(),
   i18n: {
     fallbackLanguage: "fa",
-    supportedLanguages: { fa: nilperFa },
+    supportedLanguages: { fa },
   },
   jobs: {
     access: {
@@ -125,7 +69,7 @@ export default buildConfig({
     },
     tasks: [cleanupEphemeralRecordsTask],
   },
-  plugins: [ecommerce, dataTransferPlugin, adminNavigationOrderPlugin],
+  plugins: [ecommerce, payloadMcp, adminNavigationOrderPlugin],
   secret: payloadSecret,
   serverURL: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   sharp,

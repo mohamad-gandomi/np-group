@@ -5,7 +5,6 @@ import config from '../../payload.config';
 import { validateNilperCommerceItems } from './cart-configuration';
 import { resolveCommerce } from './catalog-domain';
 import { mapPayloadProduct } from '../features/catalog/payload-catalog-mapper';
-import { makeExportHook, makeImportHook } from './data-transfer';
 import { ADMIN_NAVIGATION_GROUPS, STORE_NAVIGATION_COLLECTIONS } from './admin-navigation';
 
 const payload = await getPayload({ config });
@@ -123,13 +122,6 @@ try {
     ],
   }], req);
   assert.deepEqual((repeatedQuote.items[0].configuration as { groupLabelFaSnapshot: string }[]).map((selection) => selection.groupLabelFaSnapshot).sort(), ['رنگ پایه', 'رنگ بدنه'].sort());
-  const rawProduct = await payload.findByID({ collection: 'products', id: product.id, depth: 0, req });
-  const portable = await makeExportHook('products')({ data: [rawProduct as unknown as Record<string, unknown>], originalData: [rawProduct], req });
-  const portableAttributes = portable[0].attributes as { attribute: string; allowedOptions: string[] }[];
-  assert.equal(portableAttributes[0].attribute, size.name); assert.equal(portableAttributes[0].allowedOptions[0], small.value);
-  assert(!('enableVariants' in portable[0])); assert(!('variantTypes' in portable[0]));
-  const imported = await makeImportHook('products')({ data: portable, req });
-  assert.deepEqual((imported[0].attributes as { allowedOptions: number[] }[])[0].allowedOptions, [small.id, large.id]);
   const makeInvalid = (options: number[], sku = `${prefix}-${randomUUID()}`) => payload.create({ collection: 'variants', req, data: { product: product.id, nilperCode: sku, options, _status: 'published' } });
   await assert.rejects(makeInvalid([fixed.id, small.id]), 'Duplicate unordered combination.');
   await assert.rejects(makeInvalid([large.id, lift.id], variant.nilperCode), 'Duplicate SKU.');

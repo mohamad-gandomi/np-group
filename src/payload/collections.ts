@@ -3,6 +3,11 @@ import { ValidationError } from "payload";
 import type { Access, CollectionBeforeValidateHook, CollectionConfig, Field } from "payload";
 
 import { customerSessionStrategy } from "../features/auth/customer-session";
+import {
+  forceContentAgentUnpublished,
+  isContentAgentUser,
+  updateUnpublishedContent,
+} from "./access";
 import { Posts } from "./posts";
 import { withStorefrontRevalidation } from "./storefront-revalidation";
 
@@ -52,15 +57,17 @@ const adminOrSelf: Access = ({ req }) => {
 };
 
 const editorialContentAccess: CollectionConfig["access"] = {
-  create: editorialOnly,
+  create: ({ req }) => hasEditorialRole(req.user) || isContentAgentUser(req.user),
   delete: editorialOnly,
   read: () => true,
-  update: editorialOnly,
+  update: ({ req }) => hasEditorialRole(req.user) || isContentAgentUser(req.user),
 };
 
 const publishedContentAccess: CollectionConfig["access"] = {
   ...editorialContentAccess,
-  read: ({ req }) => hasEditorialRole(req.user) || { published: { equals: true } },
+  delete: editorialOnly,
+  read: ({ req }) => hasEditorialRole(req.user) || isContentAgentUser(req.user) || { published: { equals: true } },
+  update: updateUnpublishedContent,
 };
 
 export const Users: CollectionConfig = {
@@ -94,6 +101,7 @@ export const Users: CollectionConfig = {
         { label: "مدیر", value: "admin" },
         { label: "ویرایشگر", value: "editor" },
         { label: "فروشنده", value: "seller" },
+        { label: "عامل محتوای هوش مصنوعی", value: "content-agent" },
       ],
     },
     rtlText("contactTitle", "عنوان ارتباطی"),
@@ -257,7 +265,7 @@ export const BlogCategories: CollectionConfig = {
     description: "دسته‌بندی‌های تحریریه برای گروه‌بندی و فیلتر مطالب مجله.",
   },
   defaultSort: "sortOrder",
-  hooks: withStorefrontRevalidation(undefined, ["journal"], "published"),
+  hooks: withStorefrontRevalidation({ beforeChange: [forceContentAgentUnpublished] }, ["journal"], "published"),
   fields: [
     rtlText("title", "عنوان دسته‌بندی", true),
     {
@@ -273,7 +281,7 @@ export const BlogCategories: CollectionConfig = {
     },
     { name: "description", type: "textarea", label: "توضیح کوتاه", admin: { rtl: true } },
     { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
-    { name: "published", type: "checkbox", label: "فعال", defaultValue: true },
+    { name: "published", type: "checkbox", label: "فعال", defaultValue: false },
     {
       name: "posts",
       type: "join",
@@ -294,7 +302,7 @@ export const Brands: CollectionConfig = {
   access: publishedContentAccess,
   labels: { singular: "برند", plural: "برندها" },
   admin: { group: "فروشگاه", useAsTitle: "title", defaultColumns: ["title", "slug", "published"] },
-  hooks: withStorefrontRevalidation(undefined, ["catalog", "showcase"], "published"),
+  hooks: withStorefrontRevalidation({ beforeChange: [forceContentAgentUnpublished] }, ["catalog", "showcase"], "published"),
   fields: [
     rtlText("title", "نام فارسی برند", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
@@ -307,7 +315,7 @@ export const Brands: CollectionConfig = {
     rtlText("heroCaption", "توضیح زیر تصویر"),
     { name: "featured", type: "checkbox", label: "برند منتخب", defaultValue: false },
     { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
-    { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
+    { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: false },
   ],
 };
 
@@ -320,7 +328,7 @@ export const Projects: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "sector", "featured", "published", "updatedAt"],
   },
-  hooks: withStorefrontRevalidation(undefined, ["showcase"], "published"),
+  hooks: withStorefrontRevalidation({ beforeChange: [forceContentAgentUnpublished] }, ["showcase"], "published"),
   fields: [
     {
       type: "tabs",
@@ -396,7 +404,7 @@ export const Projects: CollectionConfig = {
             { name: "article", type: "relationship", relationTo: "posts", label: "مطلب مرتبط" },
             { name: "featured", type: "checkbox", label: "پروژه منتخب", defaultValue: false },
             { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
-            { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
+            { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: false },
           ],
         },
       ],
@@ -440,7 +448,10 @@ export const Categories: CollectionConfig = {
   access: publishedContentAccess,
   labels: { singular: "دسته‌بندی", plural: "دسته‌بندی‌ها" },
   admin: { group: "فروشگاه", useAsTitle: "title", defaultColumns: ["title", "parent", "showOnStorefront", "sortOrder", "published"] },
-  hooks: withStorefrontRevalidation({ beforeValidate: [validateCategoryStorefrontSelection] }, ["catalog"], "published"),
+  hooks: withStorefrontRevalidation({
+    beforeChange: [forceContentAgentUnpublished],
+    beforeValidate: [validateCategoryStorefrontSelection],
+  }, ["catalog"], "published"),
   fields: [
     rtlText("title", "عنوان فارسی", true),
     { name: "slug", type: "text", label: "نامک", required: true, unique: true },
@@ -458,7 +469,7 @@ export const Categories: CollectionConfig = {
       },
     },
     { name: "sortOrder", type: "number", label: "ترتیب نمایش", defaultValue: 0 },
-    { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: true },
+    { name: "published", type: "checkbox", label: "منتشرشده", defaultValue: false },
   ],
 };
 

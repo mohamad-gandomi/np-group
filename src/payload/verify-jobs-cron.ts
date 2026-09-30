@@ -54,13 +54,11 @@ try {
   } as never, now);
   assert.deepEqual(cleanup, {
     deletedCarts: 1,
-    deletedExports: 1,
-    deletedImports: 1,
     deletedOtpChallenges: 1,
     deletedSessions: 1,
   });
   assert.deepEqual(deletes.map(({ collection }) => collection).sort(), [
-    "carts", "customer-otp-challenges", "customer-sessions", "exports", "imports",
+    "carts", "customer-otp-challenges", "customer-sessions",
   ]);
   assert.match(JSON.stringify(deletes.find(({ collection }) => collection === "carts")?.where), /purchasedAt/);
 

@@ -4,7 +4,9 @@ import { randomUUID } from "node:crypto";
 
 import {
   adminOnlyFieldAccess,
+  allowContentAgent,
   adminOrPublishedStatus,
+  forceContentAgentDraft,
   isAdmin,
   isAuthenticated,
   isCustomer,
@@ -701,8 +703,18 @@ export const ecommerce = ecommercePlugin({
   products: {
     productsCollectionOverride: ({ defaultCollection }) => ({
       ...defaultCollection,
+      access: {
+        ...defaultCollection.access,
+        create: allowContentAgent(defaultCollection.access?.create),
+        read: allowContentAgent(defaultCollection.access?.read),
+        update: allowContentAgent(defaultCollection.access?.update),
+      },
       labels: { singular: "محصول", plural: "محصولات" },
-      hooks: withStorefrontRevalidation({ ...defaultCollection.hooks, beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateProduct] }, ["catalog"], "status"),
+      hooks: withStorefrontRevalidation({
+        ...defaultCollection.hooks,
+        beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), forceContentAgentDraft],
+        beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateProduct],
+      }, ["catalog"], "status"),
       admin: {
         ...defaultCollection.admin,
         group: "فروشگاه",
@@ -715,8 +727,18 @@ export const ecommerce = ecommercePlugin({
     variants: {
       variantsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
+        access: {
+          ...defaultCollection.access,
+          create: allowContentAgent(defaultCollection.access?.create),
+          read: allowContentAgent(defaultCollection.access?.read),
+          update: allowContentAgent(defaultCollection.access?.update),
+        },
         labels: { singular: "مدل محصول", plural: "مدل‌های محصول" },
-        hooks: withStorefrontRevalidation({ ...defaultCollection.hooks, beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateVariant] }, ["catalog"], "status"),
+        hooks: withStorefrontRevalidation({
+          ...defaultCollection.hooks,
+          beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), forceContentAgentDraft],
+          beforeValidate: [...(defaultCollection.hooks?.beforeValidate ?? []), validateVariant],
+        }, ["catalog"], "status"),
         admin: {
           ...defaultCollection.admin,
           group: false,

@@ -14,7 +14,7 @@ const tests = [
   ["catalog filters", "src/payload/verify-catalog-filters.ts"],
   ["curated catalog", "src/payload/verify-manual-catalog.ts"],
   ["content", "src/payload/verify-content.ts"],
-  ["optional import media", "src/payload/verify-optional-import-images.ts"],
+  ["MCP content safety", "src/payload/verify-mcp.ts"],
   ["storefront revalidation", "src/payload/verify-storefront-revalidation.ts"],
   ["jobs authorization", "src/payload/verify-jobs-cron.ts"],
 ];

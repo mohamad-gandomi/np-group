@@ -70,9 +70,11 @@ npm run payload:db:stop
 
 `npm run test:storefront` checks generated production output, so run `npm run build` first. The seed is idempotent and installs the curated catalog, journal, brands, projects, and required media.
 
-## Data transfer
+## AI content operations
 
-Administrators can run JSON import/export from supported Payload collection list menus. Relations use stable slugs, variant `nilperCode`, attribute names, option values, and uploaded media filenames. Import/export files and history are removed after seven days by the Payload job cleanup task.
+Daily catalog and editorial entry uses the official Payload MCP integration with a dedicated, restricted `content-agent` identity. The agent searches existing content first, reuses taxonomy and relationships, and creates reviewable drafts without delete or publish access.
+
+Setup, client configuration, safety boundaries, and example prompts are documented in [`docs/payload-mcp.md`](docs/payload-mcp.md).
 
 Production must call Payload's official jobs endpoint regularly:
 

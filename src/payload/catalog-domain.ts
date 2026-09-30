@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import type { CollectionBeforeValidateHook, CollectionBeforeDeleteHook, CollectionConfig, Field, FieldHook, PayloadRequest } from 'payload';
 import { ValidationError } from 'payload';
 
+import { allowContentAgent } from './access';
+
 export const relationID = (value: unknown): number | undefined => {
   if (value && typeof value === 'object' && 'id' in value) return relationID(value.id);
   const id = typeof value === 'string' ? Number(value) : value;
@@ -204,6 +206,12 @@ export function attributeCollection(collection: CollectionConfig, option: boolea
   const labels: Record<string, string> = { label: 'عنوان', name: 'کلید ویژگی', value: 'کد پایدار گزینه', variantType: 'ویژگی', options: 'گزینه‌های ویژگی' };
   return {
     ...collection,
+    access: {
+      ...collection.access,
+      create: allowContentAgent(collection.access?.create),
+      read: allowContentAgent(collection.access?.read),
+      update: allowContentAgent(collection.access?.update),
+    },
     trash: false,
     labels: option ? { singular: 'گزینه ویژگی', plural: 'گزینه‌های ویژگی' } : { singular: 'ویژگی', plural: 'ویژگی‌ها' },
     admin: { ...collection.admin, group: option ? false : 'فروشگاه', description: 'ویژگی‌ها به‌صورت خودکار مدل ایجاد نمی‌کنند.', defaultColumns: option ? ['label', 'variantType', 'value', 'active'] : ['label', 'name', 'active'] },
