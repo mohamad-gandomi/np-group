@@ -1097,10 +1097,14 @@ const localizePermissionField = (field: Field): Field => {
   const entityLabel = collectionPermissionLabels[group.name];
   if (!isToolGroup && !entityLabel) return field;
 
+  const groupFields = isToolGroup
+    ? group.fields.filter((permission) => !("name" in permission) || permission.name !== "mediaUploadImage")
+    : group.fields;
+
   const localizedGroup = {
     ...group,
     label: false,
-    fields: group.fields.map((permission): Field => {
+    fields: groupFields.map((permission): Field => {
       if (permission.type !== "checkbox" || !("name" in permission)) return permission;
       const label = isToolGroup
         ? toolPermissionLabels[permission.name]
@@ -1197,6 +1201,11 @@ export const payloadMcp = mcpPlugin({
     if (!isContentAgentUser(settings.user)) throw new Error("MCP keys must belong to a content-agent user.");
     req.user = settings.user;
     const safe = { ...settings, user: settings.user } as MCPAccessSettings;
+    const existingTools = (settings["payload-mcp-tool"] as Record<string, boolean> | undefined) ?? {};
+    safe["payload-mcp-tool"] = {
+      ...existingTools,
+      mediaUploadImage: true,
+    };
     for (const slug of exposedCollections) {
       const key = slug.replace(/[-_\s]+(.)?/g, (_, letter: string | undefined) => letter?.toUpperCase() ?? "");
       const requested = settings[key] as typeof mcpRawOperationAccess | undefined;
