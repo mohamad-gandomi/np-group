@@ -391,12 +391,48 @@ async function main() {
     return;
   }
 
+  if (command === "create-product") {
+    const inputArg = args[1];
+    if (!inputArg) {
+      console.error("Usage: node scripts/payload-mcp.mjs create-product <jsonStringOrFilePath>");
+      process.exit(1);
+    }
+    let payload;
+    try {
+      if (inputArg.trim().startsWith("{")) {
+        payload = JSON.parse(inputArg);
+      } else {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        const resolved = path.resolve(process.cwd(), inputArg);
+        const content = await fs.readFile(resolved, "utf8");
+        payload = JSON.parse(content);
+      }
+    } catch (err) {
+      console.error("Failed to parse product payload:", err.message);
+      process.exit(1);
+    }
+    console.log(`Creating product draft for "${payload.product?.title || payload.product?.slug}"...`);
+    const res = await sendMcpRequest({
+      jsonrpc: "2.0",
+      id: "cli-create-product-1",
+      method: "tools/call",
+      params: {
+        name: "catalogCreateProductDraft",
+        arguments: payload,
+      },
+    });
+    console.log("\nCreate Product Result:\n", JSON.stringify(res, null, 2));
+    return;
+  }
+
   console.log(`
 Usage:
   node scripts/payload-mcp.mjs categories          List catalog categories
   node scripts/payload-mcp.mjs products            List catalog products
   node scripts/payload-mcp.mjs tools               List all available MCP tools
   node scripts/payload-mcp.mjs upload <file> <alt> [slug] Upload & convert image to WebP (max 1336px, Q70)
+  node scripts/payload-mcp.mjs create-product <jsonOrFile> Create or repair product draft
   node scripts/payload-mcp.mjs call <name> [args]  Execute any MCP tool
   node scripts/payload-mcp.mjs --stdio             Run as an MCP stdio server
 `);
