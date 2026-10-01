@@ -62,7 +62,7 @@ async function createManiBedDraft(img1Id, img2Id) {
       ],
       ambiguities: [],
     },
-    updateExistingDraft: false,
+    updateExistingDraft: true,
     product: {
       title: "تخت خواب مانی",
       slug: "mani-bed",
@@ -198,29 +198,8 @@ async function createManiBedDraft(img1Id, img2Id) {
 }
 
 async function main() {
-  console.log("Step 1: Optimizing images to WebP Q70...");
-  const base64Img1 = await optimizeImage(IMG1_PATH);
-  const base64Img2 = await optimizeImage(IMG2_PATH);
-
-  console.log("Step 2: Uploading images to Payload media library...");
-  let media1 = await uploadImage({
-    base64: base64Img1,
-    alt: "تخت خواب مدرن مانی نیلپر با تاج پارچه‌ای",
-    productSlug: "mani-bed",
-    captionFa: "تخت خواب دو نفره مانی نیلپر با پوشش پارچه‌ای و طراحی مدرن",
-  });
-
-  let media2 = await uploadImage({
-    base64: base64Img2,
-    alt: "تخت خواب جک‌دار مانی نیلپر با فضای انبارش",
-    productSlug: "mani-bed",
-    captionFa: "تخت خواب جک‌دار مانی نیلپر با کفی بازشو و فضای انبارش زیر تخت",
-  });
-
-  console.log("Uploaded Media IDs:", media1?.id, media2?.id);
-
-  console.log("Step 3: Creating Mani Bed product draft with 4 real SKU variants...");
-  await createManiBedDraft(media1?.id, media2?.id);
+  console.log("Linking uploaded WebP Media IDs (24, 25) to Mani Bed product draft and variants...");
+  await createManiBedDraft(24, 25);
 }
 
 main().catch(console.error);
