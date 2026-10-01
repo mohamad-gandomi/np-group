@@ -196,7 +196,7 @@ export async function uploadImage({
   productSlug,
   filename,
   maxWidth = 1336,
-  quality = 70,
+  quality = 85,
 }) {
   const response = await sendMcpRequest({
     jsonrpc: "2.0",
@@ -355,7 +355,7 @@ async function main() {
     const productSlug = args[3];
     const captionFa = args[4];
     const maxWidth = args[5] ? parseInt(args[5], 10) : 1336;
-    const quality = args[6] ? parseInt(args[6], 10) : 70;
+    const quality = args[6] ? parseInt(args[6], 10) : 85;
 
     if (!filePath || !alt) {
       console.error("Usage: node scripts/payload-mcp.mjs upload <imagePath> <altText> [productSlug] [captionFa] [maxWidth] [quality]");
@@ -431,7 +431,7 @@ Usage:
   node scripts/payload-mcp.mjs categories          List catalog categories
   node scripts/payload-mcp.mjs products            List catalog products
   node scripts/payload-mcp.mjs tools               List all available MCP tools
-  node scripts/payload-mcp.mjs upload <file> <alt> [slug] Upload & convert image to WebP (max 1336px, Q70)
+  node scripts/payload-mcp.mjs upload <file> <alt> [slug] Upload & convert image to WebP (max 1336px, Q85)
   node scripts/payload-mcp.mjs create-product <jsonOrFile> Create or repair product draft
   node scripts/payload-mcp.mjs call <name> [args]  Execute any MCP tool
   node scripts/payload-mcp.mjs --stdio             Run as an MCP stdio server

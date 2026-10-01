@@ -439,7 +439,7 @@ const mediaUploadFields = z.object({
   filePath: z.string().min(1).optional().describe("Local filesystem path to the image file to read and upload."),
   url: z.string().url().optional().describe("Remote HTTP/HTTPS URL of the image to download, process, and upload."),
   maxWidth: z.number().int().positive().optional().default(1336).describe("Maximum allowed width in pixels. Images wider than this will be resized while maintaining aspect ratio (default: 1336)."),
-  quality: z.number().int().min(1).max(100).optional().default(70).describe("WebP compression quality (default: 70)."),
+  quality: z.number().int().min(1).max(100).optional().default(85).describe("WebP compression quality (default: 85)."),
 });
 
 const mediaUploadSchema = mediaUploadFields.refine((data) => Boolean(data.base64 || data.filePath || data.url), {
@@ -518,7 +518,7 @@ const mediaUploadImage = async (args: Record<string, unknown>, req: PayloadReque
   }
 
   const maxWidth = input.maxWidth ?? 1336;
-  const quality = input.quality ?? 70;
+  const quality = input.quality ?? 85;
 
   let pipeline = image.rotate();
   if (metadata.width && metadata.width > maxWidth) {
