@@ -19,7 +19,8 @@
     "payload:seed": "payload run src/payload/seed.ts",
     "payload:db:start": "docker compose --env-file .env.local -f payload.compose.yaml up -d",
     "payload:db:stop": "docker compose --env-file .env.local -f payload.compose.yaml down",
-    "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps"
+    "payload:db:status": "docker compose --env-file .env.local -f payload.compose.yaml ps",
+    "payload:mcp": "node scripts/payload-mcp.mjs"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.88.0",

@@ -64,12 +64,13 @@ const permissionBulkActions = apiKeys.fields.find((field) => (
 assert.ok(permissionBulkActions && permissionBulkActions.type === "ui");
 const configuredPermissionPaths = permissionBulkActions.admin?.custom?.permissionPaths as string[] | undefined;
 assert.ok(configuredPermissionPaths);
-assert.equal(configuredPermissionPaths.length, 15);
+assert.equal(configuredPermissionPaths.length, 16);
 assert.equal(configuredPermissionPaths.some((path) => (
   path.endsWith(".create") || path.endsWith(".update") || path.endsWith(".delete")
 )), false);
 assert.ok(configuredPermissionPaths.includes("products.find"));
 assert.ok(configuredPermissionPaths.includes("payload-mcp-tool.catalogCreateProductDraft"));
+assert.ok(configuredPermissionPaths.includes("payload-mcp-tool.mediaUploadImage"));
 assert.deepEqual(mcpRawOperationAccess, { find: true, create: false, update: false, delete: false });
 const configuredRawOperations = apiKeys.fields.flatMap((field) => {
   if (field.type !== "collapsible") return [];

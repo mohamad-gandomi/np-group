@@ -1,6 +1,9 @@
 import { mcpPlugin, type MCPAccessSettings } from "@payloadcms/plugin-mcp";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { ValidationError } from "payload";
 import type { Access, CollectionConfig, CollectionSlug, Field, FieldAccess, PayloadRequest } from "payload";
+import sharp from "sharp";
 import { z } from "zod";
 
 import { isContentAgentUser, isStrictAdminUser } from "./access";
@@ -77,6 +80,7 @@ const toolPermissionLabels: Record<string, string> = {
   contentCreateArticleDraft: "ساخت پیش‌نویس مقاله",
   contentCreateProjectDraft: "ساخت پیش‌نویس پروژه",
   contentCreateBrandDraft: "ساخت پیش‌نویس برند",
+  mediaUploadImage: "بارگذاری و بهینه‌سازی تصویر",
 };
 
 const permissionPaths = [
@@ -336,6 +340,20 @@ const productSchema = z.object({
     salesMode: z.enum(["direct", "inquiry", "made_to_order"]).optional().default("made_to_order"),
     availabilityMode: z.enum(["orderable", "in_stock", "unavailable"]).optional().default("orderable"),
     shippingMode: z.enum(["parcel", "freight"]).optional().default("freight"),
+    mainImage: z.union([z.string(), z.number()]).optional().describe(
+      "Media document ID or filename for the primary product image.",
+    ),
+    gallery: z.array(z.union([
+      z.number(),
+      z.string(),
+      z.object({
+        image: z.union([z.number(), z.string()]),
+        alt: z.string().optional(),
+        caption: z.string().optional(),
+      }),
+    ])).optional().describe(
+      "Gallery images as media document IDs, filenames, or gallery items.",
+    ),
     data: z.record(z.string(), z.unknown()).optional(),
   }),
   brand: entityRefSchema,
@@ -361,6 +379,9 @@ const productSchema = z.object({
     options: z.array(z.object({ attribute: z.string().min(1), value: z.string().min(1) })).min(1),
     measurements: z.array(measurementSchema).optional().describe(
       "Dimensions, weight, fabric consumption, or other physical values specific to this SKU/model.",
+    ),
+    mainImage: z.union([z.string(), z.number()]).optional().describe(
+      "Media document ID or filename for variant-specific image.",
     ),
     manufacturingNotesFa: z.string().optional(),
     data: z.record(z.string(), z.unknown()).optional(),
@@ -409,6 +430,20 @@ const brandSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 });
 
+const mediaUploadSchema = z.object({
+  alt: z.string().trim().min(1).describe("Persian alt text for accessibility and SEO. Required."),
+  captionFa: z.string().trim().optional().describe("Optional Persian caption for the image."),
+  productSlug: z.string().trim().optional().describe("Product slug or title to base the filename on (e.g. 'zhivar-bed'). Generates product_name_01.webp, product_name_02.webp, etc."),
+  filename: z.string().trim().optional().describe("Desired base filename or product name."),
+  base64: z.string().min(1).optional().describe("Base64-encoded image data, optionally prefixed with data URI (e.g. data:image/jpeg;base64,...)."),
+  filePath: z.string().min(1).optional().describe("Local filesystem path to the image file to read and upload."),
+  url: z.string().url().optional().describe("Remote HTTP/HTTPS URL of the image to download, process, and upload."),
+  maxWidth: z.number().int().positive().optional().default(1336).describe("Maximum allowed width in pixels. Images wider than this will be resized while maintaining aspect ratio (default: 1336)."),
+  quality: z.number().int().min(1).max(100).optional().default(70).describe("WebP compression quality (default: 70)."),
+}).refine((data) => Boolean(data.base64 || data.filePath || data.url), {
+  message: "At least one of 'base64', 'filePath', or 'url' must be provided.",
+});
+
 const catalogFindExisting = async (args: Record<string, unknown>, req: PayloadRequest) => {
   assertAgent(req);
   const input = findExistingSchema.parse(args);
@@ -418,6 +453,155 @@ const catalogFindExisting = async (args: Record<string, unknown>, req: PayloadRe
     collection: input.collection,
     query: input.query,
     matches,
+  });
+};
+
+const mediaUploadImage = async (args: Record<string, unknown>, req: PayloadRequest) => {
+  assertAgent(req);
+  const input = mediaUploadSchema.parse(args);
+
+  let inputBuffer: Buffer;
+  if (input.base64) {
+    const cleanBase64 = input.base64.replace(/^data:image\/[a-z0-9.+_-]+;base64,/, "");
+    inputBuffer = Buffer.from(cleanBase64, "base64");
+  } else if (input.filePath) {
+    const resolvedPath = path.isAbsolute(input.filePath)
+      ? input.filePath
+      : path.resolve(process.cwd(), input.filePath);
+    try {
+      inputBuffer = await fs.readFile(resolvedPath);
+    } catch (error) {
+      throw new ValidationError({
+        req,
+        errors: [{ path: "filePath", message: `Could not read file at ${resolvedPath}: ${String(error)}` }],
+      });
+    }
+  } else if (input.url) {
+    try {
+      const response = await fetch(input.url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      inputBuffer = Buffer.from(arrayBuffer);
+    } catch (error) {
+      throw new ValidationError({
+        req,
+        errors: [{ path: "url", message: `Failed to download image from ${input.url}: ${String(error)}` }],
+      });
+    }
+  } else {
+    throw new ValidationError({
+      req,
+      errors: [{ path: "file", message: "No image source provided." }],
+    });
+  }
+
+  const image = sharp(inputBuffer);
+  let metadata: sharp.Metadata;
+  try {
+    metadata = await image.metadata();
+  } catch (error) {
+    throw new ValidationError({
+      req,
+      errors: [{ path: "file", message: `File is not a valid recognized image: ${String(error)}` }],
+    });
+  }
+
+  if (!metadata.format) {
+    throw new ValidationError({
+      req,
+      errors: [{ path: "file", message: "Unrecognized image format." }],
+    });
+  }
+
+  const maxWidth = input.maxWidth ?? 1336;
+  const quality = input.quality ?? 70;
+
+  let pipeline = image.rotate();
+  if (metadata.width && metadata.width > maxWidth) {
+    pipeline = pipeline.resize({
+      width: maxWidth,
+      withoutEnlargement: true,
+    });
+  }
+
+  const processedBuffer = await pipeline.webp({ quality }).toBuffer();
+  const processedMeta = await sharp(processedBuffer).metadata();
+
+  let prefix = (input.productSlug || input.filename || (input.filePath ? path.parse(input.filePath).name : "product"))
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/\.webp$/i, "")
+    .replace(/_\d+$/, "")
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^a-z0-9_]+/g, "")
+    .replace(/^_+|_+$/g, "");
+
+  if (!prefix) prefix = "product";
+
+  const existingMedia = await req.payload.find({
+    collection: "media",
+    where: {
+      filename: {
+        like: `${prefix}_%`,
+      },
+    },
+    limit: 200,
+    overrideAccess: true,
+    req,
+    user: req.user,
+  });
+
+  let maxIndex = 0;
+  const indexRegex = new RegExp(`^${prefix}_(\\d+)\\.webp$`, "i");
+  for (const doc of existingMedia.docs) {
+    if (typeof doc.filename === "string") {
+      const match = doc.filename.match(indexRegex);
+      if (match) {
+        const idx = parseInt(match[1], 10);
+        if (!isNaN(idx) && idx > maxIndex) {
+          maxIndex = idx;
+        }
+      }
+    }
+  }
+
+  const nextIndex = String(maxIndex + 1).padStart(2, "0");
+  const finalFilename = `${prefix}_${nextIndex}.webp`;
+
+  const created = await req.payload.create({
+    collection: "media",
+    data: {
+      alt: input.alt,
+      ...(input.captionFa ? { captionFa: input.captionFa } : {}),
+    },
+    file: {
+      data: processedBuffer,
+      mimetype: "image/webp",
+      name: finalFilename,
+      size: processedBuffer.length,
+    },
+    overrideAccess: false,
+    req,
+    user: req.user,
+  }) as unknown as DataRecord;
+
+  return textResponse({
+    status: "media-uploaded",
+    media: {
+      id: created.id,
+      filename: created.filename ?? finalFilename,
+      url: created.url,
+      alt: created.alt,
+      captionFa: created.captionFa,
+      width: processedMeta.width,
+      height: processedMeta.height,
+      filesize: processedBuffer.length,
+      originalWidth: metadata.width,
+      originalHeight: metadata.height,
+      format: "webp",
+    },
   });
 };
 
@@ -436,6 +620,8 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
       "salesMode",
       "availabilityMode",
       "shippingMode",
+      ...(input.product.mainImage !== undefined ? ["mainImage"] : []),
+      ...(input.product.gallery?.length ? ["gallery"] : []),
       ...(input.product.measurements ? ["measurements"] : []),
       ...(input.product.technicalSpecs ? ["technicalSpecs"] : []),
       ...(input.product.orderNotesFa ? ["orderNotesFa"] : []),
@@ -580,12 +766,53 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
     return textResponse(output);
   }
 
+  let mainImageID: EntityID | undefined;
+  if (input.product.mainImage !== undefined) {
+    if (typeof input.product.mainImage === "number") {
+      mainImageID = input.product.mainImage;
+    } else {
+      const matches = await findNormalized(req, "media", [input.product.mainImage], ["filename", "alt"]);
+      if (matches.length >= 1) {
+        mainImageID = relationID(matches[0].id);
+        output.reused.push(`media:${String(matches[0].filename ?? mainImageID)}`);
+      } else {
+        output.warnings.push(`mainImage "${input.product.mainImage}" was not found in media library.`);
+      }
+    }
+  }
+
+  const galleryItems: Array<{ image: EntityID; alt?: string; caption?: string }> = [];
+  if (input.product.gallery?.length) {
+    for (const item of input.product.gallery) {
+      const rawRef = typeof item === "object" && item !== null && "image" in item ? item.image : item;
+      let imgID: EntityID | undefined;
+      if (typeof rawRef === "number") {
+        imgID = rawRef;
+      } else if (typeof rawRef === "string") {
+        const matches = await findNormalized(req, "media", [rawRef], ["filename", "alt"]);
+        if (matches.length >= 1) {
+          imgID = relationID(matches[0].id);
+          output.reused.push(`media:${String(matches[0].filename ?? imgID)}`);
+        }
+      }
+      if (imgID !== undefined) {
+        galleryItems.push({
+          image: imgID,
+          ...(typeof item === "object" && item.alt ? { alt: item.alt } : {}),
+          ...(typeof item === "object" && item.caption ? { caption: item.caption } : {}),
+        });
+      }
+    }
+  }
+
   const productData = {
     ...input.product.data,
     title: input.product.title,
     slug: input.product.slug,
     catalogCode: input.product.catalogCode,
     descriptionFa: normalizeMcpRichText(input.product.descriptionFa),
+    ...(mainImageID !== undefined ? { mainImage: mainImageID } : {}),
+    ...(galleryItems.length ? { gallery: galleryItems } : {}),
     ...(input.product.measurements ? { measurements: input.product.measurements } : {}),
     ...(input.product.technicalSpecs ? { technicalSpecs: input.product.technicalSpecs } : {}),
     ...(input.product.orderNotesFa !== undefined ? { orderNotesFa: input.product.orderNotesFa } : {}),
@@ -660,12 +887,25 @@ const catalogCreateProductDraft = async (args: Record<string, unknown>, req: Pay
       output.needsReview.push(`Variant "${variant.nilperCode}" references an unresolved attribute option.`);
       continue;
     }
+    let variantMainImageID: EntityID | undefined;
+    if (variant.mainImage !== undefined) {
+      if (typeof variant.mainImage === "number") {
+        variantMainImageID = variant.mainImage;
+      } else {
+        const matches = await findNormalized(req, "media", [variant.mainImage], ["filename", "alt"]);
+        if (matches.length >= 1) {
+          variantMainImageID = relationID(matches[0].id);
+          output.reused.push(`media:${String(matches[0].filename ?? variantMainImageID)}`);
+        }
+      }
+    }
     const variantData = {
       ...variant.data,
       product: productID,
       nilperCode: variant.nilperCode,
       title: variant.title,
       options: selectedOptions,
+      ...(variantMainImageID !== undefined ? { mainImage: variantMainImageID } : {}),
       ...(variant.measurements ? { measurements: variant.measurements } : {}),
       ...(variant.manufacturingNotesFa !== undefined
         ? { manufacturingNotesFa: variant.manufacturingNotesFa }
@@ -1013,6 +1253,12 @@ export const payloadMcp = mcpPlugin({
         description: "Search first, then create an unpublished brand profile only when no normalized match exists.",
         parameters: brandSchema.shape,
         handler: contentCreateBrandDraft,
+      },
+      {
+        name: "mediaUploadImage",
+        description: "Optimize and upload an image to the Payload media library. Automatically resizes images wider than maxWidth (default: 1336px), converts them to WebP format, and creates a media record with required Persian alt text.",
+        parameters: mediaUploadSchema.shape,
+        handler: mediaUploadImage,
       },
     ],
   },
