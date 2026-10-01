@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { ValidationError } from "payload";
 import type { Access, CollectionConfig, CollectionSlug, Field, FieldAccess, PayloadRequest } from "payload";
-import sharp from "sharp";
+import sharp, { type Metadata as SharpMetadata } from "sharp";
 import { z } from "zod";
 
 import { isContentAgentUser, isStrictAdminUser } from "./access";
@@ -430,7 +430,7 @@ const brandSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 });
 
-const mediaUploadSchema = z.object({
+const mediaUploadFields = z.object({
   alt: z.string().trim().min(1).describe("Persian alt text for accessibility and SEO. Required."),
   captionFa: z.string().trim().optional().describe("Optional Persian caption for the image."),
   productSlug: z.string().trim().optional().describe("Product slug or title to base the filename on (e.g. 'zhivar-bed'). Generates product_name_01.webp, product_name_02.webp, etc."),
@@ -440,7 +440,9 @@ const mediaUploadSchema = z.object({
   url: z.string().url().optional().describe("Remote HTTP/HTTPS URL of the image to download, process, and upload."),
   maxWidth: z.number().int().positive().optional().default(1336).describe("Maximum allowed width in pixels. Images wider than this will be resized while maintaining aspect ratio (default: 1336)."),
   quality: z.number().int().min(1).max(100).optional().default(70).describe("WebP compression quality (default: 70)."),
-}).refine((data) => Boolean(data.base64 || data.filePath || data.url), {
+});
+
+const mediaUploadSchema = mediaUploadFields.refine((data) => Boolean(data.base64 || data.filePath || data.url), {
   message: "At least one of 'base64', 'filePath', or 'url' must be provided.",
 });
 
@@ -498,7 +500,7 @@ const mediaUploadImage = async (args: Record<string, unknown>, req: PayloadReque
   }
 
   const image = sharp(inputBuffer);
-  let metadata: sharp.Metadata;
+  let metadata: SharpMetadata;
   try {
     metadata = await image.metadata();
   } catch (error) {
@@ -1257,7 +1259,7 @@ export const payloadMcp = mcpPlugin({
       {
         name: "mediaUploadImage",
         description: "Optimize and upload an image to the Payload media library. Automatically resizes images wider than maxWidth (default: 1336px), converts them to WebP format, and creates a media record with required Persian alt text.",
-        parameters: mediaUploadSchema.shape,
+        parameters: mediaUploadFields.shape,
         handler: mediaUploadImage,
       },
     ],
